@@ -5,44 +5,51 @@ This directory is the **lucky** personal portfolio workspace (Apple-style
 typography × Japanese healing hand-drawn line art). Brand voice:
 `Code with craft. Design with soul.` UI languages: Chinese + English only.
 
-The active planning artifact is `个人主页设计与开发方案.md` (bilingual design +
-development plan). Implementation is not started yet; when it begins, add a
-runtime subfolder (e.g. `paper-road/` or `site/`) rather than scattering files
-in the root.
+Canonical spec: `个人主页设计与开发方案.md` (v1.2). Implementation starts with
+`paper-road/` (feel prototype) then Astro site. Do not scatter runtime files
+in the repo root.
 
 ## Structure
-- `个人主页设计与开发方案.md`: canonical design/dev plan (lucky brand, ZH/EN).
-- `AGENTS.md`: this file — project rules and conventions.
-- `.gitignore`: ignore local backups (`*副本*`), secrets, editor/build noise.
-- Historical (removed from working tree; remain only in git history):
-  `water.html`, `fish.png`, `flash1.png` — old WebGL pond prototype assets.
-  Do not restore or delete git history without explicit user approval.
-- `water - 副本.html`: if present, local backup only; gitignored, never track.
+- `个人主页设计与开发方案.md`: design/dev plan (lucky, ZH/EN, no-ending road).
+- `AGENTS.md`: this file.
+- `.gitignore`: local backups (`*副本*`), secrets, editor/build noise.
+- Planned (not created yet):
+  - `paper-road/` — single-file feel prototype (M0–M1).
+  - `content/works/` — pluggable works (one file per work).
+  - `content/notes/`, `public/assets/works/`, `data/site.json`, `data/works.json`.
+- Historical (deleted from working tree; still in git history):
+  `water.html`, `fish.png`, `flash1.png`. Do not restore or purge history
+  without explicit user approval.
 
 ## Conventions
-- Brand name: **lucky** (lowercase in UI wordmark unless design says otherwise).
-- Primary tagline (EN): `Code with craft. Design with soul.`
-- Languages: **zh-CN + en only**. No Japanese locale in product copy
-  (visual style may still reference Japanese illustration aesthetics).
-- Controls: Jump = left click / tap / Space; Roll = right click / Shift/S/↓ /
-  swipe-down. Do **not** bind Roll to double-click or long-press (fallback
-  only). Always `preventDefault` on `contextmenu` over the canvas.
-- Mascots follow the “starring roles” system in the plan §3.1 / §6
-  (not every card gets all three).
-- Scrolling is a single continuous world (Lenis + ScrollTrigger), not
-  multi-page hard transitions.
+- Brand: **lucky**. Tagline: `Code with craft. Design with soul.`
+- Locales: **zh-CN + en only**.
+- **No ending / no finish-line narrative.** Open with a **Start Camp** departure
+  ritual (5–8s, skippable). Contact is a **roadside mailbox (Waystation)** the
+  mascots walk past. The page ends on **Open Road** (`未完，还在画。 /
+  To be drawn…`). Never ship “The End / 终点 / 旅程结束” copy.
+- Controls: Jump = left click / tap / Space / ↑; Roll = right click / Shift / S / ↓ /
+  swipe-down. Long-press left = fallback only. **Never bind Roll to double-click.**
+  `preventDefault` on canvas `contextmenu`. Any input skips the intro ritual.
+- Works are **pluggable**: one file per work under `content/works/` (or
+  `data/works.json` in the prototype). Add/delete a file to add/delete a work.
+  Do not hardcode work cards in UI components. Schema/status:
+  `featured | bento | draft`, `order`, bilingual `title`/`tagline`, `art`, `link`.
+- Mascots use the starring-roles system (plan §3.1), not stickers on every card.
+- Scroll is one continuous world (Lenis + ScrollTrigger).
 
 ## Workflow
-- Make all file changes on the `develop` branch.
+- Work on the `develop` branch.
 - Update this file before changing conventions or adding new top-level files.
-- Keep experiments outside the root until they are ready to join the prototype.
-- Do not delete existing files, backups, or git history without explicit approval.
-- Plan documents are design contracts: change the plan first, then implement.
+- Change the plan first, then implement (plan is the design contract).
+- Do not delete files, backups, or git history without explicit approval.
 
 ## Validation
-- After editing the plan, check brand name, tagline, locale list, and control
-  tables stay consistent (§0, §1, §5, §6, §12).
-- After implementing `water.html` or any HTML prototype, open it locally and
-  confirm scene rendering, mascots, pen, and interactions work.
-- For visual/interaction changes, verify desktop and mobile-sized viewports
-  when browser tooling is available.
+- Spec consistency: brand, tagline, locales, controls, and no-ending copy match
+  across plan §0 / §1 / §5 / §6 / §12.
+- Works: add/remove a sample work file only — list must update without code edits.
+  Run `npm run works:check` when the site exists (id unique, zh/en complete).
+- After any HTML prototype edit, open locally; verify camp intro, skip, pen ahead
+  of mascots, jump/roll, and that the footer has no “end camp”.
+- Visual checks: desktop + mobile viewports when browser tooling is available;
+  confirm `prefers-reduced-motion` shows Start Camp + 「出发 / Set out」.
