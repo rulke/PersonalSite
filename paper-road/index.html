@@ -591,12 +591,9 @@
       </div>
       <div class="side right"></div>
     </div>
-    <svg class="mail-box" viewBox="0 0 120 120" aria-hidden="true">
-      <path d="M28 72c0-20 13-34 32-34s32 14 32 34v20H28V72z" fill="#fff" stroke="#18181A" stroke-width="1.6" stroke-linejoin="round"/>
-      <path d="M46 72h30" stroke="#18181A" stroke-width="1.6" stroke-linecap="round"/>
-      <path d="M42 50v-10h14" stroke="#18181A" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-      <rect x="54" y="24" width="16" height="20" rx="2" fill="#FF9F43" stroke="#18181A" stroke-width="1.3"/>
-      <path d="M36 92v12M84 92v12" stroke="#18181A" stroke-width="1.6" stroke-linecap="round"/>
+    <svg class="mail-box" viewBox="0 0 120 120" aria-hidden="true" fill="none">
+      <path d="M28 72c0-20 13-34 32-34s32 14 32 34v20H28V72z" stroke="#18181A" stroke-width="1.6" stroke-linejoin="round"/>
+      <path d="M46 72h30M42 50v-10h14M54 30h16v18M36 92v12M84 92v12" stroke="#18181A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
     <a class="email-link" href="mailto:hello@lucky.dev" data-i18n="contact.email_label">写信给我</a>
     <div class="socials">
@@ -718,40 +715,23 @@
       `<svg viewBox="0 0 200 140" fill="none" xmlns="http://www.w3.org/2000/svg">${inner}</svg>`;
     const ink = 'stroke="#18181A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"';
     if (kind === "clock") return S(`
-      <circle cx="100" cy="72" r="36" fill="#fff" ${ink}/>
-      <circle cx="100" cy="72" r="27" fill="none" stroke="#FFDE59" stroke-width="3.5" stroke-linecap="round"/>
-      <path d="M100 54v20l14 9" ${ink}/>
-      <path d="M78 34l-8-10M122 34l8-10" ${ink}/>
-      <circle cx="54" cy="48" r="2" fill="#18181A"/>
-      <circle cx="148" cy="44" r="1.5" fill="#18181A"/>
+      <path d="M100 36a36 36 0 1 1 0 72 36 36 0 1 1 0-72M100 52a20 20 0 1 1 0 40 20 20 0 1 1 0-40" ${ink}/>
+      <path d="M100 58v16l12 8M78 30l-8-10M122 30l8-10" ${ink}/>
       <path d="M150 96c6-2 8-8 4-12" ${ink}/>
     `);
     if (kind === "cat") return S(`
-      <path d="M40 100h90" ${ink}/>
-      <path d="M62 100c-2-22 14-38 36-28 10 4 14 16 12 28" fill="#fff" ${ink}/>
-      <path d="M78 72l-8-14 16 6" fill="#fff" ${ink}/>
-      <path d="M102 70l12-12 2 16" fill="#fff" ${ink}/>
-      <circle cx="88" cy="84" r="1.6" fill="#18181A"/>
-      <circle cx="102" cy="84" r="1.6" fill="#18181A"/>
-      <path d="M92 92c2 2 6 2 8 0" ${ink}/>
-      <path d="M140 48c10 2 12 12 4 16" ${ink}/>
+      <path d="M40 100h90M62 100c-2-22 14-38 36-28 10 4 14 16 12 28M78 72l-8-14 16 6M102 70l12-12 2 16" ${ink}/>
+      <path d="M86 82h2M100 82h2M92 92c2 2 6 2 8 0M140 48c10 2 12 12 4 16" ${ink}/>
     `);
     if (kind === "pen") return S(`
-      <path d="M48 108c24-10 48-36 80-62" ${ink}/>
-      <path d="M122 36l22 8-8 22-20-10 6-20z" fill="#FFDE59" stroke="#18181A" stroke-width="1.5" stroke-linejoin="round"/>
-      <path d="M122 36l8 4" ${ink}/>
-      <circle cx="56" cy="112" r="1.5" fill="#18181A"/>
-      <circle cx="68" cy="106" r="1" fill="#18181A"/>
+      <path d="M48 108c24-10 48-36 80-62M122 36l22 8-8 22-20-10 6-20z" ${ink}/>
+      <path d="M56 112h2M68 106h1" ${ink}/>
     `);
     if (kind === "list") return S(`
-      <rect x="64" y="28" width="72" height="88" rx="8" fill="#fff" ${ink}/>
-      <path d="M80 54h40M80 74h40M80 94h26" ${ink}/>
-      <path d="M80 40h16" stroke="#70A07B" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M64 36h72v88H64zM64 28h56" ${ink}/>
+      <path d="M80 58h40M80 78h40M80 98h26" ${ink}/>
     `);
-    return S(`
-      <rect x="68" y="44" width="64" height="52" rx="6" fill="#fff" ${ink}/>
-      <path d="M68 62h64" ${ink}/>
-    `);
+    return S(`<path d="M68 44h64v52H68zM68 62h64" ${ink}/>`);
   };
 
   const peekSvg = `
@@ -888,42 +868,35 @@
   }
   const tangentAt = (wx) => (terrainY(wx + 4) - terrainY(wx - 4)) / 8;
 
-  /* ── object stroke templates (local coords, y up from ground) ── */
+  /* ── object stroke templates: 一笔画 / monoline ──
+     each stroke: array of [x,y] local, y negative = up
+     designed as few continuous contours, no fill */
   function objectStrokes(kind) {
-    // each stroke: array of [x,y] local, y negative = up
     if (kind === "tree") return [
-      [[0, 0], [0, -28]],
-      [[-2, -28], [-12, -40], [-4, -52], [8, -50], [14, -38], [4, -28], [-2, -28]],
+      // one continuous: trunk into canopy loop back
+      [[0, 0], [0, -22], [-2, -30], [-12, -38], [-8, -50], [4, -54], [14, -46], [12, -34], [2, -28], [0, -22]],
     ];
     if (kind === "cabin") return [
-      [[-24, 0], [-24, -34], [24, -34], [24, 0], [-24, 0]],
-      [[-28, -34], [0, -56], [28, -34]],
-      [[-8, 0], [-8, -18], [8, -18], [8, 0]],
-      [[-16, -24], [-16, -12], [-10, -12], [-10, -24]],
+      // single house contour with door suggested by retrace
+      [[-22, 0], [-22, -32], [0, -52], [22, -32], [22, 0], [-22, 0]],
+      [[-8, 0], [-8, -16], [8, -16], [8, 0]],
     ];
     if (kind === "mush") return [
-      [[-5, 0], [-4, -12], [4, -12], [5, 0]],
-      [[-14, -12], [-10, -24], [0, -28], [10, -24], [14, -12], [-14, -12]],
+      [[-5, 0], [-4, -11], [4, -11], [5, 0]],
+      [[-13, -11], [-9, -22], [0, -26], [10, -22], [13, -11], [-13, -11]],
     ];
     if (kind === "flower") return [
-      [[0, 0], [0, -14]],
-      [[0, -14], [-6, -20], [0, -26], [6, -20], [0, -14]],
+      [[0, 0], [0, -12], [-5, -18], [0, -24], [5, -18], [0, -12]],
     ];
     if (kind === "sign") return [
-      [[0, 0], [0, -36]],
-      [[2, -34], [26, -34], [26, -18], [2, -18], [2, -34]],
-      [[8, -26], [20, -26]],
+      [[0, 0], [0, -34], [22, -34], [22, -16], [0, -16]],
     ];
     if (kind === "rock") return [
-      [[-16, 0], [-18, -14], [-6, -26], [10, -24], [18, -10], [14, 0], [-16, 0]],
-      [[-6, -10], [4, -16]],
+      [[-15, 0], [-16, -12], [-4, -24], [12, -20], [16, -6], [10, 0], [-15, 0]],
     ];
     if (kind === "arch") return [
-      [[-36, 0], [-36, -14], [-20, -36], [0, -44], [20, -36], [36, -14], [36, 0]],
-      [[-24, 0], [-22, -10], [0, -28], [22, -10], [24, 0]],
-    ];
-    if (kind === "pit-edge") return [
-      [[-18, 0], [-8, 6], [8, 6], [18, 0]],
+      // one-line tunnel arch
+      [[-34, 0], [-34, -12], [-18, -34], [0, -42], [18, -34], [34, -12], [34, 0]],
     ];
     return [[[0, 0], [0, -10]]];
   }
@@ -1070,20 +1043,17 @@
 
   function drawPath() {
     if (pathPoints.length < 2) return;
-    ctx.lineWidth = 1.8;
+    ctx.lineWidth = 1.6;
     ctx.strokeStyle = "#18181A";
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
+    // 一笔画：地面是一条不断开的线，只留极轻微笔触呼吸
     ctx.beginPath();
-    let penDown = true;
     for (let i = 0; i < pathPoints.length; i++) {
       const p = pathPoints[i];
       const sx = p.x - cameraX;
       const sy = p.y;
-      const gap = i > 0 && i % 19 === 0;
-      if (gap) penDown = false;
-      if (!penDown) { penDown = true; ctx.moveTo(sx, sy); }
-      else if (i === 0) ctx.moveTo(sx, sy);
+      if (i === 0) ctx.moveTo(sx, sy);
       else ctx.lineTo(sx, sy);
     }
     ctx.stroke();
@@ -1092,16 +1062,22 @@
   function drawHills(parallax) {
     ctx.lineWidth = 1.2;
     ctx.strokeStyle = "rgba(24,24,26,0.28)";
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.fillStyle = "none";
     for (const h of hills) {
       let x = (h.x - cameraX * parallax);
-      // wrap in view
       const span = W + 500;
       x = ((x % span) + span) % span - 150;
       const y = baseY - 8;
       if (h.kind === "tower") {
-        ctx.strokeRect(x, y - h.h, 14, h.h);
+        // one-line tower
         ctx.beginPath();
-        ctx.moveTo(x - 3, y - h.h); ctx.lineTo(x + 7, y - h.h - 12); ctx.lineTo(x + 17, y - h.h);
+        ctx.moveTo(x, y);
+        ctx.lineTo(x, y - h.h);
+        ctx.lineTo(x + 7, y - h.h - 12);
+        ctx.lineTo(x + 14, y - h.h);
+        ctx.lineTo(x + 14, y);
         ctx.stroke();
       } else {
         ctx.beginPath();
@@ -1113,7 +1089,7 @@
   }
 
   function drawObjects() {
-    ctx.lineWidth = 1.5;
+    ctx.lineWidth = 1.6;
     ctx.strokeStyle = "#18181A";
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
@@ -1124,35 +1100,9 @@
       const sy = terrainY(o.x);
       if (!o.strokes) o.strokes = objectStrokes(o.kind);
       const sc = o.s || 1;
-      // fill shapes lightly when fully drawn
-      if (o.p > 0.85 && (o.kind === "cabin" || o.kind === "mush" || o.kind === "rock")) {
-        ctx.save();
-        ctx.globalAlpha = (o.p - 0.85) / 0.15 * 0.9;
-        ctx.fillStyle = "#fff";
-        ctx.beginPath();
-        const pts = o.strokes[0];
-        ctx.moveTo(sx + pts[0][0] * sc, sy + pts[0][1] * sc);
-        for (let i = 1; i < pts.length; i++)
-          ctx.lineTo(sx + pts[i][0] * sc, sy + pts[i][1] * sc);
-        ctx.fill();
-        ctx.restore();
-      }
-      if (o.kind === "mush" && o.p > 0.85) {
-        ctx.save();
-        ctx.globalAlpha = 0.15 * (o.p - 0.85) / 0.15;
-        ctx.fillStyle = "#FF9F43";
-        ctx.beginPath();
-        const pts = o.strokes[1];
-        ctx.moveTo(sx + pts[0][0] * sc, sy + pts[0][1] * sc);
-        for (let i = 1; i < pts.length; i++)
-          ctx.lineTo(sx + pts[i][0] * sc, sy + pts[i][1] * sc);
-        ctx.fill();
-        ctx.restore();
-      }
-      // progressive strokes
+      // 一笔画：纯线稿，不填色
       for (let si = 0; si < o.strokes.length; si++) {
-        // each stroke shares progress window
-        const sp = Math.max(0, Math.min(1, (o.p - si * 0.12) / (1 - si * 0.05)));
+        const sp = Math.max(0, Math.min(1, (o.p - si * 0.15) / (1 - si * 0.05)));
         if (sp <= 0) continue;
         drawStrokeReveal(o.strokes[si], sp, sx, sy, sc);
       }
@@ -1173,26 +1123,32 @@
 
     ctx.lineWidth = 1.6;
     ctx.strokeStyle = "#18181A";
+    ctx.lineCap = "round";
     ctx.lineJoin = "round";
+    ctx.fillStyle = "none";
 
-    // body
-    ctx.fillStyle = "#FFF3B0";
+    // 一笔画笔：连续轮廓，无色块
     ctx.beginPath();
-    ctx.moveTo(-6.5, -L); ctx.lineTo(6.5, -L); ctx.lineTo(4.5, -14); ctx.lineTo(-4.5, -14);
-    ctx.closePath(); ctx.fill(); ctx.stroke();
-    // graphite tip
-    ctx.fillStyle = "#E8D890";
+    ctx.moveTo(0, 0);              // tip
+    ctx.lineTo(-5, -14);           // to body
+    ctx.lineTo(-6.5, -L);          // up left
+    ctx.lineTo(6.5, -L);           // across top
+    ctx.lineTo(5, -14);            // down right
+    ctx.lineTo(0, 0);              // back to tip
+    ctx.stroke();
+
+    // band — one segment of the same line language
     ctx.beginPath();
-    ctx.moveTo(-4.5, -14); ctx.lineTo(4.5, -14); ctx.lineTo(0, 0); ctx.closePath();
-    ctx.fill(); ctx.stroke();
-    // orange band
-    ctx.fillStyle = "#FF9F43";
+    ctx.moveTo(-6.3, -L + 24);
+    ctx.lineTo(6.3, -L + 24);
+    ctx.stroke();
+
+    // graphite hint at tip (tiny arc, not fill)
     ctx.beginPath();
-    ctx.moveTo(-6.2, -L + 22); ctx.lineTo(6.2, -L + 22); ctx.lineTo(6, -L + 32); ctx.lineTo(-6, -L + 32);
-    ctx.closePath(); ctx.fill(); ctx.stroke();
-    // cap
-    ctx.fillStyle = "#18181A";
-    ctx.fillRect(-6.5, -L, 13, 7);
+    ctx.moveTo(-2.5, -8);
+    ctx.quadraticCurveTo(0, -4, 2.5, -8);
+    ctx.stroke();
+
     ctx.restore();
   }
 
@@ -1217,76 +1173,78 @@
     ctx.globalAlpha = 1;
   }
 
-  /* refined mascots */
+  /* 一笔画角色：单线连续轮廓，无色块填充 */
   function drawChestnut(x, y, squash) {
     ctx.save();
     ctx.translate(x, y);
     ctx.scale(1 + squash * 0.04, 1 - squash * 0.07);
-    ctx.lineWidth = 1.35;
+    ctx.lineWidth = 1.5;
     ctx.strokeStyle = "#18181A";
+    ctx.lineCap = "round";
     ctx.lineJoin = "round";
-    // bag
-    ctx.fillStyle = "#FFDE59";
+    ctx.fillStyle = "none";
+
+    // continuous contour: ear → head/body → backpack → feet → tail → ear
     ctx.beginPath();
-    ctx.roundRect(7, -32, 13, 16, 3);
-    ctx.fill(); ctx.stroke();
-    // body
-    ctx.fillStyle = "#C9AD7C";
+    ctx.moveTo(-10, -32);          // left ear tip
+    ctx.quadraticCurveTo(-6, -38, -2, -34);
+    ctx.quadraticCurveTo(2, -40, 6, -36);   // right ear tip
+    ctx.quadraticCurveTo(14, -34, 15, -24); // head right
+    ctx.lineTo(18, -20);                     // to backpack
+    ctx.lineTo(18, -8);
+    ctx.lineTo(12, -8);
+    ctx.lineTo(12, -18);
+    ctx.quadraticCurveTo(14, -10, 10, -6);  // bag bottom
+    ctx.lineTo(7, 0);                        // right foot
+    ctx.moveTo(7, -4);
+    ctx.lineTo(-2, -2);
+    ctx.lineTo(-6, 0);                       // left foot
+    ctx.quadraticCurveTo(-16, -4, -20, -14); // tail out
+    ctx.quadraticCurveTo(-16, -28, -10, -32);
+    ctx.stroke();
+
+    // face dots + smile (same line weight)
     ctx.beginPath();
-    ctx.ellipse(0, -20, 15, 14, 0, 0, Math.PI * 2);
-    ctx.fill(); ctx.stroke();
-    // ears
-    ctx.beginPath();
-    ctx.arc(-9, -34, 4.5, 0, Math.PI * 2);
-    ctx.arc(7, -36, 4.5, 0, Math.PI * 2);
-    ctx.fill(); ctx.stroke();
-    // face
-    ctx.fillStyle = "#18181A";
-    ctx.beginPath();
-    ctx.arc(-4, -22, 1.3, 0, Math.PI * 2);
-    ctx.arc(4, -22, 1.3, 0, Math.PI * 2);
+    ctx.arc(-4, -24, 1.1, 0, Math.PI * 2);
+    ctx.arc(4, -24, 1.1, 0, Math.PI * 2);
     ctx.fill();
-    ctx.strokeStyle = "#18181A";
     ctx.beginPath();
-    ctx.arc(0, -18, 2.5, 0.15 * Math.PI, 0.85 * Math.PI);
-    ctx.stroke();
-    // tail
-    ctx.beginPath();
-    ctx.moveTo(-13, -16);
-    ctx.quadraticCurveTo(-24, -24, -18, -34);
-    ctx.stroke();
-    // feet
-    ctx.beginPath();
-    ctx.moveTo(-5, -7); ctx.lineTo(-7, 0);
-    ctx.moveTo(5, -7); ctx.lineTo(7, 0);
+    ctx.arc(0, -20, 2, 0.2 * Math.PI, 0.8 * Math.PI);
     ctx.stroke();
     ctx.restore();
   }
 
   function drawCloudy(x, y, squash, time) {
     ctx.save();
-    ctx.translate(x, y - Math.abs(Math.sin(time * 7)) * 1.5);
+    ctx.translate(x, y - Math.abs(Math.sin(time * 7)) * 1.2);
     ctx.scale(1 + squash * 0.04, 1 - squash * 0.07);
-    ctx.lineWidth = 1.35;
+    ctx.lineWidth = 1.5;
     ctx.strokeStyle = "#18181A";
-    ctx.fillStyle = "#fff";
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.fillStyle = "none";
+
+    // one contour: ear L → body → ear R → feet
     ctx.beginPath();
-    ctx.ellipse(0, -20, 14, 13, 0, 0, Math.PI * 2);
-    ctx.fill(); ctx.stroke();
-    ctx.beginPath();
-    ctx.ellipse(-11, -16, 4.5, 11, 0.35, 0, Math.PI * 2);
-    ctx.ellipse(11, -16, 4.5, 11, -0.35, 0, Math.PI * 2);
-    ctx.fill(); ctx.stroke();
-    ctx.fillStyle = "#18181A";
-    ctx.beginPath();
-    ctx.arc(-3.5, -22, 1.2, 0, Math.PI * 2);
-    ctx.arc(4, -22, 1.2, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = "#18181A";
-    ctx.beginPath();
-    ctx.moveTo(-5, -7); ctx.lineTo(-6, 0);
-    ctx.moveTo(5, -7); ctx.lineTo(6, 0);
+    ctx.moveTo(-12, -28);
+    ctx.quadraticCurveTo(-18, -18, -14, -10); // floppy ear L
+    ctx.quadraticCurveTo(-10, -14, -10, -22);
+    ctx.quadraticCurveTo(-4, -34, 4, -34);     // head top
+    ctx.quadraticCurveTo(12, -34, 14, -22);
+    ctx.quadraticCurveTo(14, -14, 18, -10);    // ear R
+    ctx.quadraticCurveTo(20, -20, 14, -28);
+    ctx.quadraticCurveTo(16, -12, 8, -6);      // body
+    ctx.lineTo(6, 0);
+    ctx.moveTo(6, -4);
+    ctx.lineTo(-4, -3);
+    ctx.lineTo(-6, 0);
+    ctx.quadraticCurveTo(-14, -8, -12, -28);
     ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(-3, -24, 1.1, 0, Math.PI * 2);
+    ctx.arc(4, -24, 1.1, 0, Math.PI * 2);
+    ctx.fill();
     ctx.restore();
   }
 
@@ -1295,25 +1253,26 @@
     ctx.translate(x, y);
     const step = Math.sin(time * 14) * 1.5;
     ctx.scale(1 + squash * 0.04, 1 - squash * 0.07);
-    ctx.fillStyle = "#18181A";
-    ctx.beginPath();
-    ctx.arc(0, -20, 12, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "#fff";
-    ctx.beginPath();
-    ctx.arc(-3.5, -22, 2.2, 0, Math.PI * 2);
-    ctx.arc(4.5, -22, 2.2, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "#18181A";
-    ctx.beginPath();
-    ctx.arc(-3.5, -22, 1, 0, Math.PI * 2);
-    ctx.arc(4.5, -22, 1, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.lineWidth = 1.5;
     ctx.strokeStyle = "#18181A";
-    ctx.lineWidth = 1.35;
+    ctx.lineCap = "round";
+    ctx.fillStyle = "none";
+
+    // one loop body + legs as continuation
     ctx.beginPath();
-    ctx.moveTo(-3, -9); ctx.lineTo(-4 + step, 0);
-    ctx.moveTo(4, -9); ctx.lineTo(5 - step, 0);
+    ctx.arc(0, -18, 11, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(-3, -8);
+    ctx.lineTo(-4 + step, 0);
+    ctx.moveTo(4, -8);
+    ctx.lineTo(5 - step, 0);
+    ctx.stroke();
+
+    // eyes as open circles (一笔画), not solid
+    ctx.beginPath();
+    ctx.arc(-3.5, -20, 1.8, 0, Math.PI * 2);
+    ctx.arc(4, -20, 1.8, 0, Math.PI * 2);
     ctx.stroke();
     ctx.restore();
   }
@@ -1325,23 +1284,22 @@
     ctx.translate(fx, fy);
     ctx.lineWidth = 1.5;
     ctx.strokeStyle = "#18181A";
+    ctx.lineCap = "round";
+    ctx.fillStyle = "none";
+
+    // one-line logs
     ctx.beginPath();
     ctx.moveTo(-16, 0); ctx.lineTo(16, -3);
     ctx.moveTo(-12, -3); ctx.lineTo(12, 2);
     ctx.stroke();
+
+    // one-line flame
     const fl = 1 + Math.sin(modeT * 5) * 0.08;
-    ctx.fillStyle = "#FF9F43";
     ctx.beginPath();
     ctx.moveTo(0, -6);
-    ctx.quadraticCurveTo(-9, -16, 0, -34 * fl);
-    ctx.quadraticCurveTo(9, -16, 0, -6);
-    ctx.fill(); ctx.stroke();
-    ctx.fillStyle = "#FFDE59";
-    ctx.beginPath();
-    ctx.moveTo(0, -8);
-    ctx.quadraticCurveTo(-4, -14, 0, -22 * fl);
-    ctx.quadraticCurveTo(4, -14, 0, -8);
-    ctx.fill();
+    ctx.quadraticCurveTo(-10, -18, 0, -34 * fl);
+    ctx.quadraticCurveTo(10, -18, 0, -6);
+    ctx.stroke();
     ctx.restore();
   }
 
