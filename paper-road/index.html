@@ -1147,6 +1147,42 @@
     ctx.stroke();
   }
 
+  /** 估算物件半宽（未建 strokes 时按 kind 估值） */
+  function halfWidthOf(kind, s) {
+    const rough = {
+      cabin: 22, tree: 22, clocktower: 14, shop: 20, hill: 46,
+      stream: 18, valley: 22, flower: 14, stone: 16, mud: 18,
+      bridge: 40, cave: 38, mush: 10, crate: 14, sign: 16,
+    };
+    return (rough[kind] || 16) * (s || 1);
+  }
+
+  /** 在不与已有地貌重合的前提下落一件 */
+  function placeObject(cursorX, kind, s, withObstacle) {
+    const hw = halfWidthOf(kind, s);
+    const minGap = 48;
+    let x = cursorX + hw + minGap + rnd() * 40;
+    // 若与已有 objects 过近则右推（双保险）
+    for (let guard = 0; guard < 8; guard++) {
+      let hit = false;
+      for (const e of objects) {
+        const eh = halfWidthOf(e.kind, e.s || 1);
+        if (Math.abs(x - e.x) < hw + eh + minGap * 0.7) { hit = true; break; }
+      }
+      if (!hit) break;
+      x += 70;
+    }
+    const obj = { x, kind, s: s || 1, p: 0, on: false, strokes: null };
+    objects.push(obj);
+    if (withObstacle === "jump-pit") obstacles.push({ x, type: "stream", w: 28, depth: 18 });
+    else if (withObstacle === "jump-valley") obstacles.push({ x, type: "valley", w: 36, depth: 22 });
+    else if (withObstacle === "jump-mud") obstacles.push({ x, type: "mud", w: 22, depth: 14 });
+    else if (withObstacle === "jump-stone") obstacles.push({ x, type: "stone", w: 18, h: 16 });
+    else if (withObstacle === "roll-bridge") obstacles.push({ x, type: "roll", w: 36, clear: 22 });
+    else if (withObstacle === "roll-cave") obstacles.push({ x, type: "roll", w: 34, clear: 20 });
+    return x + hw;
+  }
+
   function ensureWorld(xTo) {
     // 生成牌堆：11 类地貌各至少按序出现，再洗牌循环（治「缺项」）
     if (!ensureWorld._deck) {
@@ -1157,23 +1193,24 @@
       ];
     }
     if (ensureWorld._i == null) ensureWorld._i = 0;
+    if (ensureWorld._cursor == null) ensureWorld._cursor = 700;
 
     while (obstacles.length < 50) {
-      const last = obstacles.length ? obstacles[obstacles.length - 1].x : 620;
-      const x = last + 460 + rnd() * 360;
-      if (x > xTo + 1500 && obstacles.length > 3) break;
+      const xHint = ensureWorld._cursor;
+      if (xHint > xTo + 1500 && obstacles.length > 3) break;
 
       // 营地段先出风景
-      if (x < 720) {
+      if (xHint < 720) {
         const k = ensureWorld._deck[ensureWorld._i++ % ensureWorld._deck.length];
         if (["cabin", "tree", "clocktower", "shop", "hill", "flower", "mush"].includes(k)) {
-          objects.push({ x, kind: k, s: 0.9 + rnd() * 0.25, p: 0, on: false, strokes: null });
+          ensureWorld._cursor = placeObject(xHint, k, 0.9 + rnd() * 0.25, null);
+        } else {
+          ensureWorld._cursor = xHint + 200;
         }
         continue;
       }
 
       const k = ensureWorld._deck[ensureWorld._i++ % ensureWorld._deck.length];
-      // 牌堆耗尽一轮后洗牌，保持多样性
       if (ensureWorld._i % ensureWorld._deck.length === 0) {
         for (let i = ensureWorld._deck.length - 1; i > 0; i--) {
           const j = (rnd() * (i + 1)) | 0;
@@ -1183,35 +1220,22 @@
         }
       }
 
-      if (k === "stream") {
-        obstacles.push({ x, type: "stream", w: 28, depth: 18 });
-        objects.push({ x, kind: "stream", s: 1, p: 0, on: false, strokes: null });
-      } else if (k === "valley") {
-        obstacles.push({ x, type: "valley", w: 36, depth: 22 });
-        objects.push({ x, kind: "valley", s: 1, p: 0, on: false, strokes: null });
-      } else if (k === "mud") {
-        obstacles.push({ x, type: "mud", w: 22, depth: 14 });
-        objects.push({ x, kind: "mud", s: 1, p: 0, on: false, strokes: null });
-      } else if (k === "stone") {
-        obstacles.push({ x, type: "stone", w: 18, h: 16 });
-        objects.push({ x, kind: "stone", s: 1, p: 0, on: false, strokes: null });
-      } else if (k === "bridge") {
-        obstacles.push({ x, type: "roll", w: 36, clear: 22 });
-        objects.push({ x, kind: "bridge", s: 1, p: 0, on: false, strokes: null });
-      } else if (k === "cave") {
-        obstacles.push({ x, type: "roll", w: 34, clear: 20 });
-        objects.push({ x, kind: "cave", s: 1, p: 0, on: false, strokes: null });
-      } else {
-        objects.push({ x, kind: k, s: 0.88 + rnd() * 0.28, p: 0, on: false, strokes: null });
-        // 风景可带一个小伴生（仍走笔尖描出）
-        if (rnd() < 0.4) {
-          objects.push({
-            x: x + 110 + rnd() * 80,
-            kind: ["tree", "flower", "mush"][(rnd() * 3) | 0],
-            s: 0.75 + rnd() * 0.25, p: 0, on: false, strokes: null,
-          });
+      let right;
+      if (k === "stream") right = placeObject(xHint, "stream", 1, "jump-pit");
+      else if (k === "valley") right = placeObject(xHint, "valley", 1, "jump-valley");
+      else if (k === "mud") right = placeObject(xHint, "mud", 1, "jump-mud");
+      else if (k === "stone") right = placeObject(xHint, "stone", 1, "jump-stone");
+      else if (k === "bridge") right = placeObject(xHint, "bridge", 1, "roll-bridge");
+      else if (k === "cave") right = placeObject(xHint, "cave", 1, "roll-cave");
+      else {
+        right = placeObject(xHint, k, 0.88 + rnd() * 0.28, null);
+        // 伴生也走防重叠
+        if (rnd() < 0.35) {
+          const ck = ["tree", "flower", "mush"][(rnd() * 3) | 0];
+          right = placeObject(right, ck, 0.75 + rnd() * 0.25, null);
         }
       }
+      ensureWorld._cursor = right + 60 + rnd() * 80;
     }
     while (hills.length < 20) {
       const last = hills.length ? hills[hills.length - 1].x : -180;
@@ -1253,6 +1277,9 @@
     playerY = 0; vy = 0; jumping = false; sliding = 0;
     stumbleT = 0; gaitBoost = 1;
     departBlend = mode === "camp" || mode === "point" ? 0 : departBlend;
+    // 生成游标从营地塔之后开始，禁止与营地地貌重合
+    ensureWorld._cursor = 880;
+    ensureWorld._i = ensureWorld._i || 0;
     ensureWorld(cameraX + W + 200);
   }
 
