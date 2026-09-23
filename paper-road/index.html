@@ -992,11 +992,11 @@
       [[-22, 0], [-22, -24], [0, -44], [22, -24], [22, 0], [-22, 0]],
       [[-7, 0], [-7, -14], [7, -14], [7, 0]],
     ];
-    // 树：细干 + 云朵冠（与天空云同一语言）
+    // 树：细干 + 圆云冠（避免像屋顶）
     if (kind === "tree") return [[
-      [-2, 0], [-2, -18],
-      [-12, -24], [-18, -34], [-12, -44], [0, -48],
-      [12, -44], [18, -34], [12, -24], [2, -18], [2, 0],
+      [-2, 0], [-2, -20],
+      [-14, -26], [-22, -36], [-18, -48], [-4, -54],
+      [10, -54], [22, -48], [24, -36], [14, -26], [2, -20], [2, 0],
     ]];
     // 钟楼：檐口塔身 + 尖顶 + 圆表盘 + 指针
     if (kind === "clocktower") return [
@@ -1160,7 +1160,7 @@
 
     while (obstacles.length < 50) {
       const last = obstacles.length ? obstacles[obstacles.length - 1].x : 620;
-      const x = last + 240 + rnd() * 260;
+      const x = last + 460 + rnd() * 360;
       if (x > xTo + 1500 && obstacles.length > 3) break;
 
       // 营地段先出风景
@@ -1206,7 +1206,7 @@
         // 风景可带一个小伴生（仍走笔尖描出）
         if (rnd() < 0.4) {
           objects.push({
-            x: x + 60 + rnd() * 40,
+            x: x + 110 + rnd() * 80,
             kind: ["tree", "flower", "mush"][(rnd() * 3) | 0],
             s: 0.75 + rnd() * 0.25, p: 0, on: false, strokes: null,
           });
@@ -1242,11 +1242,11 @@
     cameraX = 0;
     pathPoints = [{ x: 0, y: terrainY(0) }];
     obstacles = [];
-    // 起点营地极简：屋 — 火+小队 — 树 —（留白）— 钟楼
+    // 起点营地极简：屋 — 火+小队 — 树 — 钟楼（大间距，禁止叠影）
     objects = [
-      { x: 64, kind: "cabin", s: 1.0, p: 1, on: true, strokes: null },
-      { x: 250, kind: "tree", s: 1.05, p: 1, on: true, strokes: null },
-      { x: 520, kind: "clocktower", s: 0.88, p: 1, on: true, strokes: null },
+      { x: 24, kind: "cabin", s: 0.95, p: 1, on: true, strokes: null },
+      { x: 520, kind: "tree", s: 1.0, p: 1, on: true, strokes: null },
+      { x: 820, kind: "clocktower", s: 0.85, p: 1, on: true, strokes: null },
     ];
     hills = [];
     particles = [];
@@ -1666,10 +1666,10 @@
   }
 
   function drawCampFire() {
-    const fx = 118 - cameraX;               // 锚定在世界坐标，随路一起离场
+    const fx = 175 - cameraX;               // 锚定在世界坐标，随路一起离场
     if (fx < -60 || fx > W + 60) return;
-    const fade = Math.max(0, Math.min(1, 1 - (cameraX - 350) / 250));
-    const fy = terrainY(118);
+    const fade = Math.max(0, Math.min(1, 1 - (cameraX - 520) / 250));
+    const fy = terrainY(175);
     ctx.save();
     ctx.globalAlpha = fade;
     ctx.translate(fx, fy);
@@ -1718,9 +1718,9 @@
     const pose = mode === "camp" ? (modeT > 0.9 ? "stretch" : "idle")
       : mode === "point" ? "point" : null;
 
-    const spots = [180, 232, 284];            // 营地休息位（世界坐标，保持间距）
+    const spots = [250, 315, 380];            // 营地休息位：与屋/树/塔拉开
     const phases = [0, 1.3, 2.6];
-    const forms = [-32, 0, 30];                // 行进队形：三只分离
+    const forms = [-42, 0, 40];               // 行进队形：三只分离
 
     for (let i = 0; i < 3; i++) {
       const campScreenX = spots[i] - cameraX;            // 世界锚定
