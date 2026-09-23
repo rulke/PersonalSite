@@ -8,18 +8,17 @@
 <style>
   :root {
     --paper: #ffffff;
+    --ground: #f3f2ef;
     --ink: #18181a;
-    --ink-soft: #6b6b70;
-    --line-faint: #e8e8ea;
+    --ink-soft: #8a8a90;
+    --line-faint: #e6e5e3;
+    --line-soft: #d9d8d5;
     --accent-lemon: #ffde59;
     --accent-orange: #ff9f43;
     --accent-sage: #70a07b;
     --font-display: "SF Pro Display", "Inter", -apple-system, "Segoe UI", sans-serif;
     --font-cjk: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
     --font-mono: "SF Mono", "JetBrains Mono", ui-monospace, monospace;
-    --radius-card: 20px;
-    --radius-pill: 999px;
-    --nav-h: 64px;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -27,485 +26,477 @@
   body {
     font-family: var(--font-cjk);
     color: var(--ink);
-    background: var(--paper);
-    line-height: 1.7;
+    background: var(--ground);
+    line-height: 1.75;
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
   body.intro-lock { overflow: hidden; }
 
-  /* paper noise */
   body::before {
     content: "";
     position: fixed;
     inset: 0;
     pointer-events: none;
-    z-index: 50;
-    opacity: 0.035;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    z-index: 60;
+    opacity: 0.03;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
     background-size: 256px;
+    mix-blend-mode: multiply;
   }
 
   a { color: inherit; text-decoration: none; }
   button {
-    font: inherit;
-    color: inherit;
-    background: none;
-    border: none;
-    cursor: pointer;
+    font: inherit; color: inherit; background: none; border: none; cursor: pointer;
+  }
+
+  /* ── Paper sheet ── */
+  .sheet {
+    position: relative;
+    z-index: 1;
+    background: var(--paper);
+    max-width: 1200px;
+    margin: 12px auto 24px;
+    border: 1px solid var(--line-faint);
+    border-radius: 36px;
+    overflow: clip;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.8) inset, 0 24px 60px rgba(24,24,26,0.04);
   }
 
   /* ── Nav ── */
   .nav {
     position: fixed;
-    top: 16px;
+    top: 18px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 40;
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 10px 8px 16px;
-    border-radius: var(--radius-pill);
-    background: rgba(255, 255, 255, 0.72);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    border: 1px solid var(--line-faint);
-    box-shadow: 0 8px 32px rgba(24, 24, 26, 0.04);
+    gap: 4px;
+    padding: 7px 8px 7px 14px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.78);
+    backdrop-filter: blur(16px) saturate(1.2);
+    -webkit-backdrop-filter: blur(16px) saturate(1.2);
+    border: 1px solid rgba(24,24,26,0.06);
+    box-shadow: 0 10px 40px rgba(24, 24, 26, 0.06);
   }
   .nav-brand {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    display: flex; align-items: center; gap: 7px;
     font-family: var(--font-display);
-    font-weight: 600;
-    font-size: 15px;
-    letter-spacing: -0.02em;
-    margin-right: 8px;
+    font-weight: 600; font-size: 15px; letter-spacing: -0.03em;
+    margin-right: 6px;
   }
-  .nav-brand .logo {
-    width: 18px; height: 18px;
-    display: inline-block;
-  }
-  .nav-links {
-    display: flex;
-    align-items: center;
-    gap: 2px;
-  }
+  .nav-brand .logo { width: 16px; height: 16px; }
+  .nav-links { display: flex; align-items: center; gap: 0; }
   .nav-links a, .nav-lang {
     font-family: var(--font-display);
-    font-size: 12px;
-    font-weight: 500;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    padding: 8px 12px;
-    border-radius: var(--radius-pill);
+    font-size: 11px; font-weight: 500;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 8px 11px; border-radius: 999px;
     color: var(--ink-soft);
-    transition: color 0.2s, background 0.2s;
+    transition: color .25s, background .25s;
+    white-space: nowrap;
   }
   .nav-links a:hover, .nav-lang:hover {
-    color: var(--ink);
-    background: rgba(24, 24, 26, 0.04);
+    color: var(--ink); background: rgba(24,24,26,0.04);
   }
   .nav-lang {
     border: 1px solid var(--line-faint);
-    min-width: 52px;
+    margin-left: 4px;
+    min-width: 54px;
+    text-align: center;
   }
 
-  /* ── Hero / Stage ── */
-  .hero {
-    position: relative;
-    min-height: 100vh;
-    min-height: 100dvh;
-  }
+  /* ── Stage canvas ── */
   #stage {
-    position: fixed;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 0;
     display: block;
+    width: 100%;
+    height: min(72vh, 640px);
     touch-action: none;
+    cursor: default;
+    background: var(--paper);
   }
+
   .hero-copy {
-    position: absolute;
-    left: 50%;
-    top: 22%;
-    transform: translateX(-50%);
-    width: min(720px, calc(100% - 40px));
     text-align: center;
-    z-index: 2;
-    pointer-events: none;
+    padding: 12px 24px 8px;
+    margin-top: -20px;
   }
   .hero-title {
     font-family: var(--font-display);
     font-weight: 600;
-    font-size: clamp(36px, 7vw, 84px);
+    font-size: clamp(34px, 6.2vw, 72px);
     line-height: 1.08;
-    letter-spacing: -0.03em;
+    letter-spacing: -0.035em;
   }
   .hero-title .zh {
     font-family: var(--font-cjk);
     font-weight: 500;
-    letter-spacing: 0.04em;
-    line-height: 1.35;
+    letter-spacing: 0.06em;
+    line-height: 1.4;
   }
   .hero-sub {
-    margin-top: 20px;
-    font-size: clamp(14px, 1.6vw, 17px);
+    margin-top: 18px;
+    font-size: 14px;
     color: var(--ink-soft);
+    letter-spacing: 0.04em;
   }
-  .hero-hint {
-    position: absolute;
-    right: 24px;
-    bottom: 28px;
-    z-index: 3;
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--ink-soft);
-    background: rgba(255, 255, 255, 0.75);
-    backdrop-filter: blur(10px);
-    border: 1px solid var(--line-faint);
-    border-radius: 12px;
-    padding: 10px 14px;
-    max-width: min(360px, calc(100% - 40px));
-    pointer-events: none;
-  }
-  .hero-controls {
-    position: absolute;
-    left: 24px;
-    bottom: 28px;
-    z-index: 3;
+
+  .hero-bar {
     display: flex;
-    gap: 8px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 8px 28px 22px;
     flex-wrap: wrap;
   }
+  .hero-controls { display: flex; gap: 8px; flex-wrap: wrap; }
   .ctrl-btn {
     font-family: var(--font-mono);
     font-size: 11px;
-    padding: 8px 12px;
-    border-radius: var(--radius-pill);
+    padding: 8px 13px;
+    border-radius: 999px;
     border: 1px solid var(--line-faint);
-    background: rgba(255, 255, 255, 0.8);
     color: var(--ink-soft);
-    transition: color 0.2s, border-color 0.2s, background 0.2s;
+    transition: color .2s, border-color .2s, background .2s;
+    background: var(--paper);
   }
-  .ctrl-btn:hover {
-    color: var(--ink);
-    border-color: var(--ink);
+  .ctrl-btn:hover { color: var(--ink); border-color: var(--ink-soft); }
+  .hero-hint {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ink-soft);
+    letter-spacing: 0.02em;
+    text-align: right;
+    flex: 1;
+    min-width: 200px;
   }
 
-  /* Intro overlay */
   .intro-ui {
-    position: absolute;
-    left: 50%;
-    bottom: 96px;
-    transform: translateX(-50%);
-    z-index: 5;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 12px;
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+    padding: 0 24px 18px;
   }
   .intro-ui.hidden { display: none; }
   .btn-setout {
     font-family: var(--font-display);
-    font-weight: 600;
-    font-size: 14px;
-    letter-spacing: 0.04em;
-    padding: 12px 28px;
-    border-radius: var(--radius-pill);
-    background: var(--ink);
-    color: var(--paper);
-    border: 1.5px solid var(--ink);
-    transition: transform 0.25s cubic-bezier(0.34, 1.4, 0.64, 1);
+    font-weight: 600; font-size: 13px; letter-spacing: 0.08em;
+    padding: 12px 32px; border-radius: 999px;
+    background: var(--ink); color: var(--paper);
+    transition: transform .25s cubic-bezier(.34,1.4,.64,1);
   }
-  .btn-setout:hover { transform: scale(1.04); }
+  .btn-setout:hover { transform: scale(1.03); }
   .btn-skip {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--ink-soft);
-    opacity: 0.8;
+    font-family: var(--font-mono); font-size: 11px;
+    color: var(--ink-soft); letter-spacing: 0.04em;
   }
-  .btn-skip:hover { color: var(--ink); opacity: 1; }
+  .btn-skip:hover { color: var(--ink); }
 
-  /* ── Content sections ── */
-  main { position: relative; z-index: 1; }
+  /* ── Sections ── */
   .section {
-    position: relative;
-    padding: 120px 24px 80px;
-    max-width: 1120px;
+    padding: 100px 56px 72px;
+    max-width: 980px;
     margin: 0 auto;
-    background: transparent;
   }
   .section-head {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: end;
+    margin-bottom: 56px;
+    gap: 12px;
+  }
+  .section-head .side {
+    display: flex;
+    align-items: center;
+  }
+  .section-head .side.right { justify-content: flex-end; }
+  .section-head .center {
     text-align: center;
-    margin-bottom: 64px;
   }
   .hollow {
     font-family: var(--font-display);
     font-weight: 600;
-    font-size: clamp(48px, 10vw, 96px);
-    letter-spacing: -0.02em;
-    line-height: 1;
+    font-size: clamp(42px, 8vw, 72px);
+    letter-spacing: 0.02em;
+    line-height: 0.95;
     color: transparent;
-    -webkit-text-stroke: 2px var(--line-faint);
-    text-stroke: 2px var(--line-faint);
-    paint-order: stroke fill;
+    -webkit-text-stroke: 1.6px var(--line-soft);
+    text-stroke: 1.6px var(--line-soft);
+    user-select: none;
   }
   .section-sub {
-    margin-top: 12px;
-    font-size: 14px;
+    margin-top: 14px;
+    font-size: 12px;
     color: var(--ink-soft);
-    letter-spacing: 0.12em;
+    letter-spacing: 0.28em;
   }
+  .text-link {
+    font-family: var(--font-display);
+    font-size: 13px;
+    color: var(--ink-soft);
+    letter-spacing: 0.04em;
+    transition: color .2s;
+  }
+  .text-link:hover { color: var(--ink); }
 
   /* Works */
   .works-featured {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 40px 48px;
-    margin-bottom: 40px;
+    gap: 56px 48px;
+    margin-bottom: 48px;
   }
   .work-card {
     display: block;
-    border: 1.5px solid var(--ink);
-    border-radius: var(--radius-card);
-    background: var(--paper);
-    padding: 28px;
-    transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    border-radius: 24px;
+    padding: 28px 28px 32px;
+    transition: transform .4s cubic-bezier(.22,1,.36,1);
     position: relative;
   }
-  .work-card:hover { transform: translateY(-4px); }
-  .work-card.featured:nth-child(even) { margin-top: 48px; }
+  .work-card:hover { transform: translateY(-3px); }
+  .work-card.featured:nth-child(even) { margin-top: 56px; }
   .work-art {
-    height: 140px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 20px;
+    height: 160px;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 28px;
   }
-  .work-art svg { max-width: 100%; height: 120px; }
+  .work-art svg { width: 180px; height: 130px; overflow: visible; }
   .work-title {
     font-family: var(--font-display);
-    font-size: 28px;
-    font-weight: 600;
-    letter-spacing: -0.02em;
+    font-size: 28px; font-weight: 600;
+    letter-spacing: -0.03em;
   }
   .work-tagline {
-    margin-top: 8px;
+    margin-top: 10px;
     font-size: 15px;
-    color: var(--ink);
+    line-height: 1.7;
   }
   .work-meta {
-    margin-top: 6px;
-    font-size: 13px;
+    margin-top: 8px;
+    font-size: 12px;
     color: var(--ink-soft);
+    letter-spacing: 0.04em;
   }
   .work-arrow {
-    position: absolute;
-    right: 24px;
-    bottom: 24px;
-    font-size: 20px;
-    transition: transform 0.3s;
+    position: absolute; right: 28px; bottom: 28px;
+    font-family: var(--font-display);
+    font-size: 18px; color: var(--ink-soft);
+    transition: transform .3s, color .3s;
   }
-  .work-card:hover .work-arrow { transform: translate(3px, -3px); }
+  .work-card:hover .work-arrow {
+    transform: translate(3px,-3px);
+    color: var(--ink);
+  }
+  .mascot-peek {
+    position: absolute; top: -18px; right: 40px;
+    width: 56px; height: 56px; pointer-events: none;
+    filter: drop-shadow(0 2px 0 rgba(24,24,26,0.04));
+  }
 
   .works-bento {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
+    gap: 16px;
+    padding-top: 8px;
+    border-top: 1px solid var(--line-faint);
   }
-  .work-card.bento { padding: 20px; }
-  .work-card.bento .work-art { height: 80px; margin-bottom: 12px; }
-  .work-card.bento .work-art svg { height: 64px; }
-  .work-card.bento .work-title { font-size: 20px; }
-  .work-card.bento .work-tagline { font-size: 13px; }
-  .works-empty {
-    text-align: center;
-    color: var(--ink-soft);
-    padding: 48px;
-    border: 1.5px dashed var(--line-faint);
-    border-radius: var(--radius-card);
+  .work-card.bento {
+    padding: 24px 20px 28px;
+    margin-top: 16px;
   }
+  .work-card.bento .work-art { height: 88px; margin-bottom: 16px; }
+  .work-card.bento .work-art svg { width: 100px; height: 72px; }
+  .work-card.bento .work-title { font-size: 18px; }
+  .work-card.bento .work-tagline { font-size: 13px; color: var(--ink-soft); }
+  .work-card.bento .work-arrow { right: 20px; bottom: 18px; font-size: 15px; }
 
-  .mascot-peek {
-    position: absolute;
-    top: -28px;
-    right: 32px;
-    width: 52px;
-    height: 52px;
-    pointer-events: none;
+  .works-empty {
+    text-align: center; color: var(--ink-soft);
+    padding: 56px; border: 1px dashed var(--line-faint); border-radius: 24px;
   }
 
   /* About */
   .about-manifesto {
     text-align: center;
     font-family: var(--font-display);
-    font-size: clamp(22px, 3.5vw, 36px);
+    font-size: clamp(22px, 3.2vw, 34px);
     font-weight: 500;
     letter-spacing: -0.02em;
-    margin-bottom: 64px;
+    margin-bottom: 72px;
   }
   .timeline {
     list-style: none;
-    max-width: 640px;
+    max-width: 560px;
     margin: 0 auto;
     position: relative;
-    padding-left: 32px;
-    border-left: 2px solid var(--ink);
+    padding-left: 28px;
+  }
+  .timeline::before {
+    content: "";
+    position: absolute; left: 0; top: 8px; bottom: 8px;
+    width: 1px; background: var(--line-soft);
   }
   .timeline li {
     position: relative;
-    padding: 0 0 48px 24px;
+    padding: 0 0 52px 36px;
   }
   .timeline li:last-child { padding-bottom: 0; }
   .timeline li::before {
     content: "";
-    position: absolute;
-    left: -39px;
-    top: 8px;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
+    position: absolute; left: -33px; top: 8px;
+    width: 9px; height: 9px; border-radius: 50%;
     background: var(--paper);
-    border: 2px solid var(--ink);
+    border: 1.5px solid var(--ink);
   }
   .timeline .year {
     font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--ink-soft);
+    font-size: 12px; color: var(--ink-soft);
+    letter-spacing: 0.06em;
   }
   .timeline .event {
-    margin-top: 4px;
+    margin-top: 6px;
     font-size: 16px;
+    letter-spacing: 0.02em;
   }
 
-  /* Notes */
-  .notes-all {
-    display: block;
-    text-align: right;
-    font-family: var(--font-display);
-    font-size: 13px;
-    color: var(--ink-soft);
-    margin-bottom: 16px;
-    letter-spacing: 0.04em;
-  }
-  .notes-all:hover { color: var(--ink); }
+  /* Notes — match reference layout */
+  .notes-all { justify-self: end; }
   .note-row {
     display: grid;
-    grid-template-columns: 110px 1fr 24px;
-    gap: 16px;
+    grid-template-columns: 120px 1fr 28px;
+    gap: 20px;
     align-items: center;
-    padding: 22px 4px;
+    padding: 26px 8px;
     border-top: 1px solid var(--line-faint);
-    transition: background 0.2s;
+    transition: background .25s, padding .25s;
   }
   .note-row:last-child { border-bottom: 1px solid var(--line-faint); }
-  .note-row:hover { background: rgba(24, 24, 26, 0.02); }
+  .note-row:hover {
+    background: rgba(24,24,26,0.015);
+    padding-left: 14px;
+  }
   .note-date {
     font-family: var(--font-mono);
     font-size: 12px;
     color: var(--ink-soft);
+    letter-spacing: 0.02em;
   }
-  .note-title { font-size: 15px; }
+  .note-title {
+    font-family: var(--font-display);
+    font-size: 15px;
+    letter-spacing: -0.01em;
+  }
+  .note-title.zh {
+    font-family: var(--font-cjk);
+    letter-spacing: 0.02em;
+    font-size: 14px;
+  }
+  .note-arrow {
+    font-family: var(--font-display);
+    color: var(--ink-soft);
+    font-size: 15px;
+    transition: transform .25s, color .25s;
+  }
+  .note-row:hover .note-arrow {
+    transform: translate(2px,-2px);
+    color: var(--ink);
+  }
 
   /* Waystation */
-  .waystation {
-    text-align: center;
-    padding-top: 80px;
-    padding-bottom: 40px;
-  }
+  .waystation { text-align: center; padding-top: 80px; }
   .mail-box {
-    width: 120px;
-    height: 120px;
-    margin: 0 auto 28px;
+    width: 100px; height: 100px;
+    margin: 8px auto 28px;
   }
   .email-link {
     display: inline-block;
     font-family: var(--font-display);
-    font-size: clamp(22px, 4vw, 36px);
+    font-size: clamp(24px, 3.5vw, 36px);
     font-weight: 600;
-    letter-spacing: -0.02em;
-    border-bottom: 2px solid var(--ink);
-    padding-bottom: 4px;
-    margin-top: 12px;
+    letter-spacing: -0.03em;
+    padding-bottom: 6px;
+    border-bottom: 1.5px solid var(--ink);
+    transition: border-color .25s, color .25s;
   }
-  .email-link:hover { border-color: var(--accent-orange); color: var(--accent-orange); }
+  .email-link:hover {
+    color: var(--accent-orange);
+    border-color: var(--accent-orange);
+  }
   .socials {
     margin-top: 28px;
-    display: flex;
-    justify-content: center;
-    gap: 16px;
+    display: flex; justify-content: center; gap: 28px;
   }
   .socials a {
     font-family: var(--font-display);
-    font-size: 13px;
+    font-size: 12px; letter-spacing: 0.12em;
+    text-transform: uppercase;
     color: var(--ink-soft);
-    letter-spacing: 0.04em;
   }
   .socials a:hover { color: var(--ink); }
 
   /* Open Road */
   .openroad {
-    min-height: 50vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
     text-align: center;
-    padding: 80px 24px 120px;
-    position: relative;
-    z-index: 1;
+    padding: 96px 24px 100px;
+    border-top: 1px solid var(--line-faint);
+  }
+  .vanish {
+    width: min(420px, 70%);
+    height: 70px;
+    margin-bottom: 28px;
   }
   .openroad-title {
     font-family: var(--font-display);
-    font-size: clamp(28px, 5vw, 56px);
+    font-size: clamp(28px, 4.5vw, 48px);
     font-weight: 500;
     letter-spacing: -0.02em;
   }
   .openroad-title .zh {
     font-family: var(--font-cjk);
-    letter-spacing: 0.08em;
+    letter-spacing: 0.12em;
+    font-weight: 500;
   }
   .openroad-credit {
-    margin-top: 24px;
+    margin-top: 20px;
     font-family: var(--font-mono);
     font-size: 11px;
     color: var(--ink-soft);
-  }
-  .vanish {
-    width: min(480px, 80%);
-    height: 80px;
-    margin-bottom: 32px;
+    letter-spacing: 0.08em;
   }
 
   .sr-only {
-    position: absolute;
-    width: 1px; height: 1px;
-    padding: 0; margin: -1px;
-    overflow: hidden;
-    clip: rect(0,0,0,0);
-    border: 0;
+    position: absolute; width: 1px; height: 1px;
+    padding: 0; margin: -1px; overflow: hidden;
+    clip: rect(0,0,0,0); border: 0;
   }
 
-  @media (max-width: 860px) {
-    .works-featured { grid-template-columns: 1fr; gap: 24px; }
+  @media (max-width: 880px) {
+    .sheet { margin: 0; border-radius: 0; border-left: none; border-right: none; }
+    .section { padding: 72px 24px 56px; }
+    .works-featured { grid-template-columns: 1fr; gap: 28px; }
     .work-card.featured:nth-child(even) { margin-top: 0; }
     .works-bento { grid-template-columns: 1fr 1fr; }
-    .nav { left: 12px; right: 12px; transform: none; width: auto; max-width: calc(100% - 24px); overflow-x: auto; }
-    .hero-hint { right: 12px; bottom: 12px; font-size: 10px; }
-    .hero-controls { left: 12px; bottom: 12px; }
+    .section-head {
+      grid-template-columns: 1fr;
+      justify-items: center;
+      gap: 10px;
+    }
+    .section-head .side { justify-content: center !important; }
+    .hero-bar { padding: 4px 18px 18px; }
+    .hero-hint { text-align: left; }
   }
-  @media (max-width: 520px) {
+  @media (max-width: 540px) {
     .works-bento { grid-template-columns: 1fr; }
-    .nav-links a { padding: 8px 8px; font-size: 11px; }
-    .note-row { grid-template-columns: 90px 1fr 20px; gap: 8px; }
+    .nav { left: 10px; right: 10px; transform: none; width: auto; max-width: none; overflow-x: auto; }
+    .nav-links a { padding: 7px 8px; font-size: 10px; }
+    .note-row { grid-template-columns: 92px 1fr 20px; gap: 8px; padding: 20px 4px; }
+    .hero-title { font-size: clamp(28px, 9vw, 40px); }
   }
 
   @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
-    .work-card, .work-arrow, .btn-setout { transition: none; }
+    .work-card, .work-arrow, .note-arrow, .btn-setout, .note-row { transition: none; }
   }
 </style>
 </head>
@@ -514,9 +505,9 @@
 <nav class="nav" aria-label="Primary">
   <div class="nav-brand">
     <svg class="logo" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M4 16c4-1 7-5 12-12" stroke="#18181A" stroke-width="1.6" stroke-linecap="round"/>
-      <path d="M14 3.5l5 1.2-1.2 5" stroke="#18181A" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-      <path d="M4 16c1.2 1.8 2.8 2.2 5 1.5" stroke="#FF9F43" stroke-width="1.6" stroke-linecap="round"/>
+      <path d="M3.5 17.5c5-1.5 8.5-6 14-14" stroke="#18181A" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M15 3.2l5.2 1.3-1.3 5.2" stroke="#18181A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M3.5 17.5c1.3 1.5 3 1.8 5 1" stroke="#FF9F43" stroke-width="1.5" stroke-linecap="round"/>
     </svg>
     <span>lucky</span>
   </div>
@@ -529,32 +520,36 @@
   <button class="nav-lang" id="lang-btn" type="button" aria-label="Switch language">中 / EN</button>
 </nav>
 
-<canvas id="stage" aria-label="Interactive road scene" role="img"></canvas>
+<div class="sheet">
+  <canvas id="stage" aria-label="Interactive road scene" role="img"></canvas>
 
-<header class="hero" id="hero">
-  <div class="hero-copy">
-    <h1 class="hero-title" id="hero-title"></h1>
-    <p class="hero-sub" id="hero-sub"></p>
-  </div>
+  <header class="hero" id="hero">
+    <div class="hero-copy">
+      <h1 class="hero-title" id="hero-title"></h1>
+      <p class="hero-sub" id="hero-sub"></p>
+    </div>
+    <div class="intro-ui hidden" id="intro-ui">
+      <button class="btn-setout" id="btn-setout" type="button" data-i18n="hero.setout">出发</button>
+      <button class="btn-skip" id="btn-skip" type="button" data-i18n="hero.skip">跳过出发</button>
+    </div>
+    <div class="hero-bar">
+      <div class="hero-controls">
+        <button class="ctrl-btn" id="btn-redraw" type="button">↺ 重绘</button>
+        <button class="ctrl-btn" id="btn-pause" type="button">⏸ 暂停</button>
+      </div>
+      <p class="hero-hint" id="hero-hint"></p>
+    </div>
+    <p class="sr-only" id="a11y-controls"></p>
+  </header>
 
-  <div class="intro-ui" id="intro-ui">
-    <button class="btn-setout" id="btn-setout" type="button" data-i18n="hero.setout">出发</button>
-    <button class="btn-skip" id="btn-skip" type="button" data-i18n="hero.skip">跳过出发</button>
-  </div>
-
-  <div class="hero-controls">
-    <button class="ctrl-btn" id="btn-redraw" type="button" data-i18n="hero.redraw">↺ 重绘</button>
-    <button class="ctrl-btn" id="btn-pause" type="button" data-i18n="hero.pause">⏸ 暂停</button>
-  </div>
-  <p class="hero-hint" id="hero-hint"></p>
-  <p class="sr-only" id="a11y-controls"></p>
-</header>
-
-<main>
   <section class="section" id="works">
     <div class="section-head">
-      <h2 class="hollow">WORKS</h2>
-      <p class="section-sub" data-i18n="works.sub">精选项目</p>
+      <div class="side"></div>
+      <div class="center">
+        <h2 class="hollow">WORKS</h2>
+        <p class="section-sub" data-i18n="works.sub">精选项目</p>
+      </div>
+      <div class="side right"></div>
     </div>
     <div class="works-featured" id="works-featured"></div>
     <div class="works-bento" id="works-bento"></div>
@@ -562,8 +557,12 @@
 
   <section class="section" id="about">
     <div class="section-head">
-      <h2 class="hollow">ABOUT</h2>
-      <p class="section-sub" data-i18n="about.sub">路上的人</p>
+      <div class="side"></div>
+      <div class="center">
+        <h2 class="hollow">ABOUT</h2>
+        <p class="section-sub" data-i18n="about.sub">路上的人</p>
+      </div>
+      <div class="side right"></div>
     </div>
     <p class="about-manifesto" data-i18n="about.manifesto">路是边走边画出来的。</p>
     <ol class="timeline" id="timeline"></ol>
@@ -571,106 +570,94 @@
 
   <section class="section" id="notes">
     <div class="section-head">
-      <h2 class="hollow">NOTES</h2>
-      <p class="section-sub" data-i18n="notes.sub">制作笔记</p>
+      <div class="side"></div>
+      <div class="center">
+        <h2 class="hollow">NOTES</h2>
+        <p class="section-sub" data-i18n="notes.sub">制作笔记</p>
+      </div>
+      <div class="side right">
+        <a class="text-link notes-all" href="#" data-i18n="notes.all">阅读全部 ↗</a>
+      </div>
     </div>
-    <a class="notes-all" href="#" data-i18n="notes.all">阅读全部 ↗</a>
     <div id="notes-list"></div>
   </section>
 
   <section class="section waystation" id="contact">
     <div class="section-head">
-      <h2 class="hollow">CONTACT</h2>
-      <p class="section-sub" data-i18n="contact.sub">寄一张明信片</p>
+      <div class="side"></div>
+      <div class="center">
+        <h2 class="hollow">CONTACT</h2>
+        <p class="section-sub" data-i18n="contact.sub">寄一张明信片</p>
+      </div>
+      <div class="side right"></div>
     </div>
     <svg class="mail-box" viewBox="0 0 120 120" aria-hidden="true">
-      <path d="M30 70c0-18 12-32 30-32s30 14 30 32v22H30V70z" fill="#fff" stroke="#18181A" stroke-width="2" stroke-linejoin="round"/>
-      <path d="M48 70h28" stroke="#18181A" stroke-width="2" stroke-linecap="round"/>
-      <path d="M42 48v-8h12" stroke="#18181A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      <rect x="52" y="28" width="14" height="18" rx="2" fill="#FF9F43" stroke="#18181A" stroke-width="1.5"/>
-      <path d="M38 92v10M82 92v10" stroke="#18181A" stroke-width="2" stroke-linecap="round"/>
+      <path d="M28 72c0-20 13-34 32-34s32 14 32 34v20H28V72z" fill="#fff" stroke="#18181A" stroke-width="1.6" stroke-linejoin="round"/>
+      <path d="M46 72h30" stroke="#18181A" stroke-width="1.6" stroke-linecap="round"/>
+      <path d="M42 50v-10h14" stroke="#18181A" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <rect x="54" y="24" width="16" height="20" rx="2" fill="#FF9F43" stroke="#18181A" stroke-width="1.3"/>
+      <path d="M36 92v12M84 92v12" stroke="#18181A" stroke-width="1.6" stroke-linecap="round"/>
     </svg>
     <a class="email-link" href="mailto:hello@lucky.dev" data-i18n="contact.email_label">写信给我</a>
     <div class="socials">
-      <a href="#" aria-label="GitHub">GitHub</a>
-      <a href="#" aria-label="X">X</a>
-      <a href="#" aria-label="Bilibili">Bilibili</a>
+      <a href="#">GitHub</a>
+      <a href="#">X</a>
+      <a href="#">Bilibili</a>
     </div>
   </section>
 
   <footer class="openroad" id="openroad">
-    <svg class="vanish" viewBox="0 0 480 80" aria-hidden="true">
-      <path d="M20 60 Q 140 50 240 40 T 460 12" fill="none" stroke="#18181A" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="2 6" opacity="0.55"/>
-      <path d="M40 70 Q 160 58 260 46 T 460 16" fill="none" stroke="#18181A" stroke-width="1.2" stroke-linecap="round" opacity="0.25"/>
+    <svg class="vanish" viewBox="0 0 420 70" aria-hidden="true">
+      <path d="M10 55 Q 120 48 220 36 T 410 8" fill="none" stroke="#18181A" stroke-width="1.2" stroke-linecap="round" stroke-dasharray="1.5 7" opacity="0.45"/>
+      <path d="M28 64 Q 140 54 240 42 T 410 14" fill="none" stroke="#18181A" stroke-width="1" stroke-linecap="round" opacity="0.2"/>
     </svg>
     <h2 class="openroad-title" id="openroad-title"></h2>
-    <p class="openroad-credit" data-i18n="footer.credit">© 2026 lucky · Still on the road.</p>
+    <p class="openroad-credit" data-i18n="footer.credit"></p>
   </footer>
-</main>
+</div>
 
 <script src="works.js"></script>
 <script>
 (() => {
   "use strict";
 
-  /* ───────── i18n ───────── */
+  /* ═══════════ i18n ═══════════ */
   const I18N = {
     zh: {
-      "nav.works": "作品",
-      "nav.about": "关于",
-      "nav.notes": "手记",
-      "nav.contact": "联系",
+      "nav.works": "作品", "nav.about": "关于", "nav.notes": "手记", "nav.contact": "联系",
       "hero.title": "用匠心写代码，<br>以灵魂做设计。",
       "hero.sub": "边走边画，把每天画得更新一点。",
       "hero.hint": "[左键] 跳跃 · [右键] 翻滚 ｜ [↺ 重绘] ｜ [⏸ 暂停]",
       "hero.hint.touch": "[轻点] 跳跃 · [下滑] 翻滚",
-      "hero.setout": "出发",
-      "hero.skip": "跳过出发",
-      "hero.redraw": "↺ 重绘",
-      "hero.pause": "⏸ 暂停",
-      "hero.play": "▶ 继续",
+      "hero.setout": "出发", "hero.skip": "跳过出发",
+      "hero.redraw": "↺ 重绘", "hero.pause": "⏸ 暂停", "hero.play": "▶ 继续",
       "hero.skipping": "出发中… 点击跳过",
       "a11y.controls": "键盘：空格或上箭头跳跃，Shift、S 或下箭头翻滚，Esc 跳过开场。",
-      "works.sub": "精选项目",
-      "works.empty": "还在路上收集。",
-      "about.sub": "路上的人",
-      "about.manifesto": "路是边走边画出来的。",
-      "notes.sub": "制作笔记",
-      "notes.all": "阅读全部 ↗",
-      "contact.sub": "寄一张明信片",
-      "contact.email_label": "写信给我",
-      "openroad.title": "未完，还在画。",
+      "works.sub": "精选项目", "works.empty": "还在路上收集。",
+      "about.sub": "路上的人", "about.manifesto": "路是边走边画出来的。",
+      "notes.sub": "制作笔记", "notes.all": "阅读全部 ↗",
+      "contact.sub": "寄一张明信片", "contact.email_label": "写信给我",
+      "openroad.title": '<span class="zh">未完，还在画。</span>',
       "footer.credit": "© 2026 lucky · Still on the road.",
     },
     en: {
-      "nav.works": "Works",
-      "nav.about": "About",
-      "nav.notes": "Notes",
-      "nav.contact": "Contact",
+      "nav.works": "Works", "nav.about": "About", "nav.notes": "Notes", "nav.contact": "Contact",
       "hero.title": "Code with craft.<br>Design with soul.",
       "hero.sub": "Keep walking, keep drawing.",
       "hero.hint": "[LMB] Jump · [RMB] Roll ｜ [↺ Redraw] ｜ [⏸ Pause]",
       "hero.hint.touch": "[Tap] Jump · [Swipe down] Roll",
-      "hero.setout": "Set out",
-      "hero.skip": "Skip intro",
-      "hero.redraw": "↺ Redraw",
-      "hero.pause": "⏸ Pause",
-      "hero.play": "▶ Resume",
+      "hero.setout": "Set out", "hero.skip": "Skip intro",
+      "hero.redraw": "↺ Redraw", "hero.pause": "⏸ Pause", "hero.play": "▶ Resume",
       "hero.skipping": "Departing… click to skip",
       "a11y.controls": "Keyboard: Space or Up to jump, Shift, S or Down to roll. Esc skips the intro.",
-      "works.sub": "Selected projects",
-      "works.empty": "Still collecting on the road.",
-      "about.sub": "Who is on the road",
-      "about.manifesto": "Draw the road as we go.",
-      "notes.sub": "Making notes",
-      "notes.all": "Read all notes ↗",
-      "contact.sub": "Send a note",
-      "contact.email_label": "Email me",
+      "works.sub": "Selected projects", "works.empty": "Still collecting on the road.",
+      "about.sub": "Who is on the road", "about.manifesto": "Draw the road as we go.",
+      "notes.sub": "Making notes", "notes.all": "Read all notes ↗",
+      "contact.sub": "Send a note", "contact.email_label": "Email me",
       "openroad.title": "To be drawn…",
       "footer.credit": "© 2026 lucky · Still on the road.",
     },
   };
-
   const TIMELINE = {
     zh: [
       { year: "2024", event: "独立开发，发布 TimeSense" },
@@ -683,10 +670,9 @@
       { year: "2026", event: "lucky — this site as a walking-and-drawing metaphor" },
     ],
   };
-
   const NOTES = {
     zh: [
-      { date: "2026.06.21", title: "TimeSense 在各个国家被学到了一些事。" },
+      { date: "2026.06.21", title: "TimeSense，在各个国家被学到了一些事。" },
       { date: "2026.02.15", title: "「知育時計・声音计时器」TimeSense 是什么？" },
     ],
     en: [
@@ -696,31 +682,27 @@
   };
 
   let lang = "zh";
-  const t = (key) => (I18N[lang] && I18N[lang][key]) || I18N.en[key] || key;
+  const t = (k) => (I18N[lang] && I18N[lang][k]) || I18N.en[k] || k;
 
   function applyI18n() {
     document.documentElement.lang = lang === "zh" ? "zh-CN" : "en";
     document.querySelectorAll("[data-i18n]").forEach((el) => {
       const key = el.getAttribute("data-i18n");
       const val = t(key);
-      if (val.includes("<br>")) el.innerHTML = val;
+      if (String(val).includes("<")) el.innerHTML = val;
       else el.textContent = val;
     });
-
     const title = document.getElementById("hero-title");
     title.innerHTML = t("hero.title");
     title.classList.toggle("zh", lang === "zh");
     document.getElementById("hero-sub").textContent = t("hero.sub");
     updateHint();
     document.getElementById("a11y-controls").textContent = t("a11y.controls");
-    document.getElementById("openroad-title").innerHTML =
-      lang === "zh"
-        ? '<span class="zh">未完，还在画。</span>'
-        : t("openroad.title");
-
-    renderWorks();
-    renderTimeline();
-    renderNotes();
+    document.getElementById("openroad-title").innerHTML = t("openroad.title");
+    document.getElementById("btn-redraw").textContent = t("hero.redraw");
+    document.getElementById("btn-pause").textContent =
+      (window.__paused ? t("hero.play") : t("hero.pause"));
+    renderWorks(); renderTimeline(); renderNotes();
   }
 
   function updateHint() {
@@ -730,6 +712,59 @@
     );
   }
 
+  /* illustrations */
+  const artSvg = (kind) => {
+    const S = (inner) =>
+      `<svg viewBox="0 0 200 140" fill="none" xmlns="http://www.w3.org/2000/svg">${inner}</svg>`;
+    const ink = 'stroke="#18181A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"';
+    if (kind === "clock") return S(`
+      <circle cx="100" cy="72" r="36" fill="#fff" ${ink}/>
+      <circle cx="100" cy="72" r="27" fill="none" stroke="#FFDE59" stroke-width="3.5" stroke-linecap="round"/>
+      <path d="M100 54v20l14 9" ${ink}/>
+      <path d="M78 34l-8-10M122 34l8-10" ${ink}/>
+      <circle cx="54" cy="48" r="2" fill="#18181A"/>
+      <circle cx="148" cy="44" r="1.5" fill="#18181A"/>
+      <path d="M150 96c6-2 8-8 4-12" ${ink}/>
+    `);
+    if (kind === "cat") return S(`
+      <path d="M40 100h90" ${ink}/>
+      <path d="M62 100c-2-22 14-38 36-28 10 4 14 16 12 28" fill="#fff" ${ink}/>
+      <path d="M78 72l-8-14 16 6" fill="#fff" ${ink}/>
+      <path d="M102 70l12-12 2 16" fill="#fff" ${ink}/>
+      <circle cx="88" cy="84" r="1.6" fill="#18181A"/>
+      <circle cx="102" cy="84" r="1.6" fill="#18181A"/>
+      <path d="M92 92c2 2 6 2 8 0" ${ink}/>
+      <path d="M140 48c10 2 12 12 4 16" ${ink}/>
+    `);
+    if (kind === "pen") return S(`
+      <path d="M48 108c24-10 48-36 80-62" ${ink}/>
+      <path d="M122 36l22 8-8 22-20-10 6-20z" fill="#FFDE59" stroke="#18181A" stroke-width="1.5" stroke-linejoin="round"/>
+      <path d="M122 36l8 4" ${ink}/>
+      <circle cx="56" cy="112" r="1.5" fill="#18181A"/>
+      <circle cx="68" cy="106" r="1" fill="#18181A"/>
+    `);
+    if (kind === "list") return S(`
+      <rect x="64" y="28" width="72" height="88" rx="8" fill="#fff" ${ink}/>
+      <path d="M80 54h40M80 74h40M80 94h26" ${ink}/>
+      <path d="M80 40h16" stroke="#70A07B" stroke-width="1.5" stroke-linecap="round"/>
+    `);
+    return S(`
+      <rect x="68" y="44" width="64" height="52" rx="6" fill="#fff" ${ink}/>
+      <path d="M68 62h64" ${ink}/>
+    `);
+  };
+
+  const peekSvg = `
+    <svg class="mascot-peek" viewBox="0 0 56 56" aria-hidden="true">
+      <ellipse cx="28" cy="36" rx="17" ry="15" fill="#C4A574" stroke="#18181A" stroke-width="1.4"/>
+      <circle cx="17" cy="18" r="5.5" fill="#C4A574" stroke="#18181A" stroke-width="1.3"/>
+      <circle cx="38" cy="18" r="5.5" fill="#C4A574" stroke="#18181A" stroke-width="1.3"/>
+      <rect x="36" y="30" width="13" height="15" rx="3" fill="#FFDE59" stroke="#18181A" stroke-width="1.2"/>
+      <circle cx="22" cy="36" r="1.5" fill="#18181A"/>
+      <circle cx="33" cy="36" r="1.5" fill="#18181A"/>
+      <path d="M26 42c2 1 4 1 6 0" stroke="#18181A" stroke-width="1.2" stroke-linecap="round"/>
+    </svg>`;
+
   function renderWorks() {
     const all = (window.WORKS || []).filter((w) => w.status !== "draft");
     all.sort((a, b) => (a.order || 0) - (b.order || 0));
@@ -737,72 +772,20 @@
     const bento = all.filter((w) => w.status === "bento");
     const peeked = new Set();
 
-    const artSvg = (kind) => {
-      const s = (inner) =>
-        `<svg viewBox="0 0 160 120" fill="none" xmlns="http://www.w3.org/2000/svg">${inner}</svg>`;
-      if (kind === "clock")
-        return s(`
-          <circle cx="80" cy="58" r="34" stroke="#18181A" stroke-width="2" fill="#fff"/>
-          <circle cx="80" cy="58" r="26" stroke="#FFDE59" stroke-width="3" fill="none"/>
-          <path d="M80 40v20l12 8" stroke="#18181A" stroke-width="2" stroke-linecap="round"/>
-          <path d="M62 24l-8-8M98 24l8-8" stroke="#18181A" stroke-width="2" stroke-linecap="round"/>
-        `);
-      if (kind === "cat")
-        return s(`
-          <path d="M30 80h70" stroke="#18181A" stroke-width="2" stroke-linecap="round"/>
-          <path d="M55 80c0-18 14-30 30-22 8 4 12 14 10 22" stroke="#18181A" stroke-width="2" fill="#fff"/>
-          <path d="M70 58l-6-12 14 6" stroke="#18181A" stroke-width="2" fill="#fff"/>
-          <path d="M88 58l10-10 2 14" stroke="#18181A" stroke-width="2" fill="#fff"/>
-          <circle cx="78" cy="68" r="1.5" fill="#18181A"/>
-          <circle cx="90" cy="68" r="1.5" fill="#18181A"/>
-          <path d="M120 40c8 0 10 8 4 12" stroke="#18181A" stroke-width="1.5" stroke-linecap="round"/>
-        `);
-      if (kind === "pen")
-        return s(`
-          <path d="M40 80c20-8 40-28 70-50" stroke="#18181A" stroke-width="2" stroke-linecap="round"/>
-          <path d="M105 22l18 6-6 18-16-8 4-16z" fill="#FFDE59" stroke="#18181A" stroke-width="1.5"/>
-          <circle cx="48" cy="88" r="1.5" fill="#18181A"/>
-          <circle cx="58" cy="82" r="1" fill="#18181A"/>
-        `);
-      if (kind === "list")
-        return s(`
-          <rect x="48" y="24" width="64" height="76" rx="6" stroke="#18181A" stroke-width="2" fill="#fff"/>
-          <path d="M62 46h36M62 62h36M62 78h24" stroke="#18181A" stroke-width="2" stroke-linecap="round"/>
-          <path d="M62 34h12" stroke="#70A07B" stroke-width="2" stroke-linecap="round"/>
-        `);
-      return s(`
-        <rect x="50" y="36" width="60" height="48" rx="4" stroke="#18181A" stroke-width="2" fill="#fff"/>
-        <path d="M50 52h60" stroke="#18181A" stroke-width="1.5"/>
-      `);
-    };
-
-    const peekSvg = `
-      <svg class="mascot-peek" viewBox="0 0 52 52" aria-hidden="true">
-        <ellipse cx="26" cy="34" rx="16" ry="14" fill="#C4A574" stroke="#18181A" stroke-width="1.6"/>
-        <circle cx="16" cy="18" r="5" fill="#C4A574" stroke="#18181A" stroke-width="1.5"/>
-        <circle cx="36" cy="18" r="5" fill="#C4A574" stroke="#18181A" stroke-width="1.5"/>
-        <rect x="34" y="28" width="12" height="14" rx="3" fill="#FFDE59" stroke="#18181A" stroke-width="1.4"/>
-        <circle cx="20" cy="34" r="1.4" fill="#18181A"/>
-        <circle cx="30" cy="34" r="1.4" fill="#18181A"/>
-      </svg>`;
-
-    const cardHtml = (w, kind, allowPeek) => {
-      const L = w[lang] || w.title?.[lang] || w.title?.en;
+    const card = (w, kind, allowPeek) => {
       const title = (w.title && (w.title[lang] || w.title.en)) || w.id;
       const tagline = (w.tagline && (w.tagline[lang] || w.tagline.en)) || "";
       const meta = (w.meta && (w.meta[lang] || w.meta.en)) || "";
-      const doPeek =
-        allowPeek && w.mascot === "peek" && !peeked.has("peek");
+      const doPeek = allowPeek && w.mascot === "peek" && !peeked.size;
       if (doPeek) peeked.add("peek");
-      return `
-        <a class="work-card ${kind}" href="${w.link || "#"}" data-id="${w.id}">
-          ${doPeek ? peekSvg : ""}
-          <div class="work-art">${artSvg(w.art)}</div>
-          <h3 class="work-title">${title}</h3>
-          <p class="work-tagline">${tagline}</p>
-          <p class="work-meta">${meta}</p>
-          <span class="work-arrow" aria-hidden="true">↗</span>
-        </a>`;
+      return `<a class="work-card ${kind}" href="${w.link || "#"}">
+        ${doPeek ? peekSvg : ""}
+        <div class="work-art">${artSvg(w.art)}</div>
+        <h3 class="work-title">${title}</h3>
+        <p class="work-tagline">${tagline}</p>
+        <p class="work-meta">${meta}</p>
+        <span class="work-arrow" aria-hidden="true">↗</span>
+      </a>`;
     };
 
     const fEl = document.getElementById("works-featured");
@@ -812,27 +795,22 @@
       bEl.innerHTML = `<div class="works-empty">${t("works.empty")}</div>`;
       return;
     }
-    fEl.innerHTML = featured.map((w) => cardHtml(w, "featured", true)).join("");
-    bEl.innerHTML = bento.map((w) => cardHtml(w, "bento", false)).join("");
+    fEl.innerHTML = featured.map((w) => card(w, "featured", true)).join("");
+    bEl.innerHTML = bento.map((w) => card(w, "bento", false)).join("");
   }
 
   function renderTimeline() {
-    const rows = TIMELINE[lang] || TIMELINE.en;
-    document.getElementById("timeline").innerHTML = rows
-      .map(
-        (r) =>
-          `<li><div class="year">${r.year}</div><div class="event">${r.event}</div></li>`
-      )
+    document.getElementById("timeline").innerHTML = (TIMELINE[lang] || TIMELINE.en)
+      .map((r) => `<li><div class="year">${r.year}</div><div class="event">${r.event}</div></li>`)
       .join("");
   }
 
   function renderNotes() {
-    const rows = NOTES[lang] || NOTES.en;
-    document.getElementById("notes-list").innerHTML = rows
-      .map(
-        (n) =>
-          `<a class="note-row" href="#"><span class="note-date">${n.date}</span><span class="note-title">${n.title}</span><span aria-hidden="true">↗</span></a>`
-      )
+    document.getElementById("notes-list").innerHTML = (NOTES[lang] || NOTES.en)
+      .map((n) => `<a class="note-row" href="#">
+        <span class="note-date">${n.date}</span>
+        <span class="note-title${lang === "zh" ? " zh" : ""}">${n.title}</span>
+        <span class="note-arrow" aria-hidden="true">↗</span></a>`)
       .join("");
   }
 
@@ -841,67 +819,45 @@
     applyI18n();
   });
 
-  /* ───────── Canvas scene ───────── */
+  /* ═══════════ Canvas scene ═══════════ */
   const canvas = document.getElementById("stage");
   const ctx = canvas.getContext("2d");
-  let W = 0, H = 0, dpr = 1;
+  let W = 0, H = 0, dpr = 1, baseY = 0;
 
   function resize() {
     dpr = Math.min(window.devicePixelRatio || 1, 2);
-    W = window.innerWidth;
-    H = window.innerHeight;
+    W = canvas.clientWidth || window.innerWidth;
+    H = canvas.clientHeight || 640;
     canvas.width = Math.floor(W * dpr);
     canvas.height = Math.floor(H * dpr);
-    canvas.style.width = W + "px";
-    canvas.style.height = H + "px";
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    baseY = H * 0.64;
   }
-  window.addEventListener("resize", resize);
-  resize();
+  window.addEventListener("resize", () => { resize(); });
 
-  // seeded rng
   let seed = 20260215;
-  function srand(s) {
-    seed = s >>> 0;
-  }
-  function rnd() {
+  const srand = (s) => { seed = s >>> 0; };
+  const rnd = () => {
     seed = (seed * 1664525 + 1013904223) >>> 0;
     return seed / 4294967296;
-  }
-
+  };
   const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  // world
   const P = {
-    gravity: 2200,
-    jumpV: -820,
-    rollDur: 0.55,
-    speed: 180,
-    bufferJump: 0.08,
-    bufferRoll: 0.06,
-    coyote: 0.08,
+    gravity: 2200, jumpV: -820, rollDur: 0.55, speed: 175,
+    bufferJump: 0.08, bufferRoll: 0.06, coyote: 0.08,
   };
 
-  let cameraX = 0;
-  let paused = false;
-  let mode = reduceMotion ? "await" : "camp"; // camp | depart | play | await
+  let cameraX = 0, paused = false;
+  let mode = reduceMotion ? "await" : "camp";
   let modeT = 0;
-  let pathPoints = []; // {x,y}
+  let pathPoints = [];
+  let objects = [];   // pen-drawn scene objects
   let obstacles = [];
   let particles = [];
-  let decorations = [];
   let hills = [];
-  let campDrawn = false;
-  let stumbleT = 0;
-  let jumpBuf = 0;
-  let rollBuf = 0;
-  let coyote = 0;
-  let jumping = false;
-  let rolling = 0;
-  let vy = 0;
-  let baseY = 0;
-  let playerY = 0; // offset above terrain
-  let spin = 0;
+  let stumbleT = 0, jumpBuf = 0, coyote = 0;
+  let jumping = false, rolling = 0, vy = 0, playerY = 0, spin = 0;
 
   function noise1(x) {
     const s = Math.sin(x * 12.9898 + 4.1) * 43758.5453;
@@ -909,101 +865,155 @@
   }
 
   function terrainY(worldX) {
-    // start camp flatter region
-    const campEnd = 420;
+    const campEnd = 380;
     if (worldX < campEnd) {
-      const k = worldX / campEnd;
-      return (
-        baseY +
-        6 * Math.sin(worldX / 40) +
-        2 * noise1(worldX * 0.05) * k
-      );
+      return baseY + 4 * Math.sin(worldX / 50) + noise1(worldX * 0.04);
     }
     const x = worldX - campEnd;
     let y =
       baseY +
-      36 * Math.sin(x / 190) +
-      16 * Math.sin(x / 55 + 1.2) +
-      8 * Math.sin(x / 23 + 0.4);
-    // carve dips / bumps for obstacles via nearby field
-    for (let i = 0; i < obstacles.length; i++) {
-      const o = obstacles[i];
+      32 * Math.sin(x / 200) +
+      14 * Math.sin(x / 58 + 1.1) +
+      7 * Math.sin(x / 24 + 0.4);
+    for (const o of obstacles) {
       const dx = worldX - o.x;
       if (dx > -o.w && dx < o.w) {
         const u = dx / o.w;
         const fall = Math.cos((u * Math.PI) / 2);
-        if (o.type === "pit") y += 36 * fall * fall;
-        if (o.type === "rock") y -= 28 * fall * fall;
-        if (o.type === "hump") y -= 18 * fall * fall;
+        if (o.type === "pit") y += 34 * fall * fall;
+        if (o.type === "rock") y -= 24 * fall * fall;
       }
     }
-    return y + noise1(worldX * 0.08) * 1.1;
+    return y + noise1(worldX * 0.07) * 0.9;
+  }
+  const tangentAt = (wx) => (terrainY(wx + 4) - terrainY(wx - 4)) / 8;
+
+  /* ── object stroke templates (local coords, y up from ground) ── */
+  function objectStrokes(kind) {
+    // each stroke: array of [x,y] local, y negative = up
+    if (kind === "tree") return [
+      [[0, 0], [0, -28]],
+      [[-2, -28], [-12, -40], [-4, -52], [8, -50], [14, -38], [4, -28], [-2, -28]],
+    ];
+    if (kind === "cabin") return [
+      [[-24, 0], [-24, -34], [24, -34], [24, 0], [-24, 0]],
+      [[-28, -34], [0, -56], [28, -34]],
+      [[-8, 0], [-8, -18], [8, -18], [8, 0]],
+      [[-16, -24], [-16, -12], [-10, -12], [-10, -24]],
+    ];
+    if (kind === "mush") return [
+      [[-5, 0], [-4, -12], [4, -12], [5, 0]],
+      [[-14, -12], [-10, -24], [0, -28], [10, -24], [14, -12], [-14, -12]],
+    ];
+    if (kind === "flower") return [
+      [[0, 0], [0, -14]],
+      [[0, -14], [-6, -20], [0, -26], [6, -20], [0, -14]],
+    ];
+    if (kind === "sign") return [
+      [[0, 0], [0, -36]],
+      [[2, -34], [26, -34], [26, -18], [2, -18], [2, -34]],
+      [[8, -26], [20, -26]],
+    ];
+    if (kind === "rock") return [
+      [[-16, 0], [-18, -14], [-6, -26], [10, -24], [18, -10], [14, 0], [-16, 0]],
+      [[-6, -10], [4, -16]],
+    ];
+    if (kind === "arch") return [
+      [[-36, 0], [-36, -14], [-20, -36], [0, -44], [20, -36], [36, -14], [36, 0]],
+      [[-24, 0], [-22, -10], [0, -28], [22, -10], [24, 0]],
+    ];
+    if (kind === "pit-edge") return [
+      [[-18, 0], [-8, 6], [8, 6], [18, 0]],
+    ];
+    return [[[0, 0], [0, -10]]];
   }
 
-  function tangentAt(worldX) {
-    const d = 4;
-    return (terrainY(worldX + d) - terrainY(worldX - d)) / (2 * d);
+  function strokeTotal(points) {
+    let L = 0;
+    for (let i = 1; i < points.length; i++) {
+      const dx = points[i][0] - points[i - 1][0];
+      const dy = points[i][1] - points[i - 1][1];
+      L += Math.hypot(dx, dy);
+    }
+    return L;
+  }
+
+  /** draw polyline only up to `progress` (0-1) of total length */
+  function drawStrokeReveal(pts, progress, ox, oy, scale) {
+    if (progress <= 0) return;
+    const total = strokeTotal(pts);
+    if (total === 0) return;
+    let remain = total * Math.min(1, progress);
+    ctx.beginPath();
+    ctx.moveTo(ox + pts[0][0] * scale, oy + pts[0][1] * scale);
+    for (let i = 1; i < pts.length; i++) {
+      const x0 = pts[i - 1][0], y0 = pts[i - 1][1];
+      const x1 = pts[i][0], y1 = pts[i][1];
+      const seg = Math.hypot(x1 - x0, y1 - y0);
+      if (remain >= seg) {
+        ctx.lineTo(ox + x1 * scale, oy + y1 * scale);
+        remain -= seg;
+      } else if (remain > 0) {
+        const r = remain / seg;
+        ctx.lineTo(ox + (x0 + (x1 - x0) * r) * scale, oy + (y0 + (y1 - y0) * r) * scale);
+        remain = 0;
+        break;
+      } else break;
+    }
+    ctx.stroke();
   }
 
   function ensureWorld(xTo) {
-    // obstacles & decor generated ahead
-    while (obstacles.length < 80) {
-      const last = obstacles.length ? obstacles[obstacles.length - 1].x : 700;
-      const x = last + 280 + rnd() * 320;
-      if (x > xTo + 1200 && obstacles.length > 4) break;
+    while (obstacles.length < 60) {
+      const last = obstacles.length ? obstacles[obstacles.length - 1].x : 620;
+      const x = last + 300 + rnd() * 340;
+      if (x > xTo + 1400 && obstacles.length > 3) break;
       const r = rnd();
-      let type = "deco";
-      if (x < 600) type = "deco";
-      else if (r < 0.22) type = "pit";
-      else if (r < 0.4) type = "rock";
-      else if (r < 0.55) type = "hump";
-      else if (r < 0.7) type = "low"; // cave/bridge — roll
-      else if (r < 0.85) type = "deco";
-      else type = "low";
-
-      if (type === "low") {
-        obstacles.push({ x, type, w: 50, h: 48 });
-      } else if (type === "pit") {
-        obstacles.push({ x, type, w: 34, h: 20 });
-      } else if (type === "rock") {
-        obstacles.push({ x, type, w: 22, h: 26 });
-      } else if (type === "hump") {
-        obstacles.push({ x, type, w: 28, h: 18 });
-      } else {
-        obstacles.push({ x, type, w: 20, h: 20 });
-        decorations.push({
-          x: x + 20,
-          kind: rnd() < 0.5 ? "tree" : "mush",
-          s: 0.8 + rnd() * 0.5,
+      if (x < 520) {
+        // decorative only near camp start
+        objects.push({
+          x: x, kind: ["tree", "flower", "mush"][ (rnd()*3)|0 ],
+          s: 0.85 + rnd() * 0.35, p: 0, on: false, strokes: null,
         });
+        continue;
       }
-      if (rnd() < 0.35) {
-        decorations.push({
-          x: x + 80 + rnd() * 60,
-          kind: ["tree", "flower", "cabin", "mush"][(rnd() * 4) | 0],
-          s: 0.7 + rnd() * 0.6,
-        });
+      if (r < 0.2) {
+        obstacles.push({ x, type: "pit", w: 32, h: 0 });
+        objects.push({ x, kind: "rock", s: 0.9, p: 0, on: false, strokes: null, deco: true });
+      } else if (r < 0.38) {
+        obstacles.push({ x, type: "rock", w: 24, h: 26 });
+        objects.push({ x, kind: "rock", s: 1, p: 0, on: false, strokes: null, solid: true });
+      } else if (r < 0.55) {
+        obstacles.push({ x, type: "low", w: 42, h: 44 });
+        objects.push({ x, kind: "arch", s: 1, p: 0, on: false, strokes: null, solid: true });
+      } else {
+        const k = ["tree", "cabin", "mush", "flower", "sign"][(rnd() * 5) | 0];
+        objects.push({ x, kind: k, s: 0.85 + rnd() * 0.4, p: 0, on: false, strokes: null });
+        if (rnd() < 0.5) {
+          objects.push({
+            x: x + 50 + rnd() * 40,
+            kind: ["tree", "flower", "mush"][(rnd() * 3) | 0],
+            s: 0.8 + rnd() * 0.3, p: 0, on: false, strokes: null,
+          });
+        }
       }
     }
-    while (hills.length < 24) {
-      const last = hills.length ? hills[hills.length - 1].x : -200;
+    while (hills.length < 20) {
+      const last = hills.length ? hills[hills.length - 1].x : -180;
       hills.push({
-        x: last + 220 + rnd() * 260,
-        h: 40 + rnd() * 70,
-        w: 120 + rnd() * 140,
-        kind: rnd() < 0.25 ? "tower" : "hill",
+        x: last + 240 + rnd() * 280,
+        h: 36 + rnd() * 64,
+        w: 110 + rnd() * 130,
+        kind: rnd() < 0.22 ? "tower" : "hill",
       });
     }
-    // path points
     const penX = cameraX + W * 0.85;
-    if (!pathPoints.length) {
-      pathPoints.push({ x: 0, y: terrainY(0) });
-    }
+    if (!pathPoints.length) pathPoints.push({ x: 0, y: terrainY(0) });
     let lastX = pathPoints[pathPoints.length - 1].x;
-    while (lastX < penX + 20) {
-      lastX += 7;
+    while (lastX < penX + 16) {
+      lastX += 6;
       pathPoints.push({ x: lastX, y: terrainY(lastX) });
-      if (pathPoints.length > 2200) pathPoints.splice(0, 200);
+      if (pathPoints.length > 2400) pathPoints.splice(0, 240);
     }
   }
 
@@ -1012,99 +1022,86 @@
     cameraX = 0;
     pathPoints = [{ x: 0, y: terrainY(0) }];
     obstacles = [];
-    decorations = [
-      { x: 80, kind: "cabin", s: 1.1 },
-      { x: 210, kind: "tree", s: 1.15 },
-      { x: 320, kind: "mush", s: 0.9 },
-      { x: 360, kind: "sign", s: 1 },
+    objects = [
+      { x: 70, kind: "cabin", s: 1.05, p: 1, on: true, strokes: null },
+      { x: 160, kind: "tree", s: 1.1, p: 1, on: true, strokes: null },
+      { x: 240, kind: "mush", s: 0.95, p: 1, on: true, strokes: null },
+      { x: 300, kind: "sign", s: 1, p: 1, on: true, strokes: null },
+      { x: 340, kind: "flower", s: 0.9, p: 1, on: true, strokes: null },
     ];
     hills = [];
     particles = [];
-    playerY = 0;
-    vy = 0;
-    jumping = false;
-    rolling = 0;
-    stumbleT = 0;
-    spin = 0;
-    campDrawn = false;
-    ensureWorld(cameraX + W);
+    playerY = 0; vy = 0; jumping = false; rolling = 0;
+    stumbleT = 0; spin = 0;
+    ensureWorld(cameraX + W + 200);
   }
 
-  function playerWorldX() {
-    return cameraX + W * 0.22;
-  }
+  const playerWorldX = () => cameraX + W * 0.22;
 
   function emitParticles(x, y, n, burst) {
     for (let i = 0; i < n; i++) {
       const a = rnd() * Math.PI * 2;
-      const sp = burst ? 40 + rnd() * 90 : 20 + rnd() * 50;
+      const sp = burst ? 50 + rnd() * 90 : 18 + rnd() * 40;
       particles.push({
-        x,
-        y,
+        x, y,
         vx: Math.cos(a) * sp,
-        vy: -Math.abs(Math.sin(a)) * sp * 0.7 - 10,
+        vy: -Math.abs(Math.sin(a)) * sp * 0.6 - 8,
         life: 0.35 + rnd() * 0.25,
-        t: 0,
-        r: 0.6 + rnd() * 1.4,
-        kind: rnd() < 0.25 ? "star" : "dot",
+        t: 0, r: 0.5 + rnd() * 1.2,
+        kind: rnd() < 0.22 ? "star" : "dot",
       });
+    }
+  }
+
+  /** Reveal objects as the pen passes — pen draws them into existence */
+  function revealByPen() {
+    const penX = cameraX + W * 0.85;
+    for (const o of objects) {
+      if (!o.strokes) o.strokes = objectStrokes(o.kind);
+      // start revealing shortly before pen arrives at object
+      const trigger = o.x - 8;
+      if (!o.on && penX > trigger) o.on = true;
+      if (o.on && o.p < 1) {
+        // reveal speed tied to pen speed
+        o.p = Math.min(1, o.p + 0.035);
+      }
     }
   }
 
   function drawPath() {
     if (pathPoints.length < 2) return;
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 1.8;
     ctx.strokeStyle = "#18181A";
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
-
-    // main line with occasional gaps
     ctx.beginPath();
-    let drawing = true;
+    let penDown = true;
     for (let i = 0; i < pathPoints.length; i++) {
       const p = pathPoints[i];
       const sx = p.x - cameraX;
       const sy = p.y;
-      // gaps
-      const gap = i > 0 && i % 17 === 0;
-      if (gap) {
-        drawing = false;
-      }
-      if (!drawing) {
-        drawing = true;
-        ctx.moveTo(sx, sy);
-      } else if (i === 0) ctx.moveTo(sx, sy);
-      else ctx.lineTo(sx, sy);
-    }
-    ctx.stroke();
-
-    // underline sketchy stroke
-    ctx.strokeStyle = "rgba(24,24,26,0.2)";
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    for (let i = 0; i < pathPoints.length; i++) {
-      const p = pathPoints[i];
-      const sx = p.x - cameraX + 1.5;
-      const sy = p.y + 2.5;
-      if (i === 0) ctx.moveTo(sx, sy);
+      const gap = i > 0 && i % 19 === 0;
+      if (gap) penDown = false;
+      if (!penDown) { penDown = true; ctx.moveTo(sx, sy); }
+      else if (i === 0) ctx.moveTo(sx, sy);
       else ctx.lineTo(sx, sy);
     }
     ctx.stroke();
   }
 
   function drawHills(parallax) {
-    ctx.lineWidth = 1.5;
-    ctx.strokeStyle = "rgba(24,24,26,0.35)";
-    hills.forEach((h) => {
-      const sx = (h.x - cameraX * parallax) % (W + 400);
-      const x = sx < -200 ? sx + W + 400 : sx;
-      const y = baseY - 20;
+    ctx.lineWidth = 1.2;
+    ctx.strokeStyle = "rgba(24,24,26,0.28)";
+    for (const h of hills) {
+      let x = (h.x - cameraX * parallax);
+      // wrap in view
+      const span = W + 500;
+      x = ((x % span) + span) % span - 150;
+      const y = baseY - 8;
       if (h.kind === "tower") {
-        ctx.strokeRect(x, y - h.h, 18, h.h);
+        ctx.strokeRect(x, y - h.h, 14, h.h);
         ctx.beginPath();
-        ctx.moveTo(x - 4, y - h.h);
-        ctx.lineTo(x + 9, y - h.h - 14);
-        ctx.lineTo(x + 22, y - h.h);
+        ctx.moveTo(x - 3, y - h.h); ctx.lineTo(x + 7, y - h.h - 12); ctx.lineTo(x + 17, y - h.h);
         ctx.stroke();
       } else {
         ctx.beginPath();
@@ -1112,317 +1109,238 @@
         ctx.quadraticCurveTo(x, y - h.h, x + h.w / 2, y);
         ctx.stroke();
       }
-    });
+    }
   }
 
-  function drawDecor() {
-    decorations.forEach((d) => {
-      const sx = d.x - cameraX;
-      if (sx < -80 || sx > W + 80) return;
-      const sy = terrainY(d.x);
-      ctx.lineWidth = 1.5;
-      ctx.strokeStyle = "#18181A";
-      ctx.save();
-      ctx.translate(sx, sy);
-      ctx.scale(d.s, d.s);
-      if (d.kind === "tree") {
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.lineTo(0, -28);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.arc(0, -40, 16, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.arc(-8, -32, 8, 0, Math.PI * 2);
-        ctx.stroke();
-      } else if (d.kind === "mush") {
-        ctx.beginPath();
-        ctx.moveTo(-4, 0);
-        ctx.lineTo(-3, -10);
-        ctx.moveTo(4, 0);
-        ctx.lineTo(3, -10);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.arc(0, -12, 10, Math.PI, 0);
-        ctx.stroke();
-      } else if (d.kind === "flower") {
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.lineTo(0, -12);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.arc(0, -16, 4, 0, Math.PI * 2);
-        ctx.stroke();
-      } else if (d.kind === "cabin") {
-        ctx.strokeRect(-22, -36, 44, 36);
-        ctx.beginPath();
-        ctx.moveTo(-26, -36);
-        ctx.lineTo(0, -56);
-        ctx.lineTo(26, -36);
-        ctx.stroke();
-        ctx.strokeRect(-6, -18, 12, 18);
-      } else if (d.kind === "sign") {
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.lineTo(0, -34);
-        ctx.stroke();
-        ctx.strokeRect(2, -32, 22, 14);
-        ctx.beginPath();
-        ctx.moveTo(6, -25);
-        ctx.lineTo(20, -25);
-        ctx.stroke();
-      }
-      ctx.restore();
-    });
-  }
-
-  function drawObstacles() {
-    obstacles.forEach((o) => {
+  function drawObjects() {
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = "#18181A";
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    for (const o of objects) {
       const sx = o.x - cameraX;
-      if (sx < -80 || sx > W + 80) return;
+      if (sx < -100 || sx > W + 100) continue;
+      if (o.p <= 0) continue;
       const sy = terrainY(o.x);
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = "#18181A";
-      if (o.type === "rock") {
+      if (!o.strokes) o.strokes = objectStrokes(o.kind);
+      const sc = o.s || 1;
+      // fill shapes lightly when fully drawn
+      if (o.p > 0.85 && (o.kind === "cabin" || o.kind === "mush" || o.kind === "rock")) {
+        ctx.save();
+        ctx.globalAlpha = (o.p - 0.85) / 0.15 * 0.9;
         ctx.fillStyle = "#fff";
         ctx.beginPath();
-        ctx.moveTo(sx - 16, sy);
-        ctx.quadraticCurveTo(sx - 18, sy - 26, sx, sy - 28);
-        ctx.quadraticCurveTo(sx + 18, sy - 24, sx + 14, sy);
-        ctx.closePath();
+        const pts = o.strokes[0];
+        ctx.moveTo(sx + pts[0][0] * sc, sy + pts[0][1] * sc);
+        for (let i = 1; i < pts.length; i++)
+          ctx.lineTo(sx + pts[i][0] * sc, sy + pts[i][1] * sc);
         ctx.fill();
-        ctx.stroke();
-      } else if (o.type === "pit") {
-        ctx.beginPath();
-        ctx.moveTo(sx - 18, sy);
-        ctx.quadraticCurveTo(sx, sy + 16, sx + 18, sy);
-        ctx.stroke();
-      } else if (o.type === "low") {
-        // low arch / tree hollow
-        ctx.beginPath();
-        ctx.moveTo(sx - 40, sy);
-        ctx.lineTo(sx - 40, sy - 20);
-        ctx.quadraticCurveTo(sx, sy - 70, sx + 40, sy - 20);
-        ctx.lineTo(sx + 40, sy);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(sx - 28, sy);
-        ctx.quadraticCurveTo(sx, sy - 40, sx + 28, sy);
-        ctx.stroke();
+        ctx.restore();
       }
-    });
+      if (o.kind === "mush" && o.p > 0.85) {
+        ctx.save();
+        ctx.globalAlpha = 0.15 * (o.p - 0.85) / 0.15;
+        ctx.fillStyle = "#FF9F43";
+        ctx.beginPath();
+        const pts = o.strokes[1];
+        ctx.moveTo(sx + pts[0][0] * sc, sy + pts[0][1] * sc);
+        for (let i = 1; i < pts.length; i++)
+          ctx.lineTo(sx + pts[i][0] * sc, sy + pts[i][1] * sc);
+        ctx.fill();
+        ctx.restore();
+      }
+      // progressive strokes
+      for (let si = 0; si < o.strokes.length; si++) {
+        // each stroke shares progress window
+        const sp = Math.max(0, Math.min(1, (o.p - si * 0.12) / (1 - si * 0.05)));
+        if (sp <= 0) continue;
+        drawStrokeReveal(o.strokes[si], sp, sx, sy, sc);
+      }
+    }
   }
 
   function drawPen() {
     const penX = W * 0.85;
     const worldPen = cameraX + penX;
-    const penY = terrainY(worldPen) - 2;
-    const ang = Math.max(-0.26, Math.min(0.26, Math.atan(tangentAt(worldPen)) * 0.85));
-    const bob = Math.sin(modeT * 18) * 0.8 * (mode === "play" ? 1 : 0.3);
+    const penY = terrainY(worldPen) - 1;
+    const ang = Math.max(-0.24, Math.min(0.24, Math.atan(tangentAt(worldPen)) * 0.85));
+    const bob = Math.sin(modeT * 14) * 0.7;
 
     ctx.save();
     ctx.translate(penX, penY + bob);
-    ctx.rotate(ang - Math.PI / 2 + noise1(modeT * 30) * 0.014);
+    ctx.rotate(ang - Math.PI / 2 + noise1(modeT * 22) * 0.012);
+    const L = Math.min(H * 0.22, 150);
+
+    ctx.lineWidth = 1.6;
+    ctx.strokeStyle = "#18181A";
+    ctx.lineJoin = "round";
 
     // body
-    const L = Math.min(H * 0.18, 140);
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = "#18181A";
-    ctx.fillStyle = "#FFF6C8";
+    ctx.fillStyle = "#FFF3B0";
     ctx.beginPath();
-    ctx.moveTo(-7, -L);
-    ctx.lineTo(7, -L);
-    ctx.lineTo(5, -12);
-    ctx.lineTo(-5, -12);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-
-    // tip
-    ctx.fillStyle = "#F5E6A8";
+    ctx.moveTo(-6.5, -L); ctx.lineTo(6.5, -L); ctx.lineTo(4.5, -14); ctx.lineTo(-4.5, -14);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    // graphite tip
+    ctx.fillStyle = "#E8D890";
     ctx.beginPath();
-    ctx.moveTo(-5, -12);
-    ctx.lineTo(5, -12);
-    ctx.lineTo(0, 0);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-
-    // band
+    ctx.moveTo(-4.5, -14); ctx.lineTo(4.5, -14); ctx.lineTo(0, 0); ctx.closePath();
+    ctx.fill(); ctx.stroke();
+    // orange band
     ctx.fillStyle = "#FF9F43";
-    ctx.fillRect(-7, -L + 18, 14, 8);
-    ctx.strokeRect(-7, -L + 18, 14, 8);
-
+    ctx.beginPath();
+    ctx.moveTo(-6.2, -L + 22); ctx.lineTo(6.2, -L + 22); ctx.lineTo(6, -L + 32); ctx.lineTo(-6, -L + 32);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
     // cap
     ctx.fillStyle = "#18181A";
-    ctx.fillRect(-7, -L, 14, 6);
-
+    ctx.fillRect(-6.5, -L, 13, 7);
     ctx.restore();
   }
 
   function drawParticles() {
-    particles.forEach((p) => {
+    for (const p of particles) {
       const a = 1 - p.t / p.life;
       ctx.globalAlpha = Math.max(0, a);
-      ctx.fillStyle = "#18181A";
       if (p.kind === "star") {
         ctx.strokeStyle = "#FFDE59";
-        ctx.lineWidth = 1;
+        ctx.lineWidth = 1.2;
         ctx.beginPath();
-        ctx.moveTo(p.x - 3, p.y);
-        ctx.lineTo(p.x + 3, p.y);
-        ctx.moveTo(p.x, p.y - 3);
-        ctx.lineTo(p.x, p.y + 3);
+        ctx.moveTo(p.x - 3, p.y); ctx.lineTo(p.x + 3, p.y);
+        ctx.moveTo(p.x, p.y - 3); ctx.lineTo(p.x, p.y + 3);
         ctx.stroke();
       } else {
+        ctx.fillStyle = "#18181A";
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
         ctx.fill();
       }
-    });
+    }
     ctx.globalAlpha = 1;
   }
 
+  /* refined mascots */
   function drawChestnut(x, y, squash) {
     ctx.save();
     ctx.translate(x, y);
-    ctx.scale(1 + squash * 0.05, 1 - squash * 0.08);
-    // backpack
-    ctx.fillStyle = "#FFDE59";
+    ctx.scale(1 + squash * 0.04, 1 - squash * 0.07);
+    ctx.lineWidth = 1.35;
     ctx.strokeStyle = "#18181A";
-    ctx.lineWidth = 1.6;
+    ctx.lineJoin = "round";
+    // bag
+    ctx.fillStyle = "#FFDE59";
     ctx.beginPath();
-    ctx.roundRect(6, -34, 14, 18, 3);
-    ctx.fill();
-    ctx.stroke();
+    ctx.roundRect(7, -32, 13, 16, 3);
+    ctx.fill(); ctx.stroke();
     // body
-    ctx.fillStyle = "#C4A574";
+    ctx.fillStyle = "#C9AD7C";
     ctx.beginPath();
-    ctx.ellipse(0, -22, 16, 15, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
+    ctx.ellipse(0, -20, 15, 14, 0, 0, Math.PI * 2);
+    ctx.fill(); ctx.stroke();
     // ears
     ctx.beginPath();
-    ctx.arc(-10, -38, 5, 0, Math.PI * 2);
-    ctx.arc(8, -40, 5, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
+    ctx.arc(-9, -34, 4.5, 0, Math.PI * 2);
+    ctx.arc(7, -36, 4.5, 0, Math.PI * 2);
+    ctx.fill(); ctx.stroke();
     // face
     ctx.fillStyle = "#18181A";
     ctx.beginPath();
-    ctx.arc(-5, -24, 1.5, 0, Math.PI * 2);
-    ctx.arc(4, -24, 1.5, 0, Math.PI * 2);
+    ctx.arc(-4, -22, 1.3, 0, Math.PI * 2);
+    ctx.arc(4, -22, 1.3, 0, Math.PI * 2);
     ctx.fill();
-    // tail
     ctx.strokeStyle = "#18181A";
     ctx.beginPath();
-    ctx.moveTo(-14, -18);
-    ctx.quadraticCurveTo(-24, -28, -20, -36);
+    ctx.arc(0, -18, 2.5, 0.15 * Math.PI, 0.85 * Math.PI);
+    ctx.stroke();
+    // tail
+    ctx.beginPath();
+    ctx.moveTo(-13, -16);
+    ctx.quadraticCurveTo(-24, -24, -18, -34);
     ctx.stroke();
     // feet
     ctx.beginPath();
-    ctx.moveTo(-6, -8);
-    ctx.lineTo(-8, 0);
-    ctx.moveTo(6, -8);
-    ctx.lineTo(8, 0);
+    ctx.moveTo(-5, -7); ctx.lineTo(-7, 0);
+    ctx.moveTo(5, -7); ctx.lineTo(7, 0);
     ctx.stroke();
     ctx.restore();
   }
 
-  function drawCloudy(x, y, squash, t) {
+  function drawCloudy(x, y, squash, time) {
     ctx.save();
-    ctx.translate(x, y);
-    const hop = Math.abs(Math.sin(t * 8)) * 2;
-    ctx.translate(0, -hop);
-    ctx.scale(1 + squash * 0.05, 1 - squash * 0.08);
+    ctx.translate(x, y - Math.abs(Math.sin(time * 7)) * 1.5);
+    ctx.scale(1 + squash * 0.04, 1 - squash * 0.07);
+    ctx.lineWidth = 1.35;
+    ctx.strokeStyle = "#18181A";
     ctx.fillStyle = "#fff";
-    ctx.strokeStyle = "#18181A";
-    ctx.lineWidth = 1.6;
     ctx.beginPath();
-    ctx.ellipse(0, -22, 15, 14, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-    // floppy ears
+    ctx.ellipse(0, -20, 14, 13, 0, 0, Math.PI * 2);
+    ctx.fill(); ctx.stroke();
     ctx.beginPath();
-    ctx.ellipse(-12, -18, 5, 12, 0.4, 0, Math.PI * 2);
-    ctx.ellipse(12, -18, 5, 12, -0.4, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
+    ctx.ellipse(-11, -16, 4.5, 11, 0.35, 0, Math.PI * 2);
+    ctx.ellipse(11, -16, 4.5, 11, -0.35, 0, Math.PI * 2);
+    ctx.fill(); ctx.stroke();
     ctx.fillStyle = "#18181A";
     ctx.beginPath();
-    ctx.arc(-4, -24, 1.4, 0, Math.PI * 2);
-    ctx.arc(5, -24, 1.4, 0, Math.PI * 2);
+    ctx.arc(-3.5, -22, 1.2, 0, Math.PI * 2);
+    ctx.arc(4, -22, 1.2, 0, Math.PI * 2);
     ctx.fill();
     ctx.strokeStyle = "#18181A";
     ctx.beginPath();
-    ctx.moveTo(-5, -8);
-    ctx.lineTo(-6, 0);
-    ctx.moveTo(5, -8);
-    ctx.lineTo(6, 0);
+    ctx.moveTo(-5, -7); ctx.lineTo(-6, 0);
+    ctx.moveTo(5, -7); ctx.lineTo(6, 0);
     ctx.stroke();
     ctx.restore();
   }
 
-  function drawKuro(x, y, squash, t) {
+  function drawKuro(x, y, squash, time) {
     ctx.save();
     ctx.translate(x, y);
-    const step = Math.sin(t * 16) * 2;
-    ctx.scale(1 + squash * 0.05, 1 - squash * 0.08);
+    const step = Math.sin(time * 14) * 1.5;
+    ctx.scale(1 + squash * 0.04, 1 - squash * 0.07);
     ctx.fillStyle = "#18181A";
     ctx.beginPath();
-    ctx.arc(0, -22, 13, 0, Math.PI * 2);
+    ctx.arc(0, -20, 12, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = "#fff";
     ctx.beginPath();
-    ctx.arc(-4, -24, 2, 0, Math.PI * 2);
-    ctx.arc(5, -24, 2, 0, Math.PI * 2);
+    ctx.arc(-3.5, -22, 2.2, 0, Math.PI * 2);
+    ctx.arc(4.5, -22, 2.2, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = "#18181A";
     ctx.beginPath();
-    ctx.arc(-4, -24, 1, 0, Math.PI * 2);
-    ctx.arc(5, -24, 1, 0, Math.PI * 2);
+    ctx.arc(-3.5, -22, 1, 0, Math.PI * 2);
+    ctx.arc(4.5, -22, 1, 0, Math.PI * 2);
     ctx.fill();
     ctx.strokeStyle = "#18181A";
-    ctx.lineWidth = 1.6;
+    ctx.lineWidth = 1.35;
     ctx.beginPath();
-    ctx.moveTo(-4, -10);
-    ctx.lineTo(-5 + step, 0);
-    ctx.moveTo(5, -10);
-    ctx.lineTo(6 - step, 0);
+    ctx.moveTo(-3, -9); ctx.lineTo(-4 + step, 0);
+    ctx.moveTo(4, -9); ctx.lineTo(5 - step, 0);
     ctx.stroke();
     ctx.restore();
   }
 
-  function drawCamp() {
-    // fire
-    const fx = 120 - cameraX * 0.15;
+  function drawCampFire() {
+    const fx = 110 - cameraX * 0.2;
     const fy = baseY;
     ctx.save();
     ctx.translate(fx, fy);
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 1.5;
     ctx.strokeStyle = "#18181A";
-    // logs
     ctx.beginPath();
-    ctx.moveTo(-18, 0);
-    ctx.lineTo(18, -4);
-    ctx.moveTo(-14, -4);
-    ctx.lineTo(14, 2);
+    ctx.moveTo(-16, 0); ctx.lineTo(16, -3);
+    ctx.moveTo(-12, -3); ctx.lineTo(12, 2);
     ctx.stroke();
-    // flame
-    const fl = 1 + Math.sin(modeT * 6) * 0.08;
+    const fl = 1 + Math.sin(modeT * 5) * 0.08;
     ctx.fillStyle = "#FF9F43";
     ctx.beginPath();
-    ctx.moveTo(0, -8);
-    ctx.quadraticCurveTo(-10, -18, 0, -36 * fl);
-    ctx.quadraticCurveTo(10, -18, 0, -8);
-    ctx.fill();
-    ctx.stroke();
+    ctx.moveTo(0, -6);
+    ctx.quadraticCurveTo(-9, -16, 0, -34 * fl);
+    ctx.quadraticCurveTo(9, -16, 0, -6);
+    ctx.fill(); ctx.stroke();
     ctx.fillStyle = "#FFDE59";
     ctx.beginPath();
-    ctx.moveTo(0, -10);
-    ctx.quadraticCurveTo(-5, -16, 0, -24 * fl);
-    ctx.quadraticCurveTo(5, -16, 0, -10);
+    ctx.moveTo(0, -8);
+    ctx.quadraticCurveTo(-4, -14, 0, -22 * fl);
+    ctx.quadraticCurveTo(4, -14, 0, -8);
     ctx.fill();
     ctx.restore();
   }
@@ -1431,63 +1349,43 @@
     const px = W * 0.22;
     const worldX = playerWorldX();
     const gy = terrainY(worldX) + playerY;
-    const ang = Math.atan(tangentAt(worldX)) * 0.5;
-    const tumble = stumbleT > 0;
-    const squash = jumping && playerY < -20 ? 0.3 : rolling > 0 ? 0.5 : tumble ? 0.2 : 0;
+    const ang = Math.atan(tangentAt(worldX)) * 0.4;
+    const squash = jumping && playerY < -20 ? 0.25 : rolling > 0 ? 0.45 : stumbleT > 0 ? 0.15 : 0;
 
     ctx.save();
     ctx.translate(px, gy);
-    ctx.rotate(rolling > 0 ? spin : ang * 0.3);
+    ctx.rotate(rolling > 0 ? spin : ang);
 
     if (rolling > 0) {
-      // rolled balls
-      ctx.save();
-      ctx.translate(-28, -12);
-      ctx.rotate(spin * 1.2);
-      drawChestnut(0, 0, 0.4);
-      ctx.restore();
-      ctx.save();
-      ctx.translate(0, -10);
-      ctx.rotate(spin);
-      drawCloudy(0, 0, 0.4, modeT);
-      ctx.restore();
-      ctx.save();
-      ctx.translate(26, -10);
-      ctx.rotate(spin * 1.3);
-      drawKuro(0, 0, 0.4, modeT);
-      ctx.restore();
+      ctx.save(); ctx.translate(-26, -10); ctx.rotate(spin * 1.15); drawChestnut(0, 0, 0.4); ctx.restore();
+      ctx.save(); ctx.translate(0, -9); ctx.rotate(spin); drawCloudy(0, 0, 0.4, modeT); ctx.restore();
+      ctx.save(); ctx.translate(24, -9); ctx.rotate(spin * 1.25); drawKuro(0, 0, 0.4, modeT); ctx.restore();
     } else {
-      drawChestnut(-30, 0, squash);
+      drawChestnut(-28, 0, squash);
       drawCloudy(0, 0, squash, modeT);
-      drawKuro(30, 0, squash, modeT);
+      drawKuro(28, 0, squash, modeT);
     }
     ctx.restore();
 
-    // jump air lines
-    if (jumping && playerY < -10) {
-      ctx.strokeStyle = "rgba(24,24,26,0.35)";
-      ctx.lineWidth = 1.4;
+    if (jumping && playerY < -8) {
+      ctx.strokeStyle = "rgba(24,24,26,0.28)";
+      ctx.lineWidth = 1.2;
       for (let i = 0; i < 3; i++) {
         ctx.beginPath();
-        ctx.arc(px - 20 + i * 16, gy + 6, 8 + i * 2, Math.PI * 0.15, Math.PI * 0.85);
+        ctx.arc(px - 16 + i * 14, gy + 5, 7 + i, 0.2, Math.PI - 0.2);
         ctx.stroke();
       }
     }
-
-    // stumble stars
-    if (tumble) {
-      const a = 1 - stumbleT / 1.5;
+    if (stumbleT > 0) {
       for (let i = 0; i < 3; i++) {
-        const ang = (i / 3) * Math.PI * 2 + (1.5 - stumbleT) * 4;
-        const sx = px + Math.cos(ang) * 28;
-        const sy = gy - 50 + Math.sin(ang) * 12;
+        const a = (i / 3) * Math.PI * 2 + (1.5 - stumbleT) * 5;
+        const sx = px + Math.cos(a) * 26;
+        const sy = gy - 46 + Math.sin(a) * 10;
         ctx.strokeStyle = "#FFDE59";
-        ctx.lineWidth = 1.5;
+        ctx.lineWidth = 1.4;
         ctx.beginPath();
-        ctx.moveTo(sx - 4, sy);
-        ctx.lineTo(sx + 4, sy);
-        ctx.moveTo(sx, sy - 4);
-        ctx.lineTo(sx, sy + 4);
+        ctx.moveTo(sx - 3.5, sy); ctx.lineTo(sx + 3.5, sy);
+        ctx.moveTo(sx, sy - 3.5); ctx.lineTo(sx, sy + 3.5);
         ctx.stroke();
       }
     }
@@ -1497,81 +1395,44 @@
     if (mode !== "play" || stumbleT > 0) return;
     const wx = playerWorldX();
     const gy = terrainY(wx);
-    const head = gy + playerY - (rolling > 0 ? 14 : 38);
+    const head = gy + playerY - (rolling > 0 ? 14 : 36);
     const feet = gy + playerY;
-    for (let i = 0; i < obstacles.length; i++) {
-      const o = obstacles[i];
+    for (const o of obstacles) {
       const dx = Math.abs(wx - o.x);
       if (dx > o.w) continue;
       if (o.type === "low") {
-        // ceiling hazard if standing
-        const archBottom = terrainY(o.x) - 36;
-        if (rolling <= 0 && head > archBottom + 4 && feet > archBottom - 20) {
-          stun();
-          return;
-        }
-      } else if (o.type === "rock" || o.type === "hump") {
+        const archBottom = terrainY(o.x) - 34;
+        if (rolling <= 0 && head > archBottom + 6) { stun(); return; }
+      } else if (o.type === "rock") {
         const top = terrainY(o.x) - o.h;
-        if (feet > top + 6 && playerY > -o.h * 0.7) {
-          stun();
-          return;
-        }
+        if (feet > top + 6 && playerY > -o.h * 0.65) { stun(); return; }
       } else if (o.type === "pit") {
-        const g = terrainY(wx);
-        // if deep in pit without jumping
-        const local = (wx - o.x) / o.w;
-        if (Math.abs(local) < 0.7 && playerY > -8) {
-          stun();
-          return;
-        }
+        if (Math.abs((wx - o.x) / o.w) < 0.7 && playerY > -6) { stun(); return; }
       }
     }
   }
 
   function stun() {
     stumbleT = 1.5;
-    jumping = false;
-    rolling = 0;
-    playerY = 0;
-    vy = 0;
-    const px = W * 0.22;
-    emitParticles(px, terrainY(playerWorldX()) - 40, 6, true);
+    jumping = false; rolling = 0; playerY = 0; vy = 0;
+    emitParticles(W * 0.22, terrainY(playerWorldX()) - 40, 6, true);
   }
 
   function doJump() {
-    if (mode !== "play") return;
-    if (rolling > 0) return;
-    if (jumping && playerY < -5) {
-      // already airborne — buffer
-      jumpBuf = P.bufferJump;
-      return;
-    }
+    if (mode !== "play" || rolling > 0) return;
+    if (jumping && playerY < -5) { jumpBuf = P.bufferJump; return; }
     if (coyote > 0 || playerY > -2) {
-      vy = P.jumpV;
-      jumping = true;
-      jumpBuf = 0;
-    } else {
-      jumpBuf = P.bufferJump;
-    }
+      vy = P.jumpV; jumping = true; jumpBuf = 0;
+    } else jumpBuf = P.bufferJump;
   }
 
   function doRoll() {
-    if (mode !== "play") return;
-    if (rolling > 0) return;
-    rolling = P.rollDur;
-    spin = 0;
-    rollBuf = 0;
+    if (mode !== "play" || rolling > 0) return;
+    rolling = P.rollDur; spin = 0;
   }
 
   function skipIntro() {
     if (mode === "play") return;
-    if (mode === "await") {
-      mode = "play";
-      document.body.classList.remove("intro-lock");
-      document.getElementById("intro-ui").classList.add("hidden");
-      updateHint();
-      return;
-    }
     mode = "play";
     modeT = 0;
     document.body.classList.remove("intro-lock");
@@ -1579,126 +1440,63 @@
     updateHint();
   }
 
-  function startFromButton() {
-    if (reduceMotion) {
-      skipIntro();
-      return;
-    }
-    // begin depart early
-    if (mode === "camp") {
-      mode = "depart";
-      modeT = 0;
-    }
-  }
-
-  // input
   canvas.addEventListener("contextmenu", (e) => e.preventDefault());
-  window.addEventListener("contextmenu", (e) => {
-    if (mode === "play") e.preventDefault();
-  });
+  let touchStart = null, lpTimer = 0;
 
   canvas.addEventListener("pointerdown", (e) => {
-    if (e.button === 2) {
-      e.preventDefault();
-      skipIntro();
-      doRoll();
+    if (e.button === 2) { e.preventDefault(); skipIntro(); doRoll(); return; }
+    if (e.button !== 0) return;
+    skipIntro();
+    if (e.pointerType === "touch") {
+      touchStart = { x: e.clientX, y: e.clientY, t: performance.now() };
       return;
     }
-    if (e.button === 0) {
-      skipIntro();
-      if (e.pointerType === "touch") {
-        touchStart = { x: e.clientX, y: e.clientY, t: performance.now() };
-        return;
-      }
-      doJump();
-    }
+    lpTimer = window.setTimeout(() => { if (mode === "play") doRoll(); }, 200);
+    doJump();
   });
-
-  let touchStart = null;
   canvas.addEventListener("pointerup", (e) => {
+    clearTimeout(lpTimer);
     if (!touchStart || e.pointerType !== "touch") return;
     const dx = e.clientX - touchStart.x;
     const dy = e.clientY - touchStart.y;
     const dt = performance.now() - touchStart.t;
     touchStart = null;
     if (dy > 36 && Math.abs(dx) < 50) doRoll();
-    else if (dt < 300) doJump();
-  });
-
-  // long-press fallback roll (not in hints)
-  let lpTimer = 0;
-  canvas.addEventListener("pointerdown", (e) => {
-    if (e.pointerType === "touch" || e.button !== 0) return;
-    lpTimer = window.setTimeout(() => {
-      if (mode === "play") doRoll();
-    }, 200);
+    else if (dt < 320) doJump();
   });
   window.addEventListener("pointerup", () => clearTimeout(lpTimer));
-  window.addEventListener("pointercancel", () => clearTimeout(lpTimer));
 
   window.addEventListener("keydown", (e) => {
-    if (e.code === "Escape") {
-      skipIntro();
-      return;
-    }
+    if (e.code === "Escape") { skipIntro(); return; }
     if (e.code === "Space" || e.code === "ArrowUp") {
-      e.preventDefault();
-      skipIntro();
-      doJump();
-      return;
+      e.preventDefault(); skipIntro(); doJump(); return;
     }
-    if (
-      e.code === "ShiftLeft" ||
-      e.code === "ShiftRight" ||
-      e.code === "KeyS" ||
-      e.code === "ArrowDown"
-    ) {
-      e.preventDefault();
-      skipIntro();
-      doRoll();
-      return;
+    if (e.code === "ShiftLeft" || e.code === "ShiftRight" || e.code === "KeyS" || e.code === "ArrowDown") {
+      e.preventDefault(); skipIntro(); doRoll(); return;
     }
-    // any key during intro skips
     if (mode === "camp" || mode === "depart") skipIntro();
   });
 
   document.getElementById("btn-skip").addEventListener("click", skipIntro);
-  document.getElementById("btn-setout").addEventListener("click", () => {
-    if (reduceMotion) skipIntro();
-    else startFromButton();
-    document.getElementById("intro-ui").classList.add("hidden");
-  });
+  document.getElementById("btn-setout").addEventListener("click", skipIntro);
   document.getElementById("btn-redraw").addEventListener("click", () => {
-    const s = (Math.random() * 1e9) | 0;
-    resetWorld(s);
-    emitParticles(W * 0.85, terrainY(cameraX + W * 0.85) - 8, 8, true);
+    resetWorld((Math.random() * 1e9) | 0);
+    emitParticles(W * 0.85, terrainY(cameraX + W * 0.85) - 6, 8, true);
   });
   document.getElementById("btn-pause").addEventListener("click", () => {
     paused = !paused;
-    document.getElementById("btn-pause").textContent = paused
-      ? t("hero.play")
-      : t("hero.pause");
+    window.__paused = paused;
+    document.getElementById("btn-pause").textContent = paused ? t("hero.play") : t("hero.pause");
   });
 
-  // scroll: pause heavy sim slightly when hero far away
-  let scrollY = 0;
-  window.addEventListener(
-    "scroll",
-    () => {
-      scrollY = window.scrollY || 0;
-      if (mode === "camp" || mode === "depart") skipIntro();
-    },
-    { passive: true }
-  );
-  window.addEventListener(
-    "wheel",
-    () => {
-      if (mode === "camp" || mode === "depart") skipIntro();
-    },
-    { passive: true }
-  );
+  window.addEventListener("scroll", () => {
+    if (mode === "camp" || mode === "depart") skipIntro();
+  }, { passive: true });
+  window.addEventListener("wheel", () => {
+    if (mode === "camp" || mode === "depart") skipIntro();
+  }, { passive: true });
 
-  /* ───────── loop ───────── */
+  /* ── loop ── */
   let last = performance.now();
   function frame(now) {
     const dt = Math.min(0.033, (now - last) / 1000);
@@ -1706,142 +1504,92 @@
     modeT += dt;
 
     if (!paused) {
-      // intro timeline
       if (mode === "camp") {
-        if (modeT > 1.8) {
-          mode = "depart";
-          modeT = 0;
-        }
+        // rest at camp; gentle reveal of camp objects
+        revealByPen();
+        if (modeT > 2.0) { mode = "depart"; modeT = 0; }
       } else if (mode === "depart") {
-        // draw a little ahead while still near camp
-        cameraX += P.speed * 0.35 * dt;
-        ensureWorld(cameraX + W);
-        // spawn ink
-        if (rnd() < 0.35) {
-          emitParticles(W * 0.85, terrainY(cameraX + W * 0.85) - 2, 1, false);
-        }
-        if (modeT > 4.2) {
-          mode = "play";
-          document.body.classList.remove("intro-lock");
-          document.getElementById("intro-ui").classList.add("hidden");
-          updateHint();
-        }
-      } else if (mode === "play") {
-        cameraX += P.speed * dt;
-        ensureWorld(cameraX + W * 1.2);
+        cameraX += P.speed * 0.4 * dt;
+        ensureWorld(cameraX + W + 200);
+        revealByPen();
+        if (rnd() < 0.4) emitParticles(W * 0.85, terrainY(cameraX + W * 0.85) - 2, 1, false);
+        if (modeT > 4.0) skipIntro();
+      } else if (mode === "play" || mode === "await") {
+        if (mode === "play") {
+          cameraX += P.speed * dt;
+          ensureWorld(cameraX + W * 1.3);
+          revealByPen();
 
-        // physics
-        if (jumpBuf > 0) {
-          jumpBuf -= dt;
-          if (playerY > -2) {
-            doJump();
+          if (jumpBuf > 0) {
+            jumpBuf -= dt;
+            if (playerY > -2) doJump();
           }
-        }
-        if (rollBuf > 0) {
-          rollBuf -= dt;
-          if (rolling <= 0) doRoll();
-        }
-        if (rolling > 0) {
-          rolling -= dt;
-          spin += (Math.PI * 2 * 2) * dt;
-          if (rolling <= 0) spin = 0;
-        }
-        if (jumping || playerY < 0) {
-          vy += P.gravity * dt;
-          playerY += vy * dt;
-          if (playerY >= 0) {
-            playerY = 0;
-            vy = 0;
-            jumping = false;
-            coyote = P.coyote;
+          if (rolling > 0) {
+            rolling -= dt;
+            spin += Math.PI * 4 * dt;
+            if (rolling <= 0) spin = 0;
           }
+          if (jumping || playerY < 0) {
+            vy += P.gravity * dt;
+            playerY += vy * dt;
+            if (playerY >= 0) { playerY = 0; vy = 0; jumping = false; coyote = P.coyote; }
+          } else coyote -= dt;
+
+          if (stumbleT > 0) {
+            stumbleT -= dt;
+            if (stumbleT < 0.7) cameraX += P.speed * 0.3 * dt;
+          }
+          if (rnd() < dt * 4) emitParticles(W * 0.85, terrainY(cameraX + W * 0.85) - 2, 1, false);
+          collide();
         } else {
-          coyote -= dt;
+          revealByPen();
         }
-        if (stumbleT > 0) {
-          stumbleT -= dt;
-          // catch up after stun
-          if (stumbleT < 0.7) cameraX += P.speed * 0.35 * dt;
-        }
-
-        // ink from pen
-        if (rnd() < dt * 4) {
-          emitParticles(W * 0.85, terrainY(cameraX + W * 0.85) - 2, 1, false);
-        }
-
-        collide();
       }
     }
 
-    // particles
     for (let i = particles.length - 1; i >= 0; i--) {
       const p = particles[i];
       p.t += dt;
-      if (p.t > p.life) {
-        particles.splice(i, 1);
-        continue;
-      }
-      p.x += p.vx * dt;
-      p.y += p.vy * dt;
-      p.vy += 200 * dt;
+      if (p.t > p.life) { particles.splice(i, 1); continue; }
+      p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 200 * dt;
     }
 
-    // baseY responsive
-    baseY = H * 0.62;
-
-    // draw
+    baseY = H * 0.64;
     ctx.clearRect(0, 0, W, H);
-
-    // sky wash
     ctx.fillStyle = "#FFFFFF";
     ctx.fillRect(0, 0, W, H);
 
-    // faint clouds
-    ctx.strokeStyle = "rgba(24,24,26,0.2)";
-    ctx.lineWidth = 1.3;
-    for (let i = 0; i < 5; i++) {
-      const cx = ((i * 220 - cameraX * 0.08) % (W + 200)) - 50;
-      const cy = 70 + (i % 3) * 36;
+    // soft clouds
+    ctx.strokeStyle = "rgba(24,24,26,0.18)";
+    ctx.lineWidth = 1.1;
+    for (let i = 0; i < 6; i++) {
+      const cx = ((i * 190 - cameraX * 0.07) % (W + 180)) - 40;
+      const cy = 48 + (i % 3) * 30;
       ctx.beginPath();
-      ctx.arc(cx, cy, 14, 0.2, Math.PI - 0.2);
-      ctx.arc(cx + 16, cy - 4, 12, 0.3, Math.PI - 0.3);
-      ctx.arc(cx + 30, cy, 10, 0.4, Math.PI - 0.4);
+      ctx.arc(cx, cy, 11, 0.25, Math.PI - 0.25);
+      ctx.arc(cx + 14, cy - 3, 10, 0.3, Math.PI - 0.3);
+      ctx.arc(cx + 26, cy, 8, 0.35, Math.PI - 0.35);
       ctx.stroke();
     }
 
     drawHills(0.2);
-
-    // campfire near start
-    if (cameraX < 500) drawCamp();
-
-    drawDecor();
-    drawPath();
-    drawObstacles();
-
-    // close path under characters to hide "future" slightly: only draw path up to pen (already)
+    if (cameraX < 480) drawCampFire();
+    drawPath();          // ground first
+    drawObjects();       // pen-drawn trees/houses/rocks/arches
     drawPen();
+
     if (mode !== "camp") drawPlayerGroup();
     else {
-      // resting at camp
-      const px = 160;
-      const gy = terrainY(cameraX + px);
-      drawChestnut(px, gy, 0);
-      drawCloudy(px + 34, gy, 0, 0.2);
-      drawKuro(px + 64, gy, 0, 0.2);
+      const gy = terrainY(150);
+      drawChestnut(130, gy, 0);
+      drawCloudy(164, gy, 0, 0.3);
+      drawKuro(196, gy, 0, 0.3);
     }
     drawParticles();
-
-    // dim stage when scrolled into content
-    if (scrollY > H * 0.55) {
-      const a = Math.min(0.82, (scrollY - H * 0.55) / (H * 0.45));
-      ctx.fillStyle = `rgba(255,255,255,${a})`;
-      ctx.fillRect(0, 0, W, H);
-    }
 
     requestAnimationFrame(frame);
   }
 
-  // polyfill roundRect if needed
   if (!CanvasRenderingContext2D.prototype.roundRect) {
     CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
       const rr = typeof r === "number" ? r : 3;
@@ -1856,25 +1604,24 @@
   }
 
   // boot
+  resize();
   srand(seed);
-  baseY = H * 0.62;
   resetWorld(seed);
   applyI18n();
 
+  const introUI = document.getElementById("intro-ui");
   if (reduceMotion) {
-    document.getElementById("intro-ui").classList.remove("hidden");
+    introUI.classList.remove("hidden");
     document.getElementById("btn-skip").style.display = "none";
   } else {
     document.body.classList.add("intro-lock");
-    document.getElementById("intro-ui").classList.remove("hidden");
+    introUI.classList.remove("hidden");
     document.getElementById("btn-setout").style.display = "none";
     document.getElementById("hero-hint").textContent = t("hero.skipping");
   }
 
   requestAnimationFrame(frame);
-
-  // expose for debug
-  window.__lucky = { resetWorld, get mode() { return mode; }, skipIntro };
+  window.__lucky = { resetWorld, skipIntro, get mode() { return mode; } };
 })();
 </script>
 </body>
