@@ -987,74 +987,81 @@
      back: 角色身后的单线轮廓（一笔一条）
      front: 滑行时的前景遮挡（桥面/洞顶，白填充压在角色上） */
   function objectStrokes(kind) {
-    // 小屋：一笔从左脚落地 → 墙 → 屋顶 → 右墙 → 回地
-    if (kind === "cabin") return [[
-      [-20, 0], [-20, -26], [-2, -46], [20, -26], [20, 0], [-20, 0],
-      [-8, 0], [-8, -13], [8, -13], [8, 0],
-    ]];
-    // 树：一笔干→云朵冠→回干脚
+    // 小屋：墙 + 坡顶 + 门
+    if (kind === "cabin") return [
+      [[-22, 0], [-22, -24], [0, -44], [22, -24], [22, 0], [-22, 0]],
+      [[-7, 0], [-7, -14], [7, -14], [7, 0]],
+    ];
+    // 树：细干 + 云朵冠（与天空云同一语言）
     if (kind === "tree") return [[
-      [-2, 0], [-2, -16],
-      [-8, -22], [-16, -28], [-18, -38], [-10, -46], [0, -48],
-      [10, -46], [18, -38], [16, -28], [8, -22], [2, -16], [2, 0],
+      [-2, 0], [-2, -18],
+      [-12, -24], [-18, -34], [-12, -44], [0, -48],
+      [12, -44], [18, -34], [12, -24], [2, -18], [2, 0],
     ]];
-    // 钟楼：一笔尖顶塔身 + 表盘回线
-    if (kind === "clocktower") return [[
-      [-10, 0], [-10, -68], [0, -84], [10, -68], [10, 0], [-10, 0],
-      [0, -48], [-6, -52], [0, -58], [6, -52], [0, -48], [0, -56], [4, -54],
-    ]];
-    // 小店：一笔墙 + 波浪雨棚 + 门
-    if (kind === "shop") return [[
-      [-16, 0], [-16, -28],
-      [-22, -22], [-12, -22], [-6, -28], [6, -28], [12, -22], [22, -22], [16, -28],
-      [16, 0], [-16, 0], [-7, 0], [-7, -12], [7, -12], [7, 0],
-    ]];
-    // 石桥：外拱 + 内缘（两笔，随笔尖 reveal）
+    // 钟楼：檐口塔身 + 尖顶 + 圆表盘 + 指针
+    if (kind === "clocktower") return [
+      [[-10, 0], [-10, -58], [-14, -62], [0, -82], [14, -62], [10, -58], [10, 0], [-10, 0]],
+      // 表盘（圆）
+      [[0, -50], [-7, -48], [-8, -42], [-5, -37], [0, -35], [5, -37], [8, -42], [7, -48], [0, -50]],
+      // 指针
+      [[0, -42], [0, -37], [5, -40]],
+    ];
+    // 小店：墙 + 波浪雨棚 + 门
+    if (kind === "shop") return [
+      [[-16, 0], [-16, -28], [16, -28], [16, 0], [-16, 0]],
+      [[-20, -28], [-16, -34], [-8, -34], [-4, -28], [4, -28], [8, -34], [16, -34], [20, -28]],
+      [[-7, 0], [-7, -14], [7, -14], [7, 0]],
+    ];
+    // 石桥：外拱 + 内拱（两笔）
     if (kind === "bridge") return [
-      [[-38, 0], [-38, -10], [-30, -24], [-12, -34], [12, -34], [30, -24], [38, -10], [38, 0]],
-      [[-26, 0], [-26, -8], [-14, -16], [0, -20], [14, -16], [26, -8], [26, 0]],
+      [[-40, 0], [-40, -12], [-30, -28], [0, -38], [30, -28], [40, -12], [40, 0]],
+      [[-26, 0], [-26, -8], [-14, -18], [0, -24], [14, -18], [26, -8], [26, 0]],
     ];
-    // 山洞：外轮廓 + 洞口内缘（两笔，随笔尖 reveal）
+    // 山洞：岩丘外轮廓 + 洞口（两笔）
     if (kind === "cave") return [
-      [[-36, 0], [-36, -14], [-24, -32], [0, -42], [24, -32], [36, -14], [36, 0]],
-      [[-22, 0], [-20, -8], [0, -18], [20, -8], [22, 0]],
+      [[-38, 0], [-34, -18], [-20, -36], [0, -44], [20, -36], [34, -18], [38, 0]],
+      [[-22, 0], [-18, -8], [0, -18], [18, -8], [22, 0]],
     ];
-    // 山坡
+    // 山坡：双峰
     if (kind === "hill") return [[
-      [-42, 0], [-22, -16], [0, -22], [22, -16], [42, 0],
+      [-46, 0], [-28, -14], [-12, -22], [0, -14], [16, -24], [32, -12], [46, 0],
     ]];
-    // 小溪水纹（一笔）
-    if (kind === "stream") return [[
-      [-18, -3], [-10, -6], [-2, -3], [6, -6], [14, -3], [18, -5],
-    ]];
-    // 山谷底线
-    if (kind === "valley") return [[
-      [-22, -1], [-12, -5], [0, -7], [12, -5], [22, -1],
-    ]];
-    // 花丛：一笔连画三朵
-    if (kind === "flower") return [[
-      [-10, 0], [-10, -10], [-13, -13], [-10, -16], [-7, -13], [-10, -10],
-      [-2, -2], [-2, -14], [-5, -17], [-2, -20], [1, -17], [-2, -14],
-      [8, -1], [8, -9], [5, -12], [8, -15], [11, -12], [8, -9],
-    ]];
-    // 石头：一笔闭合
-    if (kind === "stone") return [[
-      [-13, 0], [-15, -9], [-4, -17], [11, -13], [13, -4], [8, 0], [-13, 0],
-    ]];
-    // 土坑
-    if (kind === "mud") return [[
-      [-16, 0], [-10, 5], [0, 7], [10, 5], [16, 0],
-    ]];
-    // 蘑菇：一笔
+    // 小溪：只画水纹（谷形交给 terrainY，避免叠成 X）
+    if (kind === "stream") return [
+      [[-18, -4], [-9, -7], [0, -4], [9, -7], [18, -4]],
+      [[-12, -11], [-3, -13], [6, -11], [14, -13]],
+    ];
+    // 山谷：两侧草痕（不重复画谷底线）
+    if (kind === "valley") return [
+      [[-20, -1], [-16, -7], [-12, -2]],
+      [[12, -2], [16, -7], [20, -1]],
+    ];
+    // 花丛：三朵错落
+    if (kind === "flower") return [
+      [[-12, 0], [-12, -12], [-16, -16], [-12, -20], [-8, -16], [-12, -12]],
+      [[-2, -1], [-2, -18], [-6, -23], [-2, -28], [2, -23], [-2, -18]],
+      [[10, 0], [10, -11], [7, -15], [10, -19], [13, -15], [10, -11]],
+    ];
+    // 石头：带棱面的石块
+    if (kind === "stone") return [
+      [[-16, 0], [-18, -10], [-6, -20], [12, -16], [16, -5], [10, 0], [-16, 0]],
+      [[-6, -8], [4, -13]],
+    ];
+    // 土坑：坑口椭圆 + 内缘
+    if (kind === "mud") return [
+      [[-18, 1], [-16, 6], [0, 9], [16, 6], [18, 1], [0, -2], [-18, 1]],
+      [[-10, 2], [0, 4], [10, 2]],
+    ];
+    // 蘑菇
     if (kind === "mush") return [[
-      [-3, 0], [-3, -8], [-9, -8], [-6, -15], [0, -18], [7, -14], [9, -8], [3, -8], [3, 0],
+      [-3, 0], [-3, -9], [-10, -9], [-7, -17], [0, -20], [8, -16], [10, -9], [3, -9], [3, 0],
     ]];
-    // 木箱：一笔箱体 + 加固线
+    // 木箱
     if (kind === "crate") return [[
       [-14, 0], [-14, -18], [14, -18], [14, 0], [-14, 0],
       [-14, -9], [14, -9], [10, -18], [10, 0], [-10, 0], [-10, -18],
     ]];
-    // 指路牌：牌面一笔 + Next→ 箭头（不写 Finish，文档 §5.1）
+    // 指路牌
     if (kind === "sign") return [
       [[-2, 0], [-2, -26], [-16, -26], [-16, -38], [16, -38], [16, -26], [5, -26], [5, 0]],
       [[-9, -32], [7, -32], [2.5, -35.5], [7, -32], [2.5, -28.5]],
@@ -1062,31 +1069,44 @@
     return [[[0, 0], [0, -8]]];
   }
 
-  /** 前景遮挡：滑行时压住角色（白填充 + 轮廓） */
+  /** 物件度量：路径总长、占宽、笔尖需走过的距离（复杂件更长） */
+  function ensureMetrics(o) {
+    if (o._m) return o._m;
+    if (!o.strokes) o.strokes = objectStrokes(o.kind);
+    let total = 0, minX = 1e9, maxX = -1e9;
+    for (const st of o.strokes) {
+      total += strokeTotal(st);
+      for (const p of st) {
+        if (p[0] < minX) minX = p[0];
+        if (p[0] > maxX) maxX = p[0];
+      }
+    }
+    const s = o.s || 1;
+    const span = Math.max(24, (maxX - minX) * s);
+    // 笔尖空间行程 ≈ 路径长（复杂度）与占宽的加权 — 复杂地貌画更久
+    const travel = Math.max(span * 1.15, total * s * 0.62);
+    o._m = { total, span, travel, halfW: span / 2 };
+    return o._m;
+  }
+
+  /** 前景遮挡：滑行时压住角色（白填充，轮廓在 back 随笔描出） */
   function objectFrontStrokes(kind) {
     if (kind === "bridge") {
-      // 桥体实体：外拱与内拱之间填白
       return [{
         fill: [[
-          [-38, 0], [-38, -10], [-30, -24], [-12, -34], [12, -34], [30, -24], [38, -10], [38, 0],
-          [26, 0], [26, -8], [14, -16], [0, -20], [-14, -16], [-26, -8], [-26, 0], [-38, 0],
+          [-40, 0], [-40, -12], [-30, -28], [0, -38], [30, -28], [40, -12], [40, 0],
+          [26, 0], [26, -8], [14, -18], [0, -24], [-14, -18], [-26, -8], [-26, 0], [-40, 0],
         ]],
-        stroke: [
-          [[-38, 0], [-38, -10], [-30, -24], [-12, -34], [12, -34], [30, -24], [38, -10], [38, 0]],
-          [[-26, 0], [-26, -8], [-14, -16], [0, -20], [14, -16], [26, -8], [26, 0]],
-        ],
+        stroke: [],
       }];
     }
     if (kind === "cave") {
       return [{
         fill: [[
-          [-36, 0], [-36, -14], [-24, -32], [0, -42], [24, -32], [36, -14], [36, 0],
-          [22, 0], [20, -8], [0, -18], [-20, -8], [-22, 0], [-36, 0],
+          [-38, 0], [-34, -18], [-20, -36], [0, -44], [20, -36], [34, -18], [38, 0],
+          [22, 0], [18, -8], [0, -18], [-18, -8], [-22, 0], [-38, 0],
         ]],
-        stroke: [
-          [[-36, 0], [-36, -14], [-24, -32], [0, -42], [24, -32], [36, -14], [36, 0]],
-          [[-22, 0], [-20, -8], [0, -18], [20, -8], [22, 0]],
-        ],
+        stroke: [],
       }];
     }
     return null;
@@ -1128,49 +1148,69 @@
   }
 
   function ensureWorld(xTo) {
+    // 生成牌堆：11 类地貌各至少按序出现，再洗牌循环（治「缺项」）
+    if (!ensureWorld._deck) {
+      ensureWorld._deck = [
+        "cabin", "tree", "hill", "stream", "flower", "stone",
+        "valley", "bridge", "mud", "cave", "clocktower", "shop",
+        "tree", "flower", "hill", "mush",
+      ];
+    }
+    if (ensureWorld._i == null) ensureWorld._i = 0;
+
     while (obstacles.length < 50) {
       const last = obstacles.length ? obstacles[obstacles.length - 1].x : 620;
-      const x = last + 230 + rnd() * 280;
+      const x = last + 240 + rnd() * 260;
       if (x > xTo + 1500 && obstacles.length > 3) break;
-      const r = rnd();
 
-      if (r < 0.14) {
-        // 小溪 → 跳
-        obstacles.push({ x, type: "stream", w: 28, depth: 18 });
-        objects.push({ x, kind: "stream", s: 1, p: 0, on: false, strokes: null });
-      } else if (r < 0.26) {
-        // 山谷 → 跳
-        obstacles.push({ x, type: "valley", w: 36, depth: 22 });
-        objects.push({ x, kind: "valley", s: 1, p: 0, on: false, strokes: null });
-      } else if (r < 0.38) {
-        // 土坑 → 跳
-        obstacles.push({ x, type: "mud", w: 22, depth: 14 });
-        objects.push({ x, kind: "mud", s: 1, p: 0, on: false, strokes: null });
-      } else if (r < 0.5) {
-        // 石头 → 跳
-        obstacles.push({ x, type: "stone", w: 18, h: 16 });
-        objects.push({ x, kind: "stone", s: 1, p: 0, on: false, strokes: null });
-      } else if (r < 0.64) {
-        // 石桥洞 → 滑行（clear=站立必撞、滑行可穿）
-        obstacles.push({ x, type: "roll", w: 34, clear: 20 });
-        objects.push({ x, kind: "bridge", s: 1, p: 0, on: false, strokes: null });
-      } else if (r < 0.78) {
-        // 山洞 → 翻滚
-        obstacles.push({ x, type: "roll", w: 32, clear: 18 });
-        objects.push({ x, kind: "cave", s: 1, p: 0, on: false, strokes: null });
-      } else {
-        // 纯风景（一笔画出）
-        const decor = ["cabin", "tree", "clocktower", "shop", "hill", "flower", "mush"];
-        const k = decor[(rnd() * decor.length) | 0];
-        objects.push({ x, kind: k, s: 0.85 + rnd() * 0.35, p: 0, on: false, strokes: null });
-        if (rnd() < 0.55) {
-          objects.push({
-            x: x + 55 + rnd() * 50,
-            kind: ["tree", "flower", "mush", "stone"][(rnd() * 4) | 0],
-            s: 0.75 + rnd() * 0.3, p: 0, on: false, strokes: null,
-          });
+      // 营地段先出风景
+      if (x < 720) {
+        const k = ensureWorld._deck[ensureWorld._i++ % ensureWorld._deck.length];
+        if (["cabin", "tree", "clocktower", "shop", "hill", "flower", "mush"].includes(k)) {
+          objects.push({ x, kind: k, s: 0.9 + rnd() * 0.25, p: 0, on: false, strokes: null });
         }
         continue;
+      }
+
+      const k = ensureWorld._deck[ensureWorld._i++ % ensureWorld._deck.length];
+      // 牌堆耗尽一轮后洗牌，保持多样性
+      if (ensureWorld._i % ensureWorld._deck.length === 0) {
+        for (let i = ensureWorld._deck.length - 1; i > 0; i--) {
+          const j = (rnd() * (i + 1)) | 0;
+          const t = ensureWorld._deck[i];
+          ensureWorld._deck[i] = ensureWorld._deck[j];
+          ensureWorld._deck[j] = t;
+        }
+      }
+
+      if (k === "stream") {
+        obstacles.push({ x, type: "stream", w: 28, depth: 18 });
+        objects.push({ x, kind: "stream", s: 1, p: 0, on: false, strokes: null });
+      } else if (k === "valley") {
+        obstacles.push({ x, type: "valley", w: 36, depth: 22 });
+        objects.push({ x, kind: "valley", s: 1, p: 0, on: false, strokes: null });
+      } else if (k === "mud") {
+        obstacles.push({ x, type: "mud", w: 22, depth: 14 });
+        objects.push({ x, kind: "mud", s: 1, p: 0, on: false, strokes: null });
+      } else if (k === "stone") {
+        obstacles.push({ x, type: "stone", w: 18, h: 16 });
+        objects.push({ x, kind: "stone", s: 1, p: 0, on: false, strokes: null });
+      } else if (k === "bridge") {
+        obstacles.push({ x, type: "roll", w: 36, clear: 22 });
+        objects.push({ x, kind: "bridge", s: 1, p: 0, on: false, strokes: null });
+      } else if (k === "cave") {
+        obstacles.push({ x, type: "roll", w: 34, clear: 20 });
+        objects.push({ x, kind: "cave", s: 1, p: 0, on: false, strokes: null });
+      } else {
+        objects.push({ x, kind: k, s: 0.88 + rnd() * 0.28, p: 0, on: false, strokes: null });
+        // 风景可带一个小伴生（仍走笔尖描出）
+        if (rnd() < 0.4) {
+          objects.push({
+            x: x + 60 + rnd() * 40,
+            kind: ["tree", "flower", "mush"][(rnd() * 3) | 0],
+            s: 0.75 + rnd() * 0.25, p: 0, on: false, strokes: null,
+          });
+        }
       }
     }
     while (hills.length < 20) {
@@ -1241,12 +1281,14 @@
   function revealByPen(dt) {
     const penX = cameraX + W * 0.85;
     for (const o of objects) {
-      if (!o.strokes) o.strokes = objectStrokes(o.kind);
-      if (!o.on && penX > o.x - 8) o.on = true;
-      if (o.on && o.p < 1) {
-        // 按时间推进（高刷屏不会加速）；reduced-motion 直接完整呈现
-        o.p = mode === "await" ? 1 : Math.min(1, o.p + dt * 2.4);
-      }
+      const m = ensureMetrics(o);
+      // 笔尖进入物件左缘即开始描出
+      const start = o.x - m.halfW - 6;
+      if (!o.on && penX >= start) o.on = true;
+      if (!o.on) continue;
+      if (mode === "await") { o.p = 1; continue; }
+      // 空间描出：p 跟笔尖位移走；复杂件 travel 更长 → 画得更慢
+      o.p = Math.max(0, Math.min(1, (penX - start) / m.travel));
     }
   }
 
@@ -1324,9 +1366,16 @@
       const sc = o.s || 1;
 
       if (layer === "back") {
-        if (!o.strokes) o.strokes = objectStrokes(o.kind);
+        const m = ensureMetrics(o);
+        // 按各笔路径长度分配进度（外轮廓先画完，再画内缘/细节）
+        const lens = o.strokes.map((st) => strokeTotal(st));
+        const sum = lens.reduce((a, b) => a + b, 0) || 1;
+        let acc = 0;
         for (let si = 0; si < o.strokes.length; si++) {
-          const sp = Math.max(0, Math.min(1, (o.p - si * 0.15) / (1 - si * 0.05)));
+          const t0 = acc / sum;
+          const t1 = (acc + lens[si]) / sum;
+          acc += lens[si];
+          const sp = Math.max(0, Math.min(1, (o.p - t0) / (t1 - t0 || 1)));
           if (sp <= 0) continue;
           drawStrokeReveal(o.strokes[si], sp, sx, sy, sc);
         }
