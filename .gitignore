@@ -1,0 +1,25 @@
+# Local backups (keep on disk, do not track)
+*副本*
+*.bak
+*.backup
+
+# Secrets / env
+.env
+.env.*
+*.pem
+*.key
+secrets.*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+*.swp
+
+# Dependencies / build (future web work)
+node_modules/
+dist/
+.cache/
+__pycache__/
