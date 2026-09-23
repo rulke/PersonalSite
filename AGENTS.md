@@ -14,9 +14,11 @@ in the repo root.
 - `AGENTS.md`: this file.
 - `.gitignore`: local backups (`*副本*`), secrets, editor/build noise.
 - Planned (not created yet):
-  - `paper-road/` — single-file feel prototype (M0–M1).
-  - `content/works/` — pluggable works (one file per work).
-  - `content/notes/`, `public/assets/works/`, `data/site.json`, `data/works.json`.
+  - `content/works/` — pluggable works (one file per work) at Astro stage.
+  - `content/notes/`, `public/assets/works/`, `data/site.json`.
+- `paper-road/`: M0–M1 feel prototype (created).
+  - `paper-road/index.html`: entry (open locally).
+  - `paper-road/works.js`: pluggable works registry — add/remove entries only.
 - Historical (deleted from working tree; still in git history):
   `water.html`, `fish.png`, `flash1.png`. Do not restore or purge history
   without explicit user approval.

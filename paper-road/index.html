@@ -1,0 +1,1881 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>lucky — Code with craft. Design with soul.</title>
+<meta name="description" content="lucky portfolio — 边走边画的数字手艺人。 Code with craft. Design with soul." />
+<style>
+  :root {
+    --paper: #ffffff;
+    --ink: #18181a;
+    --ink-soft: #6b6b70;
+    --line-faint: #e8e8ea;
+    --accent-lemon: #ffde59;
+    --accent-orange: #ff9f43;
+    --accent-sage: #70a07b;
+    --font-display: "SF Pro Display", "Inter", -apple-system, "Segoe UI", sans-serif;
+    --font-cjk: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+    --font-mono: "SF Mono", "JetBrains Mono", ui-monospace, monospace;
+    --radius-card: 20px;
+    --radius-pill: 999px;
+    --nav-h: 64px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: var(--font-cjk);
+    color: var(--ink);
+    background: var(--paper);
+    line-height: 1.7;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+  body.intro-lock { overflow: hidden; }
+
+  /* paper noise */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 50;
+    opacity: 0.035;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 256px;
+  }
+
+  a { color: inherit; text-decoration: none; }
+  button {
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+
+  /* ── Nav ── */
+  .nav {
+    position: fixed;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 40;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px 8px 16px;
+    border-radius: var(--radius-pill);
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid var(--line-faint);
+    box-shadow: 0 8px 32px rgba(24, 24, 26, 0.04);
+  }
+  .nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: -0.02em;
+    margin-right: 8px;
+  }
+  .nav-brand .logo {
+    width: 18px; height: 18px;
+    display: inline-block;
+  }
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+  .nav-links a, .nav-lang {
+    font-family: var(--font-display);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 8px 12px;
+    border-radius: var(--radius-pill);
+    color: var(--ink-soft);
+    transition: color 0.2s, background 0.2s;
+  }
+  .nav-links a:hover, .nav-lang:hover {
+    color: var(--ink);
+    background: rgba(24, 24, 26, 0.04);
+  }
+  .nav-lang {
+    border: 1px solid var(--line-faint);
+    min-width: 52px;
+  }
+
+  /* ── Hero / Stage ── */
+  .hero {
+    position: relative;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+  #stage {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    display: block;
+    touch-action: none;
+  }
+  .hero-copy {
+    position: absolute;
+    left: 50%;
+    top: 22%;
+    transform: translateX(-50%);
+    width: min(720px, calc(100% - 40px));
+    text-align: center;
+    z-index: 2;
+    pointer-events: none;
+  }
+  .hero-title {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: clamp(36px, 7vw, 84px);
+    line-height: 1.08;
+    letter-spacing: -0.03em;
+  }
+  .hero-title .zh {
+    font-family: var(--font-cjk);
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    line-height: 1.35;
+  }
+  .hero-sub {
+    margin-top: 20px;
+    font-size: clamp(14px, 1.6vw, 17px);
+    color: var(--ink-soft);
+  }
+  .hero-hint {
+    position: absolute;
+    right: 24px;
+    bottom: 28px;
+    z-index: 3;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ink-soft);
+    background: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--line-faint);
+    border-radius: 12px;
+    padding: 10px 14px;
+    max-width: min(360px, calc(100% - 40px));
+    pointer-events: none;
+  }
+  .hero-controls {
+    position: absolute;
+    left: 24px;
+    bottom: 28px;
+    z-index: 3;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .ctrl-btn {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    padding: 8px 12px;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--line-faint);
+    background: rgba(255, 255, 255, 0.8);
+    color: var(--ink-soft);
+    transition: color 0.2s, border-color 0.2s, background 0.2s;
+  }
+  .ctrl-btn:hover {
+    color: var(--ink);
+    border-color: var(--ink);
+  }
+
+  /* Intro overlay */
+  .intro-ui {
+    position: absolute;
+    left: 50%;
+    bottom: 96px;
+    transform: translateX(-50%);
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+  .intro-ui.hidden { display: none; }
+  .btn-setout {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: 0.04em;
+    padding: 12px 28px;
+    border-radius: var(--radius-pill);
+    background: var(--ink);
+    color: var(--paper);
+    border: 1.5px solid var(--ink);
+    transition: transform 0.25s cubic-bezier(0.34, 1.4, 0.64, 1);
+  }
+  .btn-setout:hover { transform: scale(1.04); }
+  .btn-skip {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ink-soft);
+    opacity: 0.8;
+  }
+  .btn-skip:hover { color: var(--ink); opacity: 1; }
+
+  /* ── Content sections ── */
+  main { position: relative; z-index: 1; }
+  .section {
+    position: relative;
+    padding: 120px 24px 80px;
+    max-width: 1120px;
+    margin: 0 auto;
+    background: transparent;
+  }
+  .section-head {
+    text-align: center;
+    margin-bottom: 64px;
+  }
+  .hollow {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: clamp(48px, 10vw, 96px);
+    letter-spacing: -0.02em;
+    line-height: 1;
+    color: transparent;
+    -webkit-text-stroke: 2px var(--line-faint);
+    text-stroke: 2px var(--line-faint);
+    paint-order: stroke fill;
+  }
+  .section-sub {
+    margin-top: 12px;
+    font-size: 14px;
+    color: var(--ink-soft);
+    letter-spacing: 0.12em;
+  }
+
+  /* Works */
+  .works-featured {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px 48px;
+    margin-bottom: 40px;
+  }
+  .work-card {
+    display: block;
+    border: 1.5px solid var(--ink);
+    border-radius: var(--radius-card);
+    background: var(--paper);
+    padding: 28px;
+    transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    position: relative;
+  }
+  .work-card:hover { transform: translateY(-4px); }
+  .work-card.featured:nth-child(even) { margin-top: 48px; }
+  .work-art {
+    height: 140px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+  .work-art svg { max-width: 100%; height: 120px; }
+  .work-title {
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+  .work-tagline {
+    margin-top: 8px;
+    font-size: 15px;
+    color: var(--ink);
+  }
+  .work-meta {
+    margin-top: 6px;
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+  .work-arrow {
+    position: absolute;
+    right: 24px;
+    bottom: 24px;
+    font-size: 20px;
+    transition: transform 0.3s;
+  }
+  .work-card:hover .work-arrow { transform: translate(3px, -3px); }
+
+  .works-bento {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+  .work-card.bento { padding: 20px; }
+  .work-card.bento .work-art { height: 80px; margin-bottom: 12px; }
+  .work-card.bento .work-art svg { height: 64px; }
+  .work-card.bento .work-title { font-size: 20px; }
+  .work-card.bento .work-tagline { font-size: 13px; }
+  .works-empty {
+    text-align: center;
+    color: var(--ink-soft);
+    padding: 48px;
+    border: 1.5px dashed var(--line-faint);
+    border-radius: var(--radius-card);
+  }
+
+  .mascot-peek {
+    position: absolute;
+    top: -28px;
+    right: 32px;
+    width: 52px;
+    height: 52px;
+    pointer-events: none;
+  }
+
+  /* About */
+  .about-manifesto {
+    text-align: center;
+    font-family: var(--font-display);
+    font-size: clamp(22px, 3.5vw, 36px);
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    margin-bottom: 64px;
+  }
+  .timeline {
+    list-style: none;
+    max-width: 640px;
+    margin: 0 auto;
+    position: relative;
+    padding-left: 32px;
+    border-left: 2px solid var(--ink);
+  }
+  .timeline li {
+    position: relative;
+    padding: 0 0 48px 24px;
+  }
+  .timeline li:last-child { padding-bottom: 0; }
+  .timeline li::before {
+    content: "";
+    position: absolute;
+    left: -39px;
+    top: 8px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--paper);
+    border: 2px solid var(--ink);
+  }
+  .timeline .year {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--ink-soft);
+  }
+  .timeline .event {
+    margin-top: 4px;
+    font-size: 16px;
+  }
+
+  /* Notes */
+  .notes-all {
+    display: block;
+    text-align: right;
+    font-family: var(--font-display);
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin-bottom: 16px;
+    letter-spacing: 0.04em;
+  }
+  .notes-all:hover { color: var(--ink); }
+  .note-row {
+    display: grid;
+    grid-template-columns: 110px 1fr 24px;
+    gap: 16px;
+    align-items: center;
+    padding: 22px 4px;
+    border-top: 1px solid var(--line-faint);
+    transition: background 0.2s;
+  }
+  .note-row:last-child { border-bottom: 1px solid var(--line-faint); }
+  .note-row:hover { background: rgba(24, 24, 26, 0.02); }
+  .note-date {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--ink-soft);
+  }
+  .note-title { font-size: 15px; }
+
+  /* Waystation */
+  .waystation {
+    text-align: center;
+    padding-top: 80px;
+    padding-bottom: 40px;
+  }
+  .mail-box {
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 28px;
+  }
+  .email-link {
+    display: inline-block;
+    font-family: var(--font-display);
+    font-size: clamp(22px, 4vw, 36px);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 4px;
+    margin-top: 12px;
+  }
+  .email-link:hover { border-color: var(--accent-orange); color: var(--accent-orange); }
+  .socials {
+    margin-top: 28px;
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+  }
+  .socials a {
+    font-family: var(--font-display);
+    font-size: 13px;
+    color: var(--ink-soft);
+    letter-spacing: 0.04em;
+  }
+  .socials a:hover { color: var(--ink); }
+
+  /* Open Road */
+  .openroad {
+    min-height: 50vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 80px 24px 120px;
+    position: relative;
+    z-index: 1;
+  }
+  .openroad-title {
+    font-family: var(--font-display);
+    font-size: clamp(28px, 5vw, 56px);
+    font-weight: 500;
+    letter-spacing: -0.02em;
+  }
+  .openroad-title .zh {
+    font-family: var(--font-cjk);
+    letter-spacing: 0.08em;
+  }
+  .openroad-credit {
+    margin-top: 24px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ink-soft);
+  }
+  .vanish {
+    width: min(480px, 80%);
+    height: 80px;
+    margin-bottom: 32px;
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip: rect(0,0,0,0);
+    border: 0;
+  }
+
+  @media (max-width: 860px) {
+    .works-featured { grid-template-columns: 1fr; gap: 24px; }
+    .work-card.featured:nth-child(even) { margin-top: 0; }
+    .works-bento { grid-template-columns: 1fr 1fr; }
+    .nav { left: 12px; right: 12px; transform: none; width: auto; max-width: calc(100% - 24px); overflow-x: auto; }
+    .hero-hint { right: 12px; bottom: 12px; font-size: 10px; }
+    .hero-controls { left: 12px; bottom: 12px; }
+  }
+  @media (max-width: 520px) {
+    .works-bento { grid-template-columns: 1fr; }
+    .nav-links a { padding: 8px 8px; font-size: 11px; }
+    .note-row { grid-template-columns: 90px 1fr 20px; gap: 8px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .work-card, .work-arrow, .btn-setout { transition: none; }
+  }
+</style>
+</head>
+<body class="intro-lock">
+
+<nav class="nav" aria-label="Primary">
+  <div class="nav-brand">
+    <svg class="logo" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M4 16c4-1 7-5 12-12" stroke="#18181A" stroke-width="1.6" stroke-linecap="round"/>
+      <path d="M14 3.5l5 1.2-1.2 5" stroke="#18181A" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M4 16c1.2 1.8 2.8 2.2 5 1.5" stroke="#FF9F43" stroke-width="1.6" stroke-linecap="round"/>
+    </svg>
+    <span>lucky</span>
+  </div>
+  <div class="nav-links">
+    <a href="#works" data-i18n="nav.works">作品</a>
+    <a href="#about" data-i18n="nav.about">关于</a>
+    <a href="#notes" data-i18n="nav.notes">手记</a>
+    <a href="#contact" data-i18n="nav.contact">联系</a>
+  </div>
+  <button class="nav-lang" id="lang-btn" type="button" aria-label="Switch language">中 / EN</button>
+</nav>
+
+<canvas id="stage" aria-label="Interactive road scene" role="img"></canvas>
+
+<header class="hero" id="hero">
+  <div class="hero-copy">
+    <h1 class="hero-title" id="hero-title"></h1>
+    <p class="hero-sub" id="hero-sub"></p>
+  </div>
+
+  <div class="intro-ui" id="intro-ui">
+    <button class="btn-setout" id="btn-setout" type="button" data-i18n="hero.setout">出发</button>
+    <button class="btn-skip" id="btn-skip" type="button" data-i18n="hero.skip">跳过出发</button>
+  </div>
+
+  <div class="hero-controls">
+    <button class="ctrl-btn" id="btn-redraw" type="button" data-i18n="hero.redraw">↺ 重绘</button>
+    <button class="ctrl-btn" id="btn-pause" type="button" data-i18n="hero.pause">⏸ 暂停</button>
+  </div>
+  <p class="hero-hint" id="hero-hint"></p>
+  <p class="sr-only" id="a11y-controls"></p>
+</header>
+
+<main>
+  <section class="section" id="works">
+    <div class="section-head">
+      <h2 class="hollow">WORKS</h2>
+      <p class="section-sub" data-i18n="works.sub">精选项目</p>
+    </div>
+    <div class="works-featured" id="works-featured"></div>
+    <div class="works-bento" id="works-bento"></div>
+  </section>
+
+  <section class="section" id="about">
+    <div class="section-head">
+      <h2 class="hollow">ABOUT</h2>
+      <p class="section-sub" data-i18n="about.sub">路上的人</p>
+    </div>
+    <p class="about-manifesto" data-i18n="about.manifesto">路是边走边画出来的。</p>
+    <ol class="timeline" id="timeline"></ol>
+  </section>
+
+  <section class="section" id="notes">
+    <div class="section-head">
+      <h2 class="hollow">NOTES</h2>
+      <p class="section-sub" data-i18n="notes.sub">制作笔记</p>
+    </div>
+    <a class="notes-all" href="#" data-i18n="notes.all">阅读全部 ↗</a>
+    <div id="notes-list"></div>
+  </section>
+
+  <section class="section waystation" id="contact">
+    <div class="section-head">
+      <h2 class="hollow">CONTACT</h2>
+      <p class="section-sub" data-i18n="contact.sub">寄一张明信片</p>
+    </div>
+    <svg class="mail-box" viewBox="0 0 120 120" aria-hidden="true">
+      <path d="M30 70c0-18 12-32 30-32s30 14 30 32v22H30V70z" fill="#fff" stroke="#18181A" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M48 70h28" stroke="#18181A" stroke-width="2" stroke-linecap="round"/>
+      <path d="M42 48v-8h12" stroke="#18181A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <rect x="52" y="28" width="14" height="18" rx="2" fill="#FF9F43" stroke="#18181A" stroke-width="1.5"/>
+      <path d="M38 92v10M82 92v10" stroke="#18181A" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+    <a class="email-link" href="mailto:hello@lucky.dev" data-i18n="contact.email_label">写信给我</a>
+    <div class="socials">
+      <a href="#" aria-label="GitHub">GitHub</a>
+      <a href="#" aria-label="X">X</a>
+      <a href="#" aria-label="Bilibili">Bilibili</a>
+    </div>
+  </section>
+
+  <footer class="openroad" id="openroad">
+    <svg class="vanish" viewBox="0 0 480 80" aria-hidden="true">
+      <path d="M20 60 Q 140 50 240 40 T 460 12" fill="none" stroke="#18181A" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="2 6" opacity="0.55"/>
+      <path d="M40 70 Q 160 58 260 46 T 460 16" fill="none" stroke="#18181A" stroke-width="1.2" stroke-linecap="round" opacity="0.25"/>
+    </svg>
+    <h2 class="openroad-title" id="openroad-title"></h2>
+    <p class="openroad-credit" data-i18n="footer.credit">© 2026 lucky · Still on the road.</p>
+  </footer>
+</main>
+
+<script src="works.js"></script>
+<script>
+(() => {
+  "use strict";
+
+  /* ───────── i18n ───────── */
+  const I18N = {
+    zh: {
+      "nav.works": "作品",
+      "nav.about": "关于",
+      "nav.notes": "手记",
+      "nav.contact": "联系",
+      "hero.title": "用匠心写代码，<br>以灵魂做设计。",
+      "hero.sub": "边走边画，把每天画得更新一点。",
+      "hero.hint": "[左键] 跳跃 · [右键] 翻滚 ｜ [↺ 重绘] ｜ [⏸ 暂停]",
+      "hero.hint.touch": "[轻点] 跳跃 · [下滑] 翻滚",
+      "hero.setout": "出发",
+      "hero.skip": "跳过出发",
+      "hero.redraw": "↺ 重绘",
+      "hero.pause": "⏸ 暂停",
+      "hero.play": "▶ 继续",
+      "hero.skipping": "出发中… 点击跳过",
+      "a11y.controls": "键盘：空格或上箭头跳跃，Shift、S 或下箭头翻滚，Esc 跳过开场。",
+      "works.sub": "精选项目",
+      "works.empty": "还在路上收集。",
+      "about.sub": "路上的人",
+      "about.manifesto": "路是边走边画出来的。",
+      "notes.sub": "制作笔记",
+      "notes.all": "阅读全部 ↗",
+      "contact.sub": "寄一张明信片",
+      "contact.email_label": "写信给我",
+      "openroad.title": "未完，还在画。",
+      "footer.credit": "© 2026 lucky · Still on the road.",
+    },
+    en: {
+      "nav.works": "Works",
+      "nav.about": "About",
+      "nav.notes": "Notes",
+      "nav.contact": "Contact",
+      "hero.title": "Code with craft.<br>Design with soul.",
+      "hero.sub": "Keep walking, keep drawing.",
+      "hero.hint": "[LMB] Jump · [RMB] Roll ｜ [↺ Redraw] ｜ [⏸ Pause]",
+      "hero.hint.touch": "[Tap] Jump · [Swipe down] Roll",
+      "hero.setout": "Set out",
+      "hero.skip": "Skip intro",
+      "hero.redraw": "↺ Redraw",
+      "hero.pause": "⏸ Pause",
+      "hero.play": "▶ Resume",
+      "hero.skipping": "Departing… click to skip",
+      "a11y.controls": "Keyboard: Space or Up to jump, Shift, S or Down to roll. Esc skips the intro.",
+      "works.sub": "Selected projects",
+      "works.empty": "Still collecting on the road.",
+      "about.sub": "Who is on the road",
+      "about.manifesto": "Draw the road as we go.",
+      "notes.sub": "Making notes",
+      "notes.all": "Read all notes ↗",
+      "contact.sub": "Send a note",
+      "contact.email_label": "Email me",
+      "openroad.title": "To be drawn…",
+      "footer.credit": "© 2026 lucky · Still on the road.",
+    },
+  };
+
+  const TIMELINE = {
+    zh: [
+      { year: "2024", event: "独立开发，发布 TimeSense" },
+      { year: "2025", event: "开源 UI 组件与手绘图标集" },
+      { year: "2026", event: "lucky / 本站，把「边走边画」做成产品隐喻" },
+    ],
+    en: [
+      { year: "2024", event: "Went indie and shipped TimeSense" },
+      { year: "2025", event: "Open-sourced UI bits and hand-drawn icons" },
+      { year: "2026", event: "lucky — this site as a walking-and-drawing metaphor" },
+    ],
+  };
+
+  const NOTES = {
+    zh: [
+      { date: "2026.06.21", title: "TimeSense 在各个国家被学到了一些事。" },
+      { date: "2026.02.15", title: "「知育時計・声音计时器」TimeSense 是什么？" },
+    ],
+    en: [
+      { date: "2026.06.21", title: "What TimeSense keeps learning around the world." },
+      { date: "2026.02.15", title: "What is TimeSense, the sound timer?" },
+    ],
+  };
+
+  let lang = "zh";
+  const t = (key) => (I18N[lang] && I18N[lang][key]) || I18N.en[key] || key;
+
+  function applyI18n() {
+    document.documentElement.lang = lang === "zh" ? "zh-CN" : "en";
+    document.querySelectorAll("[data-i18n]").forEach((el) => {
+      const key = el.getAttribute("data-i18n");
+      const val = t(key);
+      if (val.includes("<br>")) el.innerHTML = val;
+      else el.textContent = val;
+    });
+
+    const title = document.getElementById("hero-title");
+    title.innerHTML = t("hero.title");
+    title.classList.toggle("zh", lang === "zh");
+    document.getElementById("hero-sub").textContent = t("hero.sub");
+    updateHint();
+    document.getElementById("a11y-controls").textContent = t("a11y.controls");
+    document.getElementById("openroad-title").innerHTML =
+      lang === "zh"
+        ? '<span class="zh">未完，还在画。</span>'
+        : t("openroad.title");
+
+    renderWorks();
+    renderTimeline();
+    renderNotes();
+  }
+
+  function updateHint() {
+    const isTouch = matchMedia("(hover: none), (pointer: coarse)").matches;
+    document.getElementById("hero-hint").textContent = t(
+      isTouch ? "hero.hint.touch" : "hero.hint"
+    );
+  }
+
+  function renderWorks() {
+    const all = (window.WORKS || []).filter((w) => w.status !== "draft");
+    all.sort((a, b) => (a.order || 0) - (b.order || 0));
+    const featured = all.filter((w) => w.status === "featured").slice(0, 2);
+    const bento = all.filter((w) => w.status === "bento");
+    const peeked = new Set();
+
+    const artSvg = (kind) => {
+      const s = (inner) =>
+        `<svg viewBox="0 0 160 120" fill="none" xmlns="http://www.w3.org/2000/svg">${inner}</svg>`;
+      if (kind === "clock")
+        return s(`
+          <circle cx="80" cy="58" r="34" stroke="#18181A" stroke-width="2" fill="#fff"/>
+          <circle cx="80" cy="58" r="26" stroke="#FFDE59" stroke-width="3" fill="none"/>
+          <path d="M80 40v20l12 8" stroke="#18181A" stroke-width="2" stroke-linecap="round"/>
+          <path d="M62 24l-8-8M98 24l8-8" stroke="#18181A" stroke-width="2" stroke-linecap="round"/>
+        `);
+      if (kind === "cat")
+        return s(`
+          <path d="M30 80h70" stroke="#18181A" stroke-width="2" stroke-linecap="round"/>
+          <path d="M55 80c0-18 14-30 30-22 8 4 12 14 10 22" stroke="#18181A" stroke-width="2" fill="#fff"/>
+          <path d="M70 58l-6-12 14 6" stroke="#18181A" stroke-width="2" fill="#fff"/>
+          <path d="M88 58l10-10 2 14" stroke="#18181A" stroke-width="2" fill="#fff"/>
+          <circle cx="78" cy="68" r="1.5" fill="#18181A"/>
+          <circle cx="90" cy="68" r="1.5" fill="#18181A"/>
+          <path d="M120 40c8 0 10 8 4 12" stroke="#18181A" stroke-width="1.5" stroke-linecap="round"/>
+        `);
+      if (kind === "pen")
+        return s(`
+          <path d="M40 80c20-8 40-28 70-50" stroke="#18181A" stroke-width="2" stroke-linecap="round"/>
+          <path d="M105 22l18 6-6 18-16-8 4-16z" fill="#FFDE59" stroke="#18181A" stroke-width="1.5"/>
+          <circle cx="48" cy="88" r="1.5" fill="#18181A"/>
+          <circle cx="58" cy="82" r="1" fill="#18181A"/>
+        `);
+      if (kind === "list")
+        return s(`
+          <rect x="48" y="24" width="64" height="76" rx="6" stroke="#18181A" stroke-width="2" fill="#fff"/>
+          <path d="M62 46h36M62 62h36M62 78h24" stroke="#18181A" stroke-width="2" stroke-linecap="round"/>
+          <path d="M62 34h12" stroke="#70A07B" stroke-width="2" stroke-linecap="round"/>
+        `);
+      return s(`
+        <rect x="50" y="36" width="60" height="48" rx="4" stroke="#18181A" stroke-width="2" fill="#fff"/>
+        <path d="M50 52h60" stroke="#18181A" stroke-width="1.5"/>
+      `);
+    };
+
+    const peekSvg = `
+      <svg class="mascot-peek" viewBox="0 0 52 52" aria-hidden="true">
+        <ellipse cx="26" cy="34" rx="16" ry="14" fill="#C4A574" stroke="#18181A" stroke-width="1.6"/>
+        <circle cx="16" cy="18" r="5" fill="#C4A574" stroke="#18181A" stroke-width="1.5"/>
+        <circle cx="36" cy="18" r="5" fill="#C4A574" stroke="#18181A" stroke-width="1.5"/>
+        <rect x="34" y="28" width="12" height="14" rx="3" fill="#FFDE59" stroke="#18181A" stroke-width="1.4"/>
+        <circle cx="20" cy="34" r="1.4" fill="#18181A"/>
+        <circle cx="30" cy="34" r="1.4" fill="#18181A"/>
+      </svg>`;
+
+    const cardHtml = (w, kind, allowPeek) => {
+      const L = w[lang] || w.title?.[lang] || w.title?.en;
+      const title = (w.title && (w.title[lang] || w.title.en)) || w.id;
+      const tagline = (w.tagline && (w.tagline[lang] || w.tagline.en)) || "";
+      const meta = (w.meta && (w.meta[lang] || w.meta.en)) || "";
+      const doPeek =
+        allowPeek && w.mascot === "peek" && !peeked.has("peek");
+      if (doPeek) peeked.add("peek");
+      return `
+        <a class="work-card ${kind}" href="${w.link || "#"}" data-id="${w.id}">
+          ${doPeek ? peekSvg : ""}
+          <div class="work-art">${artSvg(w.art)}</div>
+          <h3 class="work-title">${title}</h3>
+          <p class="work-tagline">${tagline}</p>
+          <p class="work-meta">${meta}</p>
+          <span class="work-arrow" aria-hidden="true">↗</span>
+        </a>`;
+    };
+
+    const fEl = document.getElementById("works-featured");
+    const bEl = document.getElementById("works-bento");
+    if (!all.length) {
+      fEl.innerHTML = "";
+      bEl.innerHTML = `<div class="works-empty">${t("works.empty")}</div>`;
+      return;
+    }
+    fEl.innerHTML = featured.map((w) => cardHtml(w, "featured", true)).join("");
+    bEl.innerHTML = bento.map((w) => cardHtml(w, "bento", false)).join("");
+  }
+
+  function renderTimeline() {
+    const rows = TIMELINE[lang] || TIMELINE.en;
+    document.getElementById("timeline").innerHTML = rows
+      .map(
+        (r) =>
+          `<li><div class="year">${r.year}</div><div class="event">${r.event}</div></li>`
+      )
+      .join("");
+  }
+
+  function renderNotes() {
+    const rows = NOTES[lang] || NOTES.en;
+    document.getElementById("notes-list").innerHTML = rows
+      .map(
+        (n) =>
+          `<a class="note-row" href="#"><span class="note-date">${n.date}</span><span class="note-title">${n.title}</span><span aria-hidden="true">↗</span></a>`
+      )
+      .join("");
+  }
+
+  document.getElementById("lang-btn").addEventListener("click", () => {
+    lang = lang === "zh" ? "en" : "zh";
+    applyI18n();
+  });
+
+  /* ───────── Canvas scene ───────── */
+  const canvas = document.getElementById("stage");
+  const ctx = canvas.getContext("2d");
+  let W = 0, H = 0, dpr = 1;
+
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth;
+    H = window.innerHeight;
+    canvas.width = Math.floor(W * dpr);
+    canvas.height = Math.floor(H * dpr);
+    canvas.style.width = W + "px";
+    canvas.style.height = H + "px";
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  window.addEventListener("resize", resize);
+  resize();
+
+  // seeded rng
+  let seed = 20260215;
+  function srand(s) {
+    seed = s >>> 0;
+  }
+  function rnd() {
+    seed = (seed * 1664525 + 1013904223) >>> 0;
+    return seed / 4294967296;
+  }
+
+  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // world
+  const P = {
+    gravity: 2200,
+    jumpV: -820,
+    rollDur: 0.55,
+    speed: 180,
+    bufferJump: 0.08,
+    bufferRoll: 0.06,
+    coyote: 0.08,
+  };
+
+  let cameraX = 0;
+  let paused = false;
+  let mode = reduceMotion ? "await" : "camp"; // camp | depart | play | await
+  let modeT = 0;
+  let pathPoints = []; // {x,y}
+  let obstacles = [];
+  let particles = [];
+  let decorations = [];
+  let hills = [];
+  let campDrawn = false;
+  let stumbleT = 0;
+  let jumpBuf = 0;
+  let rollBuf = 0;
+  let coyote = 0;
+  let jumping = false;
+  let rolling = 0;
+  let vy = 0;
+  let baseY = 0;
+  let playerY = 0; // offset above terrain
+  let spin = 0;
+
+  function noise1(x) {
+    const s = Math.sin(x * 12.9898 + 4.1) * 43758.5453;
+    return (s - Math.floor(s)) * 2 - 1;
+  }
+
+  function terrainY(worldX) {
+    // start camp flatter region
+    const campEnd = 420;
+    if (worldX < campEnd) {
+      const k = worldX / campEnd;
+      return (
+        baseY +
+        6 * Math.sin(worldX / 40) +
+        2 * noise1(worldX * 0.05) * k
+      );
+    }
+    const x = worldX - campEnd;
+    let y =
+      baseY +
+      36 * Math.sin(x / 190) +
+      16 * Math.sin(x / 55 + 1.2) +
+      8 * Math.sin(x / 23 + 0.4);
+    // carve dips / bumps for obstacles via nearby field
+    for (let i = 0; i < obstacles.length; i++) {
+      const o = obstacles[i];
+      const dx = worldX - o.x;
+      if (dx > -o.w && dx < o.w) {
+        const u = dx / o.w;
+        const fall = Math.cos((u * Math.PI) / 2);
+        if (o.type === "pit") y += 36 * fall * fall;
+        if (o.type === "rock") y -= 28 * fall * fall;
+        if (o.type === "hump") y -= 18 * fall * fall;
+      }
+    }
+    return y + noise1(worldX * 0.08) * 1.1;
+  }
+
+  function tangentAt(worldX) {
+    const d = 4;
+    return (terrainY(worldX + d) - terrainY(worldX - d)) / (2 * d);
+  }
+
+  function ensureWorld(xTo) {
+    // obstacles & decor generated ahead
+    while (obstacles.length < 80) {
+      const last = obstacles.length ? obstacles[obstacles.length - 1].x : 700;
+      const x = last + 280 + rnd() * 320;
+      if (x > xTo + 1200 && obstacles.length > 4) break;
+      const r = rnd();
+      let type = "deco";
+      if (x < 600) type = "deco";
+      else if (r < 0.22) type = "pit";
+      else if (r < 0.4) type = "rock";
+      else if (r < 0.55) type = "hump";
+      else if (r < 0.7) type = "low"; // cave/bridge — roll
+      else if (r < 0.85) type = "deco";
+      else type = "low";
+
+      if (type === "low") {
+        obstacles.push({ x, type, w: 50, h: 48 });
+      } else if (type === "pit") {
+        obstacles.push({ x, type, w: 34, h: 20 });
+      } else if (type === "rock") {
+        obstacles.push({ x, type, w: 22, h: 26 });
+      } else if (type === "hump") {
+        obstacles.push({ x, type, w: 28, h: 18 });
+      } else {
+        obstacles.push({ x, type, w: 20, h: 20 });
+        decorations.push({
+          x: x + 20,
+          kind: rnd() < 0.5 ? "tree" : "mush",
+          s: 0.8 + rnd() * 0.5,
+        });
+      }
+      if (rnd() < 0.35) {
+        decorations.push({
+          x: x + 80 + rnd() * 60,
+          kind: ["tree", "flower", "cabin", "mush"][(rnd() * 4) | 0],
+          s: 0.7 + rnd() * 0.6,
+        });
+      }
+    }
+    while (hills.length < 24) {
+      const last = hills.length ? hills[hills.length - 1].x : -200;
+      hills.push({
+        x: last + 220 + rnd() * 260,
+        h: 40 + rnd() * 70,
+        w: 120 + rnd() * 140,
+        kind: rnd() < 0.25 ? "tower" : "hill",
+      });
+    }
+    // path points
+    const penX = cameraX + W * 0.85;
+    if (!pathPoints.length) {
+      pathPoints.push({ x: 0, y: terrainY(0) });
+    }
+    let lastX = pathPoints[pathPoints.length - 1].x;
+    while (lastX < penX + 20) {
+      lastX += 7;
+      pathPoints.push({ x: lastX, y: terrainY(lastX) });
+      if (pathPoints.length > 2200) pathPoints.splice(0, 200);
+    }
+  }
+
+  function resetWorld(newSeed) {
+    srand(newSeed);
+    cameraX = 0;
+    pathPoints = [{ x: 0, y: terrainY(0) }];
+    obstacles = [];
+    decorations = [
+      { x: 80, kind: "cabin", s: 1.1 },
+      { x: 210, kind: "tree", s: 1.15 },
+      { x: 320, kind: "mush", s: 0.9 },
+      { x: 360, kind: "sign", s: 1 },
+    ];
+    hills = [];
+    particles = [];
+    playerY = 0;
+    vy = 0;
+    jumping = false;
+    rolling = 0;
+    stumbleT = 0;
+    spin = 0;
+    campDrawn = false;
+    ensureWorld(cameraX + W);
+  }
+
+  function playerWorldX() {
+    return cameraX + W * 0.22;
+  }
+
+  function emitParticles(x, y, n, burst) {
+    for (let i = 0; i < n; i++) {
+      const a = rnd() * Math.PI * 2;
+      const sp = burst ? 40 + rnd() * 90 : 20 + rnd() * 50;
+      particles.push({
+        x,
+        y,
+        vx: Math.cos(a) * sp,
+        vy: -Math.abs(Math.sin(a)) * sp * 0.7 - 10,
+        life: 0.35 + rnd() * 0.25,
+        t: 0,
+        r: 0.6 + rnd() * 1.4,
+        kind: rnd() < 0.25 ? "star" : "dot",
+      });
+    }
+  }
+
+  function drawPath() {
+    if (pathPoints.length < 2) return;
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "#18181A";
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+
+    // main line with occasional gaps
+    ctx.beginPath();
+    let drawing = true;
+    for (let i = 0; i < pathPoints.length; i++) {
+      const p = pathPoints[i];
+      const sx = p.x - cameraX;
+      const sy = p.y;
+      // gaps
+      const gap = i > 0 && i % 17 === 0;
+      if (gap) {
+        drawing = false;
+      }
+      if (!drawing) {
+        drawing = true;
+        ctx.moveTo(sx, sy);
+      } else if (i === 0) ctx.moveTo(sx, sy);
+      else ctx.lineTo(sx, sy);
+    }
+    ctx.stroke();
+
+    // underline sketchy stroke
+    ctx.strokeStyle = "rgba(24,24,26,0.2)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let i = 0; i < pathPoints.length; i++) {
+      const p = pathPoints[i];
+      const sx = p.x - cameraX + 1.5;
+      const sy = p.y + 2.5;
+      if (i === 0) ctx.moveTo(sx, sy);
+      else ctx.lineTo(sx, sy);
+    }
+    ctx.stroke();
+  }
+
+  function drawHills(parallax) {
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = "rgba(24,24,26,0.35)";
+    hills.forEach((h) => {
+      const sx = (h.x - cameraX * parallax) % (W + 400);
+      const x = sx < -200 ? sx + W + 400 : sx;
+      const y = baseY - 20;
+      if (h.kind === "tower") {
+        ctx.strokeRect(x, y - h.h, 18, h.h);
+        ctx.beginPath();
+        ctx.moveTo(x - 4, y - h.h);
+        ctx.lineTo(x + 9, y - h.h - 14);
+        ctx.lineTo(x + 22, y - h.h);
+        ctx.stroke();
+      } else {
+        ctx.beginPath();
+        ctx.moveTo(x - h.w / 2, y);
+        ctx.quadraticCurveTo(x, y - h.h, x + h.w / 2, y);
+        ctx.stroke();
+      }
+    });
+  }
+
+  function drawDecor() {
+    decorations.forEach((d) => {
+      const sx = d.x - cameraX;
+      if (sx < -80 || sx > W + 80) return;
+      const sy = terrainY(d.x);
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = "#18181A";
+      ctx.save();
+      ctx.translate(sx, sy);
+      ctx.scale(d.s, d.s);
+      if (d.kind === "tree") {
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(0, -28);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(0, -40, 16, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(-8, -32, 8, 0, Math.PI * 2);
+        ctx.stroke();
+      } else if (d.kind === "mush") {
+        ctx.beginPath();
+        ctx.moveTo(-4, 0);
+        ctx.lineTo(-3, -10);
+        ctx.moveTo(4, 0);
+        ctx.lineTo(3, -10);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(0, -12, 10, Math.PI, 0);
+        ctx.stroke();
+      } else if (d.kind === "flower") {
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(0, -12);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(0, -16, 4, 0, Math.PI * 2);
+        ctx.stroke();
+      } else if (d.kind === "cabin") {
+        ctx.strokeRect(-22, -36, 44, 36);
+        ctx.beginPath();
+        ctx.moveTo(-26, -36);
+        ctx.lineTo(0, -56);
+        ctx.lineTo(26, -36);
+        ctx.stroke();
+        ctx.strokeRect(-6, -18, 12, 18);
+      } else if (d.kind === "sign") {
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(0, -34);
+        ctx.stroke();
+        ctx.strokeRect(2, -32, 22, 14);
+        ctx.beginPath();
+        ctx.moveTo(6, -25);
+        ctx.lineTo(20, -25);
+        ctx.stroke();
+      }
+      ctx.restore();
+    });
+  }
+
+  function drawObstacles() {
+    obstacles.forEach((o) => {
+      const sx = o.x - cameraX;
+      if (sx < -80 || sx > W + 80) return;
+      const sy = terrainY(o.x);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = "#18181A";
+      if (o.type === "rock") {
+        ctx.fillStyle = "#fff";
+        ctx.beginPath();
+        ctx.moveTo(sx - 16, sy);
+        ctx.quadraticCurveTo(sx - 18, sy - 26, sx, sy - 28);
+        ctx.quadraticCurveTo(sx + 18, sy - 24, sx + 14, sy);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+      } else if (o.type === "pit") {
+        ctx.beginPath();
+        ctx.moveTo(sx - 18, sy);
+        ctx.quadraticCurveTo(sx, sy + 16, sx + 18, sy);
+        ctx.stroke();
+      } else if (o.type === "low") {
+        // low arch / tree hollow
+        ctx.beginPath();
+        ctx.moveTo(sx - 40, sy);
+        ctx.lineTo(sx - 40, sy - 20);
+        ctx.quadraticCurveTo(sx, sy - 70, sx + 40, sy - 20);
+        ctx.lineTo(sx + 40, sy);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(sx - 28, sy);
+        ctx.quadraticCurveTo(sx, sy - 40, sx + 28, sy);
+        ctx.stroke();
+      }
+    });
+  }
+
+  function drawPen() {
+    const penX = W * 0.85;
+    const worldPen = cameraX + penX;
+    const penY = terrainY(worldPen) - 2;
+    const ang = Math.max(-0.26, Math.min(0.26, Math.atan(tangentAt(worldPen)) * 0.85));
+    const bob = Math.sin(modeT * 18) * 0.8 * (mode === "play" ? 1 : 0.3);
+
+    ctx.save();
+    ctx.translate(penX, penY + bob);
+    ctx.rotate(ang - Math.PI / 2 + noise1(modeT * 30) * 0.014);
+
+    // body
+    const L = Math.min(H * 0.18, 140);
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "#18181A";
+    ctx.fillStyle = "#FFF6C8";
+    ctx.beginPath();
+    ctx.moveTo(-7, -L);
+    ctx.lineTo(7, -L);
+    ctx.lineTo(5, -12);
+    ctx.lineTo(-5, -12);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // tip
+    ctx.fillStyle = "#F5E6A8";
+    ctx.beginPath();
+    ctx.moveTo(-5, -12);
+    ctx.lineTo(5, -12);
+    ctx.lineTo(0, 0);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // band
+    ctx.fillStyle = "#FF9F43";
+    ctx.fillRect(-7, -L + 18, 14, 8);
+    ctx.strokeRect(-7, -L + 18, 14, 8);
+
+    // cap
+    ctx.fillStyle = "#18181A";
+    ctx.fillRect(-7, -L, 14, 6);
+
+    ctx.restore();
+  }
+
+  function drawParticles() {
+    particles.forEach((p) => {
+      const a = 1 - p.t / p.life;
+      ctx.globalAlpha = Math.max(0, a);
+      ctx.fillStyle = "#18181A";
+      if (p.kind === "star") {
+        ctx.strokeStyle = "#FFDE59";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(p.x - 3, p.y);
+        ctx.lineTo(p.x + 3, p.y);
+        ctx.moveTo(p.x, p.y - 3);
+        ctx.lineTo(p.x, p.y + 3);
+        ctx.stroke();
+      } else {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    });
+    ctx.globalAlpha = 1;
+  }
+
+  function drawChestnut(x, y, squash) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(1 + squash * 0.05, 1 - squash * 0.08);
+    // backpack
+    ctx.fillStyle = "#FFDE59";
+    ctx.strokeStyle = "#18181A";
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.roundRect(6, -34, 14, 18, 3);
+    ctx.fill();
+    ctx.stroke();
+    // body
+    ctx.fillStyle = "#C4A574";
+    ctx.beginPath();
+    ctx.ellipse(0, -22, 16, 15, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    // ears
+    ctx.beginPath();
+    ctx.arc(-10, -38, 5, 0, Math.PI * 2);
+    ctx.arc(8, -40, 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    // face
+    ctx.fillStyle = "#18181A";
+    ctx.beginPath();
+    ctx.arc(-5, -24, 1.5, 0, Math.PI * 2);
+    ctx.arc(4, -24, 1.5, 0, Math.PI * 2);
+    ctx.fill();
+    // tail
+    ctx.strokeStyle = "#18181A";
+    ctx.beginPath();
+    ctx.moveTo(-14, -18);
+    ctx.quadraticCurveTo(-24, -28, -20, -36);
+    ctx.stroke();
+    // feet
+    ctx.beginPath();
+    ctx.moveTo(-6, -8);
+    ctx.lineTo(-8, 0);
+    ctx.moveTo(6, -8);
+    ctx.lineTo(8, 0);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawCloudy(x, y, squash, t) {
+    ctx.save();
+    ctx.translate(x, y);
+    const hop = Math.abs(Math.sin(t * 8)) * 2;
+    ctx.translate(0, -hop);
+    ctx.scale(1 + squash * 0.05, 1 - squash * 0.08);
+    ctx.fillStyle = "#fff";
+    ctx.strokeStyle = "#18181A";
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.ellipse(0, -22, 15, 14, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    // floppy ears
+    ctx.beginPath();
+    ctx.ellipse(-12, -18, 5, 12, 0.4, 0, Math.PI * 2);
+    ctx.ellipse(12, -18, 5, 12, -0.4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "#18181A";
+    ctx.beginPath();
+    ctx.arc(-4, -24, 1.4, 0, Math.PI * 2);
+    ctx.arc(5, -24, 1.4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#18181A";
+    ctx.beginPath();
+    ctx.moveTo(-5, -8);
+    ctx.lineTo(-6, 0);
+    ctx.moveTo(5, -8);
+    ctx.lineTo(6, 0);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawKuro(x, y, squash, t) {
+    ctx.save();
+    ctx.translate(x, y);
+    const step = Math.sin(t * 16) * 2;
+    ctx.scale(1 + squash * 0.05, 1 - squash * 0.08);
+    ctx.fillStyle = "#18181A";
+    ctx.beginPath();
+    ctx.arc(0, -22, 13, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#fff";
+    ctx.beginPath();
+    ctx.arc(-4, -24, 2, 0, Math.PI * 2);
+    ctx.arc(5, -24, 2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#18181A";
+    ctx.beginPath();
+    ctx.arc(-4, -24, 1, 0, Math.PI * 2);
+    ctx.arc(5, -24, 1, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#18181A";
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.moveTo(-4, -10);
+    ctx.lineTo(-5 + step, 0);
+    ctx.moveTo(5, -10);
+    ctx.lineTo(6 - step, 0);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawCamp() {
+    // fire
+    const fx = 120 - cameraX * 0.15;
+    const fy = baseY;
+    ctx.save();
+    ctx.translate(fx, fy);
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "#18181A";
+    // logs
+    ctx.beginPath();
+    ctx.moveTo(-18, 0);
+    ctx.lineTo(18, -4);
+    ctx.moveTo(-14, -4);
+    ctx.lineTo(14, 2);
+    ctx.stroke();
+    // flame
+    const fl = 1 + Math.sin(modeT * 6) * 0.08;
+    ctx.fillStyle = "#FF9F43";
+    ctx.beginPath();
+    ctx.moveTo(0, -8);
+    ctx.quadraticCurveTo(-10, -18, 0, -36 * fl);
+    ctx.quadraticCurveTo(10, -18, 0, -8);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "#FFDE59";
+    ctx.beginPath();
+    ctx.moveTo(0, -10);
+    ctx.quadraticCurveTo(-5, -16, 0, -24 * fl);
+    ctx.quadraticCurveTo(5, -16, 0, -10);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawPlayerGroup() {
+    const px = W * 0.22;
+    const worldX = playerWorldX();
+    const gy = terrainY(worldX) + playerY;
+    const ang = Math.atan(tangentAt(worldX)) * 0.5;
+    const tumble = stumbleT > 0;
+    const squash = jumping && playerY < -20 ? 0.3 : rolling > 0 ? 0.5 : tumble ? 0.2 : 0;
+
+    ctx.save();
+    ctx.translate(px, gy);
+    ctx.rotate(rolling > 0 ? spin : ang * 0.3);
+
+    if (rolling > 0) {
+      // rolled balls
+      ctx.save();
+      ctx.translate(-28, -12);
+      ctx.rotate(spin * 1.2);
+      drawChestnut(0, 0, 0.4);
+      ctx.restore();
+      ctx.save();
+      ctx.translate(0, -10);
+      ctx.rotate(spin);
+      drawCloudy(0, 0, 0.4, modeT);
+      ctx.restore();
+      ctx.save();
+      ctx.translate(26, -10);
+      ctx.rotate(spin * 1.3);
+      drawKuro(0, 0, 0.4, modeT);
+      ctx.restore();
+    } else {
+      drawChestnut(-30, 0, squash);
+      drawCloudy(0, 0, squash, modeT);
+      drawKuro(30, 0, squash, modeT);
+    }
+    ctx.restore();
+
+    // jump air lines
+    if (jumping && playerY < -10) {
+      ctx.strokeStyle = "rgba(24,24,26,0.35)";
+      ctx.lineWidth = 1.4;
+      for (let i = 0; i < 3; i++) {
+        ctx.beginPath();
+        ctx.arc(px - 20 + i * 16, gy + 6, 8 + i * 2, Math.PI * 0.15, Math.PI * 0.85);
+        ctx.stroke();
+      }
+    }
+
+    // stumble stars
+    if (tumble) {
+      const a = 1 - stumbleT / 1.5;
+      for (let i = 0; i < 3; i++) {
+        const ang = (i / 3) * Math.PI * 2 + (1.5 - stumbleT) * 4;
+        const sx = px + Math.cos(ang) * 28;
+        const sy = gy - 50 + Math.sin(ang) * 12;
+        ctx.strokeStyle = "#FFDE59";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(sx - 4, sy);
+        ctx.lineTo(sx + 4, sy);
+        ctx.moveTo(sx, sy - 4);
+        ctx.lineTo(sx, sy + 4);
+        ctx.stroke();
+      }
+    }
+  }
+
+  function collide() {
+    if (mode !== "play" || stumbleT > 0) return;
+    const wx = playerWorldX();
+    const gy = terrainY(wx);
+    const head = gy + playerY - (rolling > 0 ? 14 : 38);
+    const feet = gy + playerY;
+    for (let i = 0; i < obstacles.length; i++) {
+      const o = obstacles[i];
+      const dx = Math.abs(wx - o.x);
+      if (dx > o.w) continue;
+      if (o.type === "low") {
+        // ceiling hazard if standing
+        const archBottom = terrainY(o.x) - 36;
+        if (rolling <= 0 && head > archBottom + 4 && feet > archBottom - 20) {
+          stun();
+          return;
+        }
+      } else if (o.type === "rock" || o.type === "hump") {
+        const top = terrainY(o.x) - o.h;
+        if (feet > top + 6 && playerY > -o.h * 0.7) {
+          stun();
+          return;
+        }
+      } else if (o.type === "pit") {
+        const g = terrainY(wx);
+        // if deep in pit without jumping
+        const local = (wx - o.x) / o.w;
+        if (Math.abs(local) < 0.7 && playerY > -8) {
+          stun();
+          return;
+        }
+      }
+    }
+  }
+
+  function stun() {
+    stumbleT = 1.5;
+    jumping = false;
+    rolling = 0;
+    playerY = 0;
+    vy = 0;
+    const px = W * 0.22;
+    emitParticles(px, terrainY(playerWorldX()) - 40, 6, true);
+  }
+
+  function doJump() {
+    if (mode !== "play") return;
+    if (rolling > 0) return;
+    if (jumping && playerY < -5) {
+      // already airborne — buffer
+      jumpBuf = P.bufferJump;
+      return;
+    }
+    if (coyote > 0 || playerY > -2) {
+      vy = P.jumpV;
+      jumping = true;
+      jumpBuf = 0;
+    } else {
+      jumpBuf = P.bufferJump;
+    }
+  }
+
+  function doRoll() {
+    if (mode !== "play") return;
+    if (rolling > 0) return;
+    rolling = P.rollDur;
+    spin = 0;
+    rollBuf = 0;
+  }
+
+  function skipIntro() {
+    if (mode === "play") return;
+    if (mode === "await") {
+      mode = "play";
+      document.body.classList.remove("intro-lock");
+      document.getElementById("intro-ui").classList.add("hidden");
+      updateHint();
+      return;
+    }
+    mode = "play";
+    modeT = 0;
+    document.body.classList.remove("intro-lock");
+    document.getElementById("intro-ui").classList.add("hidden");
+    updateHint();
+  }
+
+  function startFromButton() {
+    if (reduceMotion) {
+      skipIntro();
+      return;
+    }
+    // begin depart early
+    if (mode === "camp") {
+      mode = "depart";
+      modeT = 0;
+    }
+  }
+
+  // input
+  canvas.addEventListener("contextmenu", (e) => e.preventDefault());
+  window.addEventListener("contextmenu", (e) => {
+    if (mode === "play") e.preventDefault();
+  });
+
+  canvas.addEventListener("pointerdown", (e) => {
+    if (e.button === 2) {
+      e.preventDefault();
+      skipIntro();
+      doRoll();
+      return;
+    }
+    if (e.button === 0) {
+      skipIntro();
+      if (e.pointerType === "touch") {
+        touchStart = { x: e.clientX, y: e.clientY, t: performance.now() };
+        return;
+      }
+      doJump();
+    }
+  });
+
+  let touchStart = null;
+  canvas.addEventListener("pointerup", (e) => {
+    if (!touchStart || e.pointerType !== "touch") return;
+    const dx = e.clientX - touchStart.x;
+    const dy = e.clientY - touchStart.y;
+    const dt = performance.now() - touchStart.t;
+    touchStart = null;
+    if (dy > 36 && Math.abs(dx) < 50) doRoll();
+    else if (dt < 300) doJump();
+  });
+
+  // long-press fallback roll (not in hints)
+  let lpTimer = 0;
+  canvas.addEventListener("pointerdown", (e) => {
+    if (e.pointerType === "touch" || e.button !== 0) return;
+    lpTimer = window.setTimeout(() => {
+      if (mode === "play") doRoll();
+    }, 200);
+  });
+  window.addEventListener("pointerup", () => clearTimeout(lpTimer));
+  window.addEventListener("pointercancel", () => clearTimeout(lpTimer));
+
+  window.addEventListener("keydown", (e) => {
+    if (e.code === "Escape") {
+      skipIntro();
+      return;
+    }
+    if (e.code === "Space" || e.code === "ArrowUp") {
+      e.preventDefault();
+      skipIntro();
+      doJump();
+      return;
+    }
+    if (
+      e.code === "ShiftLeft" ||
+      e.code === "ShiftRight" ||
+      e.code === "KeyS" ||
+      e.code === "ArrowDown"
+    ) {
+      e.preventDefault();
+      skipIntro();
+      doRoll();
+      return;
+    }
+    // any key during intro skips
+    if (mode === "camp" || mode === "depart") skipIntro();
+  });
+
+  document.getElementById("btn-skip").addEventListener("click", skipIntro);
+  document.getElementById("btn-setout").addEventListener("click", () => {
+    if (reduceMotion) skipIntro();
+    else startFromButton();
+    document.getElementById("intro-ui").classList.add("hidden");
+  });
+  document.getElementById("btn-redraw").addEventListener("click", () => {
+    const s = (Math.random() * 1e9) | 0;
+    resetWorld(s);
+    emitParticles(W * 0.85, terrainY(cameraX + W * 0.85) - 8, 8, true);
+  });
+  document.getElementById("btn-pause").addEventListener("click", () => {
+    paused = !paused;
+    document.getElementById("btn-pause").textContent = paused
+      ? t("hero.play")
+      : t("hero.pause");
+  });
+
+  // scroll: pause heavy sim slightly when hero far away
+  let scrollY = 0;
+  window.addEventListener(
+    "scroll",
+    () => {
+      scrollY = window.scrollY || 0;
+      if (mode === "camp" || mode === "depart") skipIntro();
+    },
+    { passive: true }
+  );
+  window.addEventListener(
+    "wheel",
+    () => {
+      if (mode === "camp" || mode === "depart") skipIntro();
+    },
+    { passive: true }
+  );
+
+  /* ───────── loop ───────── */
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(0.033, (now - last) / 1000);
+    last = now;
+    modeT += dt;
+
+    if (!paused) {
+      // intro timeline
+      if (mode === "camp") {
+        if (modeT > 1.8) {
+          mode = "depart";
+          modeT = 0;
+        }
+      } else if (mode === "depart") {
+        // draw a little ahead while still near camp
+        cameraX += P.speed * 0.35 * dt;
+        ensureWorld(cameraX + W);
+        // spawn ink
+        if (rnd() < 0.35) {
+          emitParticles(W * 0.85, terrainY(cameraX + W * 0.85) - 2, 1, false);
+        }
+        if (modeT > 4.2) {
+          mode = "play";
+          document.body.classList.remove("intro-lock");
+          document.getElementById("intro-ui").classList.add("hidden");
+          updateHint();
+        }
+      } else if (mode === "play") {
+        cameraX += P.speed * dt;
+        ensureWorld(cameraX + W * 1.2);
+
+        // physics
+        if (jumpBuf > 0) {
+          jumpBuf -= dt;
+          if (playerY > -2) {
+            doJump();
+          }
+        }
+        if (rollBuf > 0) {
+          rollBuf -= dt;
+          if (rolling <= 0) doRoll();
+        }
+        if (rolling > 0) {
+          rolling -= dt;
+          spin += (Math.PI * 2 * 2) * dt;
+          if (rolling <= 0) spin = 0;
+        }
+        if (jumping || playerY < 0) {
+          vy += P.gravity * dt;
+          playerY += vy * dt;
+          if (playerY >= 0) {
+            playerY = 0;
+            vy = 0;
+            jumping = false;
+            coyote = P.coyote;
+          }
+        } else {
+          coyote -= dt;
+        }
+        if (stumbleT > 0) {
+          stumbleT -= dt;
+          // catch up after stun
+          if (stumbleT < 0.7) cameraX += P.speed * 0.35 * dt;
+        }
+
+        // ink from pen
+        if (rnd() < dt * 4) {
+          emitParticles(W * 0.85, terrainY(cameraX + W * 0.85) - 2, 1, false);
+        }
+
+        collide();
+      }
+    }
+
+    // particles
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.t += dt;
+      if (p.t > p.life) {
+        particles.splice(i, 1);
+        continue;
+      }
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.vy += 200 * dt;
+    }
+
+    // baseY responsive
+    baseY = H * 0.62;
+
+    // draw
+    ctx.clearRect(0, 0, W, H);
+
+    // sky wash
+    ctx.fillStyle = "#FFFFFF";
+    ctx.fillRect(0, 0, W, H);
+
+    // faint clouds
+    ctx.strokeStyle = "rgba(24,24,26,0.2)";
+    ctx.lineWidth = 1.3;
+    for (let i = 0; i < 5; i++) {
+      const cx = ((i * 220 - cameraX * 0.08) % (W + 200)) - 50;
+      const cy = 70 + (i % 3) * 36;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 14, 0.2, Math.PI - 0.2);
+      ctx.arc(cx + 16, cy - 4, 12, 0.3, Math.PI - 0.3);
+      ctx.arc(cx + 30, cy, 10, 0.4, Math.PI - 0.4);
+      ctx.stroke();
+    }
+
+    drawHills(0.2);
+
+    // campfire near start
+    if (cameraX < 500) drawCamp();
+
+    drawDecor();
+    drawPath();
+    drawObstacles();
+
+    // close path under characters to hide "future" slightly: only draw path up to pen (already)
+    drawPen();
+    if (mode !== "camp") drawPlayerGroup();
+    else {
+      // resting at camp
+      const px = 160;
+      const gy = terrainY(cameraX + px);
+      drawChestnut(px, gy, 0);
+      drawCloudy(px + 34, gy, 0, 0.2);
+      drawKuro(px + 64, gy, 0, 0.2);
+    }
+    drawParticles();
+
+    // dim stage when scrolled into content
+    if (scrollY > H * 0.55) {
+      const a = Math.min(0.82, (scrollY - H * 0.55) / (H * 0.45));
+      ctx.fillStyle = `rgba(255,255,255,${a})`;
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    requestAnimationFrame(frame);
+  }
+
+  // polyfill roundRect if needed
+  if (!CanvasRenderingContext2D.prototype.roundRect) {
+    CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+      const rr = typeof r === "number" ? r : 3;
+      this.moveTo(x + rr, y);
+      this.arcTo(x + w, y, x + w, y + h, rr);
+      this.arcTo(x + w, y + h, x, y + h, rr);
+      this.arcTo(x, y + h, x, y, rr);
+      this.arcTo(x, y, x + w, y, rr);
+      this.closePath();
+      return this;
+    };
+  }
+
+  // boot
+  srand(seed);
+  baseY = H * 0.62;
+  resetWorld(seed);
+  applyI18n();
+
+  if (reduceMotion) {
+    document.getElementById("intro-ui").classList.remove("hidden");
+    document.getElementById("btn-skip").style.display = "none";
+  } else {
+    document.body.classList.add("intro-lock");
+    document.getElementById("intro-ui").classList.remove("hidden");
+    document.getElementById("btn-setout").style.display = "none";
+    document.getElementById("hero-hint").textContent = t("hero.skipping");
+  }
+
+  requestAnimationFrame(frame);
+
+  // expose for debug
+  window.__lucky = { resetWorld, get mode() { return mode; }, skipIntro };
+})();
+</script>
+</body>
+</html>
