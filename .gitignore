@@ -24,3 +24,6 @@ node_modules/
 dist/
 .cache/
 __pycache__/
+
+# Local test harness / screenshots (Playwright runs)
+output/
