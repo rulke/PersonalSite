@@ -10,12 +10,13 @@
 *.key
 secrets.*
 
-# OS / editor
+# OS / editor / local tooling
 .DS_Store
 Thumbs.db
 desktop.ini
 .idea/
 .vscode/
+.zcodeignore
 *.swp
 
 # Dependencies / build (future web work)

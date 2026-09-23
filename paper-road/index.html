@@ -198,7 +198,9 @@
     padding: 100px 56px 72px;
     max-width: 980px;
     margin: 0 auto;
+    scroll-margin-top: 88px;
   }
+  .openroad { scroll-margin-top: 88px; }
   .section-head {
     display: grid;
     grid-template-columns: 1fr auto 1fr;
@@ -405,9 +407,20 @@
 
   /* Waystation */
   .waystation { text-align: center; padding-top: 80px; }
-  .mail-box {
-    width: 100px; height: 100px;
-    margin: 8px auto 28px;
+  .mailbox-wrap {
+    position: relative;
+    width: 112px; height: 112px;
+    margin: 10px auto 30px;
+  }
+  .mail-box { width: 112px; height: 112px; overflow: visible; display: block; }
+  .mb-star { opacity: 0; }
+  .mailbox-wrap:hover .mb-star {
+    animation: starPop .85s cubic-bezier(.34,1.56,.64,1) 1 forwards;
+  }
+  @keyframes starPop {
+    0%   { opacity: 0; transform: translate(0, 4px) scale(.3); }
+    35%  { opacity: 1; }
+    100% { opacity: 0; transform: translate(0, -18px) scale(1); }
   }
   .email-link {
     display: inline-block;
@@ -471,6 +484,41 @@
     clip: rect(0,0,0,0); border: 0;
   }
 
+  /* ── 滚动描出：进入视口后一笔画出 ── */
+  .js .rv {
+    opacity: 0; transform: translateY(16px);
+    transition: opacity .7s cubic-bezier(.22,1,.36,1), transform .7s cubic-bezier(.22,1,.36,1);
+    transition-delay: var(--rvd, 0s);
+  }
+  .js .rv.in { opacity: 1; transform: none; }
+  /* 空心标题由未被裁剪的父容器触发描出（clip-path 会令 IO 交叉比恒为 0） */
+  .js .hollow {
+    clip-path: inset(-30% 100% -30% -6px);
+    transition: clip-path .9s cubic-bezier(.4,0,.2,1) .15s;
+  }
+  .js .section-head.in .hollow { clip-path: inset(-30% -6px -30% -6px); }
+
+  .hint-pulse { animation: hintPulse 1.8s ease 1; }
+  @keyframes hintPulse {
+    0% { opacity: .5 } 30% { opacity: 1 } 50% { opacity: .55 }
+    70% { opacity: 1 } 100% { opacity: .8 }
+  }
+
+  .work-art svg { transition: transform .55s cubic-bezier(.34,1.56,.64,1); }
+  .work-card:hover .work-art svg { transform: translateY(-5px) rotate(-2deg); }
+  .js .work-card.in:hover { transform: translateY(-3px); }
+  .mascot-peek { transform-origin: 30% 100%; }
+  .work-card:hover .mascot-peek {
+    animation: peekKnock 1.1s cubic-bezier(.34,1.56,.64,1);
+  }
+  @keyframes peekKnock {
+    0% { transform: rotate(0); }
+    30% { transform: rotate(-10deg); }
+    55% { transform: rotate(7deg); }
+    78% { transform: rotate(-4deg); }
+    100% { transform: rotate(0); }
+  }
+
   @media (max-width: 880px) {
     .sheet { margin: 0; border-radius: 0; border-left: none; border-right: none; }
     .section { padding: 72px 24px 56px; }
@@ -497,6 +545,13 @@
   @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
     .work-card, .work-arrow, .note-arrow, .btn-setout, .note-row { transition: none; }
+    .js .rv { opacity: 1; transform: none; transition: none; }
+    .js .hollow { clip-path: none; transition: none; }
+    .work-art svg { transition: none; }
+    .mailbox-wrap:hover .mb-star,
+    .work-card:hover .mascot-peek,
+    .work-card:hover .work-art svg,
+    .hint-pulse { animation: none; }
   }
 </style>
 </head>
@@ -543,7 +598,7 @@
   </header>
 
   <section class="section" id="works">
-    <div class="section-head">
+    <div class="section-head rv">
       <div class="side"></div>
       <div class="center">
         <h2 class="hollow">WORKS</h2>
@@ -556,7 +611,7 @@
   </section>
 
   <section class="section" id="about">
-    <div class="section-head">
+    <div class="section-head rv">
       <div class="side"></div>
       <div class="center">
         <h2 class="hollow">ABOUT</h2>
@@ -564,12 +619,12 @@
       </div>
       <div class="side right"></div>
     </div>
-    <p class="about-manifesto" data-i18n="about.manifesto">路是边走边画出来的。</p>
+    <p class="about-manifesto rv" data-i18n="about.manifesto">路是边走边画出来的。</p>
     <ol class="timeline" id="timeline"></ol>
   </section>
 
   <section class="section" id="notes">
-    <div class="section-head">
+    <div class="section-head rv">
       <div class="side"></div>
       <div class="center">
         <h2 class="hollow">NOTES</h2>
@@ -583,7 +638,7 @@
   </section>
 
   <section class="section waystation" id="contact">
-    <div class="section-head">
+    <div class="section-head rv">
       <div class="side"></div>
       <div class="center">
         <h2 class="hollow">CONTACT</h2>
@@ -591,12 +646,18 @@
       </div>
       <div class="side right"></div>
     </div>
-    <svg class="mail-box" viewBox="0 0 120 120" aria-hidden="true" fill="none">
-      <path d="M28 72c0-20 13-34 32-34s32 14 32 34v20H28V72z" stroke="#18181A" stroke-width="1.6" stroke-linejoin="round"/>
-      <path d="M46 72h30M42 50v-10h14M54 30h16v18M36 92v12M84 92v12" stroke="#18181A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
-    <a class="email-link" href="mailto:hello@lucky.dev" data-i18n="contact.email_label">写信给我</a>
-    <div class="socials">
+    <div class="mailbox-wrap rv">
+      <svg class="mail-box" viewBox="0 0 120 120" aria-hidden="true" fill="none">
+        <path d="M60 112V72" stroke="#18181A" stroke-width="1.6" stroke-linecap="round"/>
+        <path d="M30 72V52c0-10.5 8-18 18-18h24c10 0 18 7.5 18 18v20H30z" stroke="#18181A" stroke-width="1.6" stroke-linejoin="round"/>
+        <path d="M44 48h20" stroke="#18181A" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M88 58h10M93 58v-9" stroke="#18181A" stroke-width="1.4" stroke-linecap="round"/>
+        <path d="M93 49l8 4.5-8 4.5z" fill="#FFDE59" stroke="#18181A" stroke-width="1.2" stroke-linejoin="round"/>
+        <path class="mb-star" d="M54 44l1.8 4 4 1.8-4 1.8-1.8 4-1.8-4-4-1.8 4-1.8z" fill="#FFDE59" stroke="#18181A" stroke-width="1"/>
+      </svg>
+    </div>
+    <a class="email-link rv" href="mailto:hello@lucky.dev" data-i18n="contact.email_label">写信给我</a>
+    <div class="socials rv" style="--rvd:.1s">
       <a href="#">GitHub</a>
       <a href="#">X</a>
       <a href="#">Bilibili</a>
@@ -604,12 +665,15 @@
   </section>
 
   <footer class="openroad" id="openroad">
-    <svg class="vanish" viewBox="0 0 420 70" aria-hidden="true">
-      <path d="M10 55 Q 120 48 220 36 T 410 8" fill="none" stroke="#18181A" stroke-width="1.2" stroke-linecap="round" stroke-dasharray="1.5 7" opacity="0.45"/>
-      <path d="M28 64 Q 140 54 240 42 T 410 14" fill="none" stroke="#18181A" stroke-width="1" stroke-linecap="round" opacity="0.2"/>
+    <svg class="vanish rv" viewBox="0 0 420 70" aria-hidden="true" fill="none">
+      <path d="M28 66C132 61 194 44 208 27" stroke="#18181A" stroke-width="1.4" stroke-linecap="round" opacity="0.55"/>
+      <path d="M392 66C288 61 226 44 212 27" stroke="#18181A" stroke-width="1.4" stroke-linecap="round" opacity="0.55"/>
+      <path d="M210 60v-5.5M210 49v-4M211 39.5v-3" stroke="#18181A" stroke-width="1.2" stroke-linecap="round" opacity="0.35"/>
+      <path d="M210 24l7-11" stroke="#18181A" stroke-width="1.4" stroke-linecap="round"/>
+      <path d="M209.3 24.8l1.4 1" stroke="#18181A" stroke-width="1.2" stroke-linecap="round"/>
     </svg>
-    <h2 class="openroad-title" id="openroad-title"></h2>
-    <p class="openroad-credit" data-i18n="footer.credit"></p>
+    <h2 class="openroad-title rv" id="openroad-title" style="--rvd:.08s"></h2>
+    <p class="openroad-credit rv" data-i18n="footer.credit" style="--rvd:.16s"></p>
   </footer>
 </div>
 
@@ -624,29 +688,29 @@
       "nav.works": "作品", "nav.about": "关于", "nav.notes": "手记", "nav.contact": "联系",
       "hero.title": "用匠心写代码，<br>以灵魂做设计。",
       "hero.sub": "边走边画，把每天画得更新一点。",
-      "hero.hint": "[左键] 跳跃 · [右键] 滑行 ｜ [↺ 重绘] ｜ [⏸ 暂停]",
-      "hero.hint.touch": "[轻点] 跳跃 · [下滑] 滑行",
+      "hero.hint": "[左键] 跳跃 · [右键] 翻滚 ｜ [↺ 重绘] ｜ [⏸ 暂停]",
+      "hero.hint.touch": "[轻点] 跳跃 · [下滑] 翻滚",
       "hero.setout": "出发", "hero.skip": "跳过出发",
       "hero.redraw": "↺ 重绘", "hero.pause": "⏸ 暂停", "hero.play": "▶ 继续",
       "hero.skipping": "出发中… 点击跳过",
-      "a11y.controls": "键盘：空格或上箭头跳跃，Shift、S 或下箭头滑行，Esc 跳过开场。",
+      "a11y.controls": "键盘：空格或上箭头跳跃，Shift、S 或下箭头翻滚，Esc 跳过开场或暂停。",
       "works.sub": "精选项目", "works.empty": "还在路上收集。",
       "about.sub": "路上的人", "about.manifesto": "路是边走边画出来的。",
       "notes.sub": "制作笔记", "notes.all": "阅读全部 ↗",
       "contact.sub": "寄一张明信片", "contact.email_label": "写信给我",
       "openroad.title": '<span class="zh">未完，还在画。</span>',
-      "footer.credit": "© 2026 lucky · Still on the road.",
+      "footer.credit": "© 2026 lucky · 还在路上。",
     },
     en: {
       "nav.works": "Works", "nav.about": "About", "nav.notes": "Notes", "nav.contact": "Contact",
       "hero.title": "Code with craft.<br>Design with soul.",
       "hero.sub": "Keep walking, keep drawing.",
-      "hero.hint": "[LMB] Jump · [RMB] Slide ｜ [↺ Redraw] ｜ [⏸ Pause]",
-      "hero.hint.touch": "[Tap] Jump · [Swipe down] Slide",
+      "hero.hint": "[LMB] Jump · [RMB] Roll ｜ [↺ Redraw] ｜ [⏸ Pause]",
+      "hero.hint.touch": "[Tap] Jump · [Swipe down] Roll",
       "hero.setout": "Set out", "hero.skip": "Skip intro",
       "hero.redraw": "↺ Redraw", "hero.pause": "⏸ Pause", "hero.play": "▶ Resume",
       "hero.skipping": "Departing… click to skip",
-      "a11y.controls": "Keyboard: Space or Up to jump, Shift, S or Down to slide. Esc skips the intro.",
+      "a11y.controls": "Keyboard: Space or Up to jump, Shift, S or Down to roll. Esc skips the intro or pauses.",
       "works.sub": "Selected projects", "works.empty": "Still collecting on the road.",
       "about.sub": "Who is on the road", "about.manifesto": "Draw the road as we go.",
       "notes.sub": "Making notes", "notes.all": "Read all notes ↗",
@@ -699,7 +763,9 @@
     document.getElementById("btn-redraw").textContent = t("hero.redraw");
     document.getElementById("btn-pause").textContent =
       (window.__paused ? t("hero.play") : t("hero.pause"));
+    document.getElementById("lang-btn").textContent = lang === "zh" ? "EN" : "中文";
     renderWorks(); renderTimeline(); renderNotes();
+    bindReveals();
   }
 
   function updateHint() {
@@ -752,13 +818,14 @@
     const bento = all.filter((w) => w.status === "bento");
     const peeked = new Set();
 
-    const card = (w, kind, allowPeek) => {
+    const card = (w, kind, allowPeek, idx) => {
       const title = (w.title && (w.title[lang] || w.title.en)) || w.id;
       const tagline = (w.tagline && (w.tagline[lang] || w.tagline.en)) || "";
       const meta = (w.meta && (w.meta[lang] || w.meta.en)) || "";
       const doPeek = allowPeek && w.mascot === "peek" && !peeked.size;
       if (doPeek) peeked.add("peek");
-      return `<a class="work-card ${kind}" href="${w.link || "#"}">
+      const d = (idx * 0.07).toFixed(2);
+      return `<a class="work-card ${kind} rv" style="--rvd:${d}s" href="${w.link || "#"}">
         ${doPeek ? peekSvg : ""}
         <div class="work-art">${artSvg(w.art)}</div>
         <h3 class="work-title">${title}</h3>
@@ -772,22 +839,22 @@
     const bEl = document.getElementById("works-bento");
     if (!all.length) {
       fEl.innerHTML = "";
-      bEl.innerHTML = `<div class="works-empty">${t("works.empty")}</div>`;
+      bEl.innerHTML = `<div class="works-empty rv">${t("works.empty")}</div>`;
       return;
     }
-    fEl.innerHTML = featured.map((w) => card(w, "featured", true)).join("");
-    bEl.innerHTML = bento.map((w) => card(w, "bento", false)).join("");
+    fEl.innerHTML = featured.map((w, i) => card(w, "featured", true, i)).join("");
+    bEl.innerHTML = bento.map((w, i) => card(w, "bento", false, i)).join("");
   }
 
   function renderTimeline() {
     document.getElementById("timeline").innerHTML = (TIMELINE[lang] || TIMELINE.en)
-      .map((r) => `<li><div class="year">${r.year}</div><div class="event">${r.event}</div></li>`)
+      .map((r, i) => `<li class="rv" style="--rvd:${(i * 0.12).toFixed(2)}s"><div class="year">${r.year}</div><div class="event">${r.event}</div></li>`)
       .join("");
   }
 
   function renderNotes() {
     document.getElementById("notes-list").innerHTML = (NOTES[lang] || NOTES.en)
-      .map((n) => `<a class="note-row" href="#">
+      .map((n, i) => `<a class="note-row rv" style="--rvd:${(i * 0.08).toFixed(2)}s" href="#">
         <span class="note-date">${n.date}</span>
         <span class="note-title${lang === "zh" ? " zh" : ""}">${n.title}</span>
         <span class="note-arrow" aria-hidden="true">↗</span></a>`)
@@ -798,6 +865,29 @@
     lang = lang === "zh" ? "en" : "zh";
     applyI18n();
   });
+
+  document.body.classList.add("js");
+
+  /* ── 滚动描出：进入视口后一笔画出 ── */
+  const revealIO = "IntersectionObserver" in window
+    ? new IntersectionObserver((entries) => {
+        for (const en of entries) {
+          if (en.isIntersecting) {
+            en.target.classList.add("in");
+            revealIO.unobserve(en.target);
+          }
+        }
+      }, { threshold: 0.12, rootMargin: "0px 0px -6% 0px" })
+    : null;
+  const revealedSet = new WeakSet();
+  function bindReveals() {
+    document.querySelectorAll(".rv:not(.in)").forEach((el) => {
+      if (revealedSet.has(el)) return;
+      revealedSet.add(el);
+      if (!revealIO) { el.classList.add("in"); return; }
+      revealIO.observe(el);
+    });
+  }
 
   /* ═══════════ Canvas scene ═══════════ */
   const canvas = document.getElementById("stage");
@@ -815,7 +905,10 @@
   }
   window.addEventListener("resize", () => { resize(); });
 
-  let seed = 20260215;
+  let seed = (() => {
+    const q = parseInt(new URLSearchParams(location.search).get("seed"), 10);
+    return Number.isFinite(q) ? q >>> 0 : 20260215;   // ?seed= 可分享（文档 §4.4）
+  })();
   const srand = (s) => { seed = s >>> 0; };
   const rnd = () => {
     seed = (seed * 1664525 + 1013904223) >>> 0;
@@ -823,13 +916,15 @@
   };
   const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+  // 物理初值（文档 §5.3）
   const P = {
-    gravity: 2200, jumpV: -780, slideDur: 0.7, speed: 155,
-    bufferJump: 0.08, bufferSlide: 0.06, coyote: 0.08,
+    gravity: 2200, jumpV: -820, rollDur: 0.55, speed: 180,
+    bufferJump: 0.08, bufferRoll: 0.06, coyote: 0.08,
+    stumbleDur: 1.5, rejoinBoost: 1.15,
   };
 
   let cameraX = 0, paused = false;
-  let mode = reduceMotion ? "await" : "camp";
+  let mode = reduceMotion ? "await" : "camp"; // camp → point → walk → play
   let modeT = 0;
   let pathPoints = [];
   let objects = [];
@@ -837,11 +932,23 @@
   let particles = [];
   let hills = [];
   let stumbleT = 0, jumpBuf = 0, coyote = 0;
-  let jumping = false, sliding = 0, vy = 0, playerY = 0;
+  let jumping = false, rolling = 0, vy = 0, playerY = 0;
+  let penAng = 0.35, penDrop = 0, pointLand = false, flashT = 0;
+  let idleT = 0;          // 无输入计时 → idle 波浪示范
+  let departBlend = 0;    // 角色从营地休息位自然融入行进队形
+  let gaitBoost = 1;      // 踉跄归队 1.15×
+  let hintPulsed = false;
+  let stageVisible = true;
 
+  // 平滑值噪声（手绘抖动），替代毛糙的白噪声
+  function hash1(i) {
+    const s = Math.sin(i * 127.1 + 311.7) * 43758.5453;
+    return s - Math.floor(s);
+  }
   function noise1(x) {
-    const s = Math.sin(x * 12.9898 + 4.1) * 43758.5453;
-    return (s - Math.floor(s)) * 2 - 1;
+    const i = Math.floor(x), f = x - i;
+    const u = f * f * (3 - 2 * f);
+    return (hash1(i) * (1 - u) + hash1(i + 1) * u) * 2 - 1;
   }
 
   function terrainY(worldX) {
@@ -929,6 +1036,16 @@
     if (kind === "mush") return [[
       [-3, 0], [-3, -8], [-9, -8], [-6, -15], [0, -18], [7, -14], [9, -8], [3, -8], [3, 0],
     ]];
+    // 木箱：一笔箱体 + 加固线
+    if (kind === "crate") return [[
+      [-14, 0], [-14, -18], [14, -18], [14, 0], [-14, 0],
+      [-14, -9], [14, -9], [10, -18], [10, 0], [-10, 0], [-10, -18],
+    ]];
+    // 指路牌：牌面一笔 + Next→ 箭头（不写 Finish，文档 §5.1）
+    if (kind === "sign") return [
+      [[-2, 0], [-2, -26], [-16, -26], [-16, -38], [16, -38], [16, -26], [5, -26], [5, 0]],
+      [[-9, -32], [7, -32], [2.5, -35.5], [7, -32], [2.5, -28.5]],
+    ];
     return [[[0, 0], [0, -8]]];
   }
 
@@ -999,16 +1116,10 @@
 
   function ensureWorld(xTo) {
     while (obstacles.length < 50) {
-      const last = obstacles.length ? obstacles[obstacles.length - 1].x : 560;
+      const last = obstacles.length ? obstacles[obstacles.length - 1].x : 620;
       const x = last + 320 + rnd() * 380;
       if (x > xTo + 1500 && obstacles.length > 3) break;
       const r = rnd();
-
-      // 开场后先出风景，再出可玩障碍
-      if (x < 700) {
-        objects.push({ x, kind: ["tree", "flower", "mush", "hill"][(rnd() * 4) | 0], s: 0.9 + rnd() * 0.3, p: 0, on: false, strokes: null });
-        continue;
-      }
 
       if (r < 0.14) {
         // 小溪 → 跳
@@ -1027,12 +1138,12 @@
         obstacles.push({ x, type: "stone", w: 18, h: 16 });
         objects.push({ x, kind: "stone", s: 1, p: 0, on: false, strokes: null });
       } else if (r < 0.64) {
-        // 石桥洞 → 滑行
-        obstacles.push({ x, type: "slide", w: 34, low: 30 });
+        // 石桥洞 → 翻滚（clear=站立必撞、翻滚可穿）
+        obstacles.push({ x, type: "roll", w: 34, clear: 20 });
         objects.push({ x, kind: "bridge", s: 1, p: 0, on: false, strokes: null });
       } else if (r < 0.78) {
-        // 山洞 → 滑行
-        obstacles.push({ x, type: "slide", w: 32, low: 28 });
+        // 山洞 → 翻滚
+        obstacles.push({ x, type: "roll", w: 32, clear: 18 });
         objects.push({ x, kind: "cave", s: 1, p: 0, on: false, strokes: null });
       } else {
         // 纯风景（一笔画出）
@@ -1066,6 +1177,10 @@
       pathPoints.push({ x: lastX, y: terrainY(lastX) });
       if (pathPoints.length > 2400) pathPoints.splice(0, 240);
     }
+    // 回收离场对象：内存平稳，路径点有上限
+    const keepFrom = cameraX - 400;
+    while (obstacles.length && obstacles[0].x < keepFrom) obstacles.shift();
+    while (objects.length && objects[0].x < keepFrom) objects.shift();
   }
 
   function resetWorld(newSeed) {
@@ -1073,50 +1188,55 @@
     cameraX = 0;
     pathPoints = [{ x: 0, y: terrainY(0) }];
     obstacles = [];
+    // 起点营地构图（首帧静态可读，文档 §6.3）：屋—火—箱—树—小店—指路牌—钟楼
     objects = [
-      // 开场营地段：参考图式构图（屋—树—角色—店—钟楼）
-      { x: 60, kind: "cabin", s: 1.0, p: 1, on: true, strokes: null },
-      { x: 150, kind: "tree", s: 1.05, p: 1, on: true, strokes: null },
-      { x: 250, kind: "shop", s: 0.95, p: 1, on: true, strokes: null },
-      { x: 360, kind: "clocktower", s: 0.9, p: 1, on: true, strokes: null },
-      { x: 200, kind: "flower", s: 0.8, p: 1, on: true, strokes: null },
-      { x: 300, kind: "mush", s: 0.85, p: 1, on: true, strokes: null },
+      { x: 52, kind: "cabin", s: 1.0, p: 1, on: true, strokes: null },
+      { x: 168, kind: "crate", s: 0.95, p: 1, on: true, strokes: null },
+      { x: 226, kind: "tree", s: 1.05, p: 1, on: true, strokes: null },
+      { x: 288, kind: "shop", s: 0.95, p: 1, on: true, strokes: null },
+      { x: 366, kind: "flower", s: 0.8, p: 1, on: true, strokes: null },
+      { x: 396, kind: "mush", s: 0.85, p: 1, on: true, strokes: null },
+      { x: 470, kind: "sign", s: 1.0, p: 1, on: true, strokes: null },
+      { x: 560, kind: "clocktower", s: 0.9, p: 1, on: true, strokes: null },
     ];
     hills = [];
     particles = [];
-    playerY = 0; vy = 0; jumping = false; sliding = 0;
-    stumbleT = 0;
+    playerY = 0; vy = 0; jumping = false; rolling = 0;
+    stumbleT = 0; gaitBoost = 1;
+    departBlend = mode === "camp" || mode === "point" ? 0 : departBlend;
     ensureWorld(cameraX + W + 200);
   }
 
   const playerWorldX = () => cameraX + W * 0.22;
 
+  const INK_MAX = 64; // 粒子池上限（文档 §9.3）
   function emitParticles(x, y, n, burst) {
     for (let i = 0; i < n; i++) {
+      if (particles.length >= INK_MAX) return;
       const a = rnd() * Math.PI * 2;
       const sp = burst ? 50 + rnd() * 90 : 18 + rnd() * 40;
+      const r = rnd();
       particles.push({
         x, y,
-        vx: Math.cos(a) * sp,
+        vx: Math.cos(a) * sp * (r < 0.6 ? -0.55 : 1),  // 铅屑向后飘
         vy: -Math.abs(Math.sin(a)) * sp * 0.6 - 8,
         life: 0.35 + rnd() * 0.25,
         t: 0, r: 0.5 + rnd() * 1.2,
-        kind: rnd() < 0.22 ? "star" : "dot",
+        // 墨点 / 铅屑 / 星光 ≈ 3:6:1（文档 §4.3）
+        kind: r < 0.3 ? "ink" : r < 0.9 ? "fleck" : "star",
       });
     }
   }
 
   /** Reveal objects as the pen passes — pen draws them into existence */
-  function revealByPen() {
+  function revealByPen(dt) {
     const penX = cameraX + W * 0.85;
     for (const o of objects) {
       if (!o.strokes) o.strokes = objectStrokes(o.kind);
-      // start revealing shortly before pen arrives at object
-      const trigger = o.x - 8;
-      if (!o.on && penX > trigger) o.on = true;
+      if (!o.on && penX > o.x - 8) o.on = true;
       if (o.on && o.p < 1) {
-        // reveal speed tied to pen speed
-        o.p = Math.min(1, o.p + 0.035);
+        // 按时间推进（高刷屏不会加速）；reduced-motion 直接完整呈现
+        o.p = mode === "await" ? 1 : Math.min(1, o.p + dt * 2.4);
       }
     }
   }
@@ -1212,39 +1332,46 @@
     }
   }
 
-  function drawPen() {
+  /** 神笔。show: 0–1 落位进度（point 阶段从空中压下）；dt: 低通用 */
+  function drawPen(show, dt) {
+    if (show <= 0) return;
     const penX = W * 0.85;
     const worldPen = cameraX + penX;
     const penY = terrainY(worldPen) - 1;
-    const ang = Math.max(-0.2, Math.min(0.2, Math.atan(tangentAt(worldPen)) * 0.8));
-    const bob = Math.sin(modeT * 12) * 0.4;
+    // 倾角 = 基础握笔角 + 切线(×0.85, clamp ±15°) 的低通，±0.8° 噪声
+    const target = 0.35 + Math.max(-0.26, Math.min(0.26, Math.atan(tangentAt(worldPen)) * 0.85));
+    penAng += (target - penAng) * Math.min(1, (dt || 0.016) * 8);
+    const still = mode === "await";
+    const bob = still ? 0 : Math.sin(modeT * 10) * 0.45;
 
     ctx.save();
-    ctx.translate(penX, penY + bob);
-    // 自然斜握笔：笔尖触线，杆稍向右后
-    ctx.rotate(ang + 0.35 + noise1(modeT * 18) * 0.01);
+    ctx.globalAlpha = show;
+    const drop = 1 + (1 - show) * 0.22;
+    ctx.translate(penX, penY - (1 - show) * 26 + bob);
+    ctx.rotate(penAng + (still ? 0 : noise1(modeT * 3) * 0.014));
+    ctx.scale(drop, drop);
 
-    // 小笔（对齐参考图右下角笔的体量）
-    const L = Math.min(H * 0.09, 54);
+    // 笔长 ≈ 视口高 18%，≥72px（文档 §4.2）
+    const L = Math.max(72, Math.min(H * 0.18, 132));
+    const hw = L * 0.034;
 
     ctx.lineWidth = 1.3;
     ctx.strokeStyle = "#18181A";
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
-    ctx.fillStyle = "none";
 
     ctx.beginPath();
     ctx.moveTo(0, 0);
-    ctx.lineTo(-2.2, -7);
-    ctx.lineTo(-3, -L);
-    ctx.lineTo(3, -L);
-    ctx.lineTo(2.2, -7);
+    ctx.lineTo(-hw * 0.7, -L * 0.16);
+    ctx.lineTo(-hw, -L);
+    ctx.lineTo(hw, -L);
+    ctx.lineTo(hw * 0.7, -L * 0.16);
     ctx.closePath();
     ctx.stroke();
 
     ctx.beginPath();
-    ctx.moveTo(-2.9, -L + 12);
-    ctx.lineTo(2.9, -L + 12);
+    ctx.moveTo(-hw * 0.94, -L + L * 0.14);
+    ctx.lineTo(hw * 0.94, -L + L * 0.14);
     ctx.stroke();
 
     ctx.restore();
@@ -1257,10 +1384,16 @@
       if (p.kind === "star") {
         ctx.strokeStyle = "#FFDE59";
         ctx.lineWidth = 1.2;
+        ctx.lineCap = "round";
         ctx.beginPath();
         ctx.moveTo(p.x - 3, p.y); ctx.lineTo(p.x + 3, p.y);
         ctx.moveTo(p.x, p.y - 3); ctx.lineTo(p.x, p.y + 3);
         ctx.stroke();
+      } else if (p.kind === "fleck") {
+        ctx.fillStyle = "rgba(24,24,26,0.35)";
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r * 0.7, 0, Math.PI * 2);
+        ctx.fill();
       } else {
         ctx.fillStyle = "#18181A";
         ctx.beginPath();
@@ -1271,7 +1404,7 @@
     ctx.globalAlpha = 1;
   }
 
-  /* 角色：干净比例 + 自然行走循环（对齐参考图小精灵） */
+  /* 角色：干净比例 + 自然行走循环 + 翻滚（720°/0.55s，文档 §3/§5.3） */
   function walkPose(time, phase) {
     const p = time * 9 + phase;
     return {
@@ -1281,16 +1414,22 @@
       lean: Math.sin(p) * 0.035,
     };
   }
+  // 翻滚姿态：以身体中心为轴 720° 自旋 + 压扁（hitbox ×0.4）
+  function applyRoll(roll, sx, sy, pivot) {
+    ctx.translate(0, -pivot);
+    ctx.rotate(roll * Math.PI * 4);
+    ctx.scale(sx, sy);
+    ctx.translate(0, pivot);
+  }
 
-  function drawChestnut(x, y, squash, slide, phase) {
-    const w = walkPose(modeT, phase || 0);
+  function drawChestnut(x, y, squash, time, roll, phase, pose) {
+    const w = walkPose(time, phase || 0);
     ctx.save();
-    ctx.translate(x, y - (slide ? 0 : w.bob));
+    ctx.translate(x, y);
     const s = 0.8;
-    if (slide) {
-      ctx.rotate(-0.3);
-      ctx.scale(s * 1.2, s * 0.48);
-    } else {
+    if (roll != null) applyRoll(roll, s * 1.12, s * 0.6, 9);
+    else {
+      ctx.translate(0, -w.bob);
       ctx.rotate(w.lean);
       ctx.scale(s, s * (1 - squash * 0.08));
     }
@@ -1298,12 +1437,12 @@
     ctx.strokeStyle = "#18181A";
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
-    ctx.fillStyle = "none";
 
-    // 黄背包一笔
+    // 柠檬黄小背包（白底品牌点缀）
+    ctx.fillStyle = "#FFDE59";
     ctx.beginPath();
-    ctx.moveTo(11, -17); ctx.lineTo(16, -17); ctx.lineTo(16, -6); ctx.lineTo(11, -6);
-    ctx.stroke();
+    ctx.moveTo(11, -17); ctx.lineTo(16.5, -17); ctx.lineTo(16.5, -6); ctx.lineTo(11, -6);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
 
     // 身 + 头 + 双耳：一笔连续
     ctx.beginPath();
@@ -1321,11 +1460,11 @@
     ctx.quadraticCurveTo(-13, -15, -11, -23);
     ctx.stroke();
 
-    // 腿
-    if (slide) {
+    // 腿（翻滚时收起）
+    if (roll != null) {
       ctx.beginPath();
-      ctx.moveTo(-3, -3); ctx.lineTo(-11, 0);
-      ctx.moveTo(3, -3); ctx.lineTo(13, 0);
+      ctx.moveTo(-3, -6); ctx.quadraticCurveTo(-1, -2, -4, -1);
+      ctx.moveTo(4, -6); ctx.quadraticCurveTo(6, -2, 3, -1);
       ctx.stroke();
     } else {
       ctx.beginPath();
@@ -1334,6 +1473,23 @@
       ctx.stroke();
     }
 
+    // 姿态：伸懒腰（营地呼吸）/ 指路（出发仪式，文档 §6.1）
+    if (pose === "stretch") {
+      ctx.beginPath();
+      ctx.moveTo(0, -26); ctx.quadraticCurveTo(-2 - Math.sin(time * 2) * 1.5, -31, -4, -34);
+      ctx.moveTo(6, -25); ctx.quadraticCurveTo(8 + Math.sin(time * 2) * 1.5, -30, 10, -33);
+      ctx.stroke();
+    } else if (pose === "point") {
+      ctx.beginPath();
+      ctx.moveTo(4, -21);
+      ctx.quadraticCurveTo(10, -22, 15, -19);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(15.5, -19, 1, 0, Math.PI * 2);
+      ctx.fillStyle = "#18181A"; ctx.fill();
+    }
+
+    ctx.fillStyle = "#18181A";
     ctx.beginPath();
     ctx.arc(0, -21, 0.85, 0, Math.PI * 2);
     ctx.arc(5, -21, 0.85, 0, Math.PI * 2);
@@ -1341,19 +1497,24 @@
     ctx.restore();
   }
 
-  function drawCloudy(x, y, squash, time, slide, phase) {
+  function drawCloudy(x, y, squash, time, roll, phase) {
     const w = walkPose(time, phase != null ? phase : 1.3);
     ctx.save();
-    ctx.translate(x, y - (slide ? 0 : w.bob));
+    ctx.translate(x, y);
     const s = 0.8;
-    if (slide) { ctx.rotate(-0.26); ctx.scale(s * 1.2, s * 0.48); }
-    else { ctx.rotate(w.lean); ctx.scale(s, s * (1 - squash * 0.08)); }
+    if (roll != null) applyRoll(roll, s * 1.12, s * 0.6, 11);
+    else {
+      ctx.translate(0, -w.bob);
+      ctx.rotate(w.lean);
+      ctx.scale(s, s * (1 - squash * 0.08));
+    }
     ctx.lineWidth = 1.5;
     ctx.strokeStyle = "#18181A";
     ctx.lineCap = "round";
-    ctx.fillStyle = "none";
+    ctx.lineJoin = "round";
 
-    // 垂耳兔：一笔耳→头→身→耳
+    // 垂耳兔：一笔耳→头→身→耳（白填充遮住背后的线条）
+    ctx.fillStyle = "#FFFFFF";
     ctx.beginPath();
     ctx.moveTo(-7, -12);
     ctx.quadraticCurveTo(-13, -4, -11, 3);
@@ -1363,12 +1524,14 @@
     ctx.quadraticCurveTo(14, -8, 15, 1);
     ctx.quadraticCurveTo(12, -6, 9, -12);
     ctx.quadraticCurveTo(10, -5, 5, -3);
+    ctx.closePath();
+    ctx.fill();
     ctx.stroke();
 
-    if (slide) {
+    if (roll != null) {
       ctx.beginPath();
-      ctx.moveTo(-3, -2); ctx.lineTo(-11, 0);
-      ctx.moveTo(4, -2); ctx.lineTo(12, 0);
+      ctx.moveTo(-2, -6); ctx.quadraticCurveTo(0, -2, -3, -1);
+      ctx.moveTo(4, -6); ctx.quadraticCurveTo(6, -2, 3, -1);
       ctx.stroke();
     } else {
       ctx.beginPath();
@@ -1377,6 +1540,7 @@
       ctx.stroke();
     }
 
+    ctx.fillStyle = "#18181A";
     ctx.beginPath();
     ctx.arc(1, -17, 0.85, 0, Math.PI * 2);
     ctx.arc(6, -17, 0.85, 0, Math.PI * 2);
@@ -1384,26 +1548,32 @@
     ctx.restore();
   }
 
-  function drawKuro(x, y, squash, time, slide, phase) {
+  function drawKuro(x, y, squash, time, roll, phase) {
     const w = walkPose(time * 1.25, phase != null ? phase : 2.6);
     ctx.save();
-    ctx.translate(x, y - (slide ? 0 : w.bob * 0.85));
+    ctx.translate(x, y);
     const s = 0.8;
-    if (slide) { ctx.rotate(-0.26); ctx.scale(s * 1.16, s * 0.48); }
-    else { ctx.rotate(w.lean); ctx.scale(s, s * (1 - squash * 0.08)); }
+    if (roll != null) applyRoll(roll, s * 1.1, s * 0.62, 10);
+    else {
+      ctx.translate(0, -w.bob * 0.85);
+      ctx.rotate(w.lean);
+      ctx.scale(s, s * (1 - squash * 0.08));
+    }
     ctx.lineWidth = 1.5;
     ctx.strokeStyle = "#18181A";
     ctx.lineCap = "round";
-    ctx.fillStyle = "none";
+    ctx.lineJoin = "round";
 
+    // 黑毛团（#18181A 填充，豆豆眼反白）
+    ctx.fillStyle = "#18181A";
     ctx.beginPath();
     ctx.arc(0, -10, 8.2, 0, Math.PI * 2);
-    ctx.stroke();
+    ctx.fill();
 
-    if (slide) {
+    if (roll != null) {
       ctx.beginPath();
-      ctx.moveTo(-2, -3); ctx.lineTo(-9, 0);
-      ctx.moveTo(2, -3); ctx.lineTo(10, 0);
+      ctx.moveTo(-2, -4); ctx.quadraticCurveTo(0, -1, -3, 0);
+      ctx.moveTo(2, -4); ctx.quadraticCurveTo(4, -1, 1, 0);
       ctx.stroke();
     } else {
       ctx.beginPath();
@@ -1412,69 +1582,100 @@
       ctx.stroke();
     }
 
-    // 空心豆豆眼
+    ctx.fillStyle = "#FFFFFF";
     ctx.beginPath();
     ctx.arc(-2.4, -12, 1.35, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
     ctx.arc(2.8, -12, 1.35, 0, Math.PI * 2);
-    ctx.stroke();
+    ctx.fill();
     ctx.restore();
   }
 
   function drawCampFire() {
-    const fx = 110 - cameraX * 0.2;
-    const fy = baseY;
+    const fx = 118 - cameraX;               // 锚定在世界坐标，随路一起离场
+    if (fx < -60 || fx > W + 60) return;
+    const fade = Math.max(0, Math.min(1, 1 - (cameraX - 350) / 250));
+    const fy = terrainY(118);
     ctx.save();
+    ctx.globalAlpha = fade;
     ctx.translate(fx, fy);
     ctx.lineWidth = 1.5;
     ctx.strokeStyle = "#18181A";
     ctx.lineCap = "round";
-    ctx.fillStyle = "none";
+    ctx.lineJoin = "round";
 
-    // one-line logs
+    // 一笔柴堆
     ctx.beginPath();
     ctx.moveTo(-16, 0); ctx.lineTo(16, -3);
     ctx.moveTo(-12, -3); ctx.lineTo(12, 2);
     ctx.stroke();
 
-    // one-line flame
-    const fl = 1 + Math.sin(modeT * 5) * 0.08;
+    // 火苗（营地唯一的暖橙浓度点）
+    const fl = reduceMotion ? 1 : 1 + Math.sin(modeT * 5) * 0.08;
     ctx.beginPath();
     ctx.moveTo(0, -6);
     ctx.quadraticCurveTo(-10, -18, 0, -34 * fl);
     ctx.quadraticCurveTo(10, -18, 0, -6);
     ctx.stroke();
+
+    ctx.strokeStyle = "#FF9F43";
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.moveTo(0, -7);
+    ctx.quadraticCurveTo(-4.5, -15, 0, -24 * fl);
+    ctx.quadraticCurveTo(4.5, -15, 0, -7);
+    ctx.stroke();
     ctx.restore();
   }
 
-  function drawPlayerGroup() {
+  /** 角色群：营地休息位 → 行进队形连续过渡（无瞬移），翻滚/踉跄/跳跃姿态 */
+  function drawMascots() {
     const px = W * 0.22;
     const worldX = playerWorldX();
     const gy = terrainY(worldX) + playerY;
     const ang = Math.atan(tangentAt(worldX)) * 0.35;
-    const isSlide = sliding > 0;
+    const rollSpin = rolling > 0 ? 1 - rolling / P.rollDur : null;
     const squash = jumping && playerY < -16 ? 0.2 : stumbleT > 0 ? 0.15 : 0;
 
-    ctx.save();
-    ctx.translate(px, gy);
-    ctx.rotate(isSlide ? 0 : ang);
+    const b = (mode === "walk" || mode === "play")
+      ? departBlend * departBlend * (3 - 2 * departBlend)
+      : 0;
+    const tAnim = mode === "await" ? 0.3 : modeT * (0.45 + 0.55 * b) * gaitBoost;
+    const pose = mode === "camp" ? (modeT > 0.9 ? "stretch" : "idle")
+      : mode === "point" ? "point" : null;
 
-    if (isSlide) {
-      drawChestnut(-20, 0, 0.1, true, 0);
-      drawCloudy(0, 0, 0.1, modeT, true, 1.3);
-      drawKuro(18, 0, 0.1, modeT, true, 2.6);
+    const spots = [196, 224, 252];            // 营地休息位（世界坐标）
+    const phases = [0, 1.3, 2.6];
+    const forms = [-20, 0, 18];                // 行进队形偏移（屏幕坐标）
+
+    for (let i = 0; i < 3; i++) {
+      const campScreenX = spots[i] - cameraX;            // 世界锚定
+      const formScreenX = px + forms[i];                 // 屏幕锚定
+      const X = campScreenX + (formScreenX - campScreenX) * b;
+      const campY = terrainY(spots[i]);
+      const Y = campY + (gy - campY) * b;
+      const tilt = ang * b + (rollSpin == null && stumbleT > 0 ? Math.sin(modeT * 26) * 0.05 : 0);
+      ctx.save();
+      ctx.translate(X, Y);
+      ctx.rotate(tilt);
+      ctx.translate(-X, -Y);
+      if (i === 0) drawChestnut(X, Y, squash, tAnim, rollSpin, phases[i], pose);
+      else if (i === 1) drawCloudy(X, Y, squash, tAnim, rollSpin, phases[i]);
+      else drawKuro(X, Y, squash, tAnim, rollSpin, phases[i]);
+      ctx.restore();
+    }
+
+    // 滑行扬尘（翻滚拖出的短线）
+    if (rollSpin != null) {
       ctx.strokeStyle = "rgba(24,24,26,0.22)";
       ctx.lineWidth = 1;
+      ctx.lineCap = "round";
       ctx.beginPath();
-      ctx.moveTo(-34, 1); ctx.lineTo(-26, 0);
-      ctx.moveTo(-32, 4); ctx.lineTo(-23, 3);
+      ctx.moveTo(px - 36, gy + 1); ctx.lineTo(px - 27, gy);
+      ctx.moveTo(px - 33, gy + 4); ctx.lineTo(px - 24, gy + 3);
       ctx.stroke();
-    } else {
-      drawChestnut(-20, 0, squash, false, 0);
-      drawCloudy(0, 0, squash, modeT, false, 1.3);
-      drawKuro(18, 0, squash, modeT, false, 2.6);
     }
-    ctx.restore();
-
     if (jumping && playerY < -8) {
       ctx.strokeStyle = "rgba(24,24,26,0.25)";
       ctx.lineWidth = 1.1;
@@ -1485,14 +1686,15 @@
     }
     if (stumbleT > 0) {
       for (let i = 0; i < 3; i++) {
-        const a = (i / 3) * Math.PI * 2 + (1.4 - stumbleT) * 5;
-        const sx = px + Math.cos(a) * 18;
-        const sy = gy - 28 + Math.sin(a) * 8;
+        const a = (i / 3) * Math.PI * 2 + (P.stumbleDur - stumbleT) * 5;
+        const sx2 = px + Math.cos(a) * 18;
+        const sy2 = gy - 28 + Math.sin(a) * 8;
         ctx.strokeStyle = "#FFDE59";
         ctx.lineWidth = 1.2;
+        ctx.lineCap = "round";
         ctx.beginPath();
-        ctx.moveTo(sx - 3, sy); ctx.lineTo(sx + 3, sy);
-        ctx.moveTo(sx, sy - 3); ctx.lineTo(sx, sy + 3);
+        ctx.moveTo(sx2 - 3, sy2); ctx.lineTo(sx2 + 3, sy2);
+        ctx.moveTo(sx2, sy2 - 3); ctx.lineTo(sx2, sy2 + 3);
         ctx.stroke();
       }
     }
@@ -1502,7 +1704,7 @@
     if (mode !== "play" || stumbleT > 0) return;
     const wx = playerWorldX();
     const gy = terrainY(wx);
-    const standH = sliding > 0 ? 12 : 28;
+    const standH = rolling > 0 ? 11 : 28;   // 翻滚 hitbox ×0.4
     const head = gy + playerY - standH;
     const feet = gy + playerY;
 
@@ -1511,10 +1713,10 @@
       if (dx > o.w) continue;
       const u = (wx - o.x) / o.w;
 
-      if (o.type === "slide") {
-        // 桥洞 / 山洞：站立会撞顶，滑行可通过
-        const clearance = terrainY(o.x) - (o.low || 28);
-        if (sliding <= 0 && head < clearance && Math.abs(u) < 0.85) { stun(); return; }
+      if (o.type === "roll") {
+        // 桥洞 / 山洞：站立或跳跃撞顶 → 踉跄；翻滚可穿过
+        const lintel = terrainY(o.x) - (o.clear || 20);
+        if (head < lintel && Math.abs(u) < 0.88) { stun(); return; }
       } else if (o.type === "stone") {
         const top = terrainY(o.x) - (o.h || 16);
         if (feet > top + 4 && playerY > -(o.h || 16) * 0.6) { stun(); return; }
@@ -1526,45 +1728,58 @@
   }
 
   function stun() {
-    stumbleT = 1.4;
-    jumping = false; sliding = 0; playerY = 0; vy = 0;
+    stumbleT = P.stumbleDur;
+    jumping = false; rolling = 0; playerY = 0; vy = 0;
     emitParticles(W * 0.22, terrainY(playerWorldX()) - 24, 5, true);
   }
 
   function doJump() {
-    if (mode !== "play" || sliding > 0) return;
+    if (mode !== "play" || rolling > 0) return;
     if (jumping && playerY < -5) { jumpBuf = P.bufferJump; return; }
     if (coyote > 0 || playerY > -2) {
       vy = P.jumpV; jumping = true; jumpBuf = 0;
     } else jumpBuf = P.bufferJump;
   }
 
-  function doSlide() {
-    if (mode !== "play" || sliding > 0) return;
-    sliding = P.slideDur;
+  function doRoll() {
+    if (mode !== "play" || rolling > 0) return;
+    rolling = P.rollDur;
   }
 
-  function skipIntro() {
+  /** 完成交权：进入行进态。withFlash: 跳过时补 200ms 交叉淡入 */
+  function enterPlay(withFlash) {
     if (mode === "play") return;
     mode = "play";
     modeT = 0;
+    departBlend = Math.max(departBlend, 0.35);
+    penDrop = 1; pointLand = true;
+    if (withFlash) flashT = 0.2;
     document.body.classList.remove("intro-lock");
     document.getElementById("intro-ui").classList.add("hidden");
     updateHint();
+    if (!hintPulsed) {
+      hintPulsed = true;
+      const hint = document.getElementById("hero-hint");
+      hint.classList.remove("hint-pulse");
+      void hint.offsetWidth;
+      hint.classList.add("hint-pulse");
+    }
   }
+  function skipIntro() { enterPlay(true); }
 
   canvas.addEventListener("contextmenu", (e) => e.preventDefault());
   let touchStart = null, lpTimer = 0;
 
   canvas.addEventListener("pointerdown", (e) => {
-    if (e.button === 2) { e.preventDefault(); skipIntro(); doSlide(); return; }
+    idleT = 0;
+    if (e.button === 2) { e.preventDefault(); skipIntro(); doRoll(); return; }
     if (e.button !== 0) return;
     skipIntro();
     if (e.pointerType === "touch") {
       touchStart = { x: e.clientX, y: e.clientY, t: performance.now() };
       return;
     }
-    lpTimer = window.setTimeout(() => { if (mode === "play") doSlide(); }, 200);
+    lpTimer = window.setTimeout(() => { if (mode === "play") doRoll(); }, 200);
     doJump();
   });
   canvas.addEventListener("pointerup", (e) => {
@@ -1574,26 +1789,38 @@
     const dy = e.clientY - touchStart.y;
     const dt = performance.now() - touchStart.t;
     touchStart = null;
-    if (dy > 36 && Math.abs(dx) < 50) doSlide();
+    if (dy > 36 && Math.abs(dx) < 50) doRoll();
     else if (dt < 320) doJump();
   });
   window.addEventListener("pointerup", () => clearTimeout(lpTimer));
 
   window.addEventListener("keydown", (e) => {
-    if (e.code === "Escape") { skipIntro(); return; }
+    idleT = 0;
+    if (e.code === "Escape") {
+      if (mode !== "play") { skipIntro(); return; }
+      paused = !paused; window.__paused = paused;
+      document.getElementById("btn-pause").textContent = paused ? t("hero.play") : t("hero.pause");
+      return;
+    }
     if (e.code === "Space" || e.code === "ArrowUp") {
       e.preventDefault(); skipIntro(); doJump(); return;
     }
     if (e.code === "ShiftLeft" || e.code === "ShiftRight" || e.code === "KeyS" || e.code === "ArrowDown") {
-      e.preventDefault(); skipIntro(); doSlide(); return;
+      e.preventDefault(); skipIntro(); doRoll(); return;
     }
-    if (mode === "camp" || mode === "depart") skipIntro();
+    if (mode === "camp" || mode === "point" || mode === "walk") skipIntro();
   });
 
   document.getElementById("btn-skip").addEventListener("click", skipIntro);
-  document.getElementById("btn-setout").addEventListener("click", skipIntro);
+  document.getElementById("btn-setout").addEventListener("click", () => enterPlay(false));
   document.getElementById("btn-redraw").addEventListener("click", () => {
-    resetWorld((Math.random() * 1e9) | 0);
+    seed = (Math.random() * 1e9) >>> 0;
+    try {
+      const u = new URL(location.href);
+      u.searchParams.set("seed", String(seed));
+      history.replaceState(null, "", u);   // ?seed= 可分享
+    } catch (err) { /* file:// 某些环境不支持时静默 */ }
+    resetWorld(seed);
     emitParticles(W * 0.85, terrainY(cameraX + W * 0.85) - 6, 8, true);
   });
   document.getElementById("btn-pause").addEventListener("click", () => {
@@ -1603,64 +1830,99 @@
   });
 
   window.addEventListener("scroll", () => {
-    if (mode === "camp" || mode === "depart") skipIntro();
+    if (mode === "camp" || mode === "point" || mode === "walk") skipIntro();
   }, { passive: true });
   window.addEventListener("wheel", () => {
-    if (mode === "camp" || mode === "depart") skipIntro();
+    if (mode === "camp" || mode === "point" || mode === "walk") skipIntro();
   }, { passive: true });
+
+  /** Idle 示范：一小段波浪（文档 §4.4） */
+  function drawIdleWave(k) {
+    const penX = W * 0.85;
+    const base = terrainY(cameraX + penX);
+    ctx.save();
+    ctx.globalAlpha = Math.sin(Math.min(1, k) * Math.PI) * 0.6;
+    ctx.strokeStyle = "#18181A";
+    ctx.lineWidth = 1.2;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    const n = 20;
+    const upto = Math.round(n * Math.min(1, k * 2.2));
+    for (let i = 0; i <= upto; i++) {
+      const u = i / n;
+      const x = penX - 42 + u * 46;
+      const y = base - 24 - Math.sin(u * Math.PI * 2.4) * 6;
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
 
   /* ── loop ── */
   let last = performance.now();
   function frame(now) {
     const dt = Math.min(0.033, (now - last) / 1000);
     last = now;
-    modeT += dt;
+    if (!stageVisible) { requestAnimationFrame(frame); return; }   // 离屏冻结，省电
+    if (!paused) modeT += dt;
 
     if (!paused) {
       if (mode === "camp") {
-        // rest at camp; gentle reveal of camp objects
-        revealByPen();
-        if (modeT > 2.0) { mode = "depart"; modeT = 0; }
-      } else if (mode === "depart") {
-        cameraX += P.speed * 0.4 * dt;
-        ensureWorld(cameraX + W + 200);
-        revealByPen();
-        if (rnd() < 0.4) emitParticles(W * 0.85, terrainY(cameraX + W * 0.85) - 2, 1, false);
-        if (modeT > 4.0) skipIntro();
-      } else if (mode === "play" || mode === "await") {
-        if (mode === "play") {
-          cameraX += P.speed * dt;
-          ensureWorld(cameraX + W * 1.3);
-          revealByPen();
-
-          if (jumpBuf > 0) {
-            jumpBuf -= dt;
-            if (playerY > -2) doJump();
-          }
-          if (sliding > 0) sliding -= dt;
-          if (jumping || playerY < 0) {
-            vy += P.gravity * dt;
-            playerY += vy * dt;
-            if (playerY >= 0) { playerY = 0; vy = 0; jumping = false; coyote = P.coyote; }
-          } else coyote -= dt;
-
-          if (stumbleT > 0) {
-            stumbleT -= dt;
-            if (stumbleT < 0.7) cameraX += P.speed * 0.3 * dt;
-          }
-          if (rnd() < dt * 4) emitParticles(W * 0.85, terrainY(cameraX + W * 0.85) - 2, 1, false);
-          collide();
-        } else {
-          revealByPen();
+        // t 0–1.8s 营地呼吸：火苗轻晃、伸懒腰（文档 §6.1）
+        revealByPen(dt);
+        if (modeT > 1.8) { mode = "point"; modeT = 0; }
+      } else if (mode === "point") {
+        // t 1.8–3.2s 栗子鼠指向前方；画笔在 85% 处轻轻落位
+        penDrop = Math.min(1, penDrop + dt / 0.9);
+        if (penDrop >= 1 && !pointLand) {
+          pointLand = true;
+          emitParticles(W * 0.85, terrainY(cameraX + W * 0.85) - 2, 4, true);
         }
-      }
-    }
+        if (modeT > 1.4) { mode = "walk"; modeT = 0; }
+      } else if (mode === "walk") {
+        // t 3.2–6.0s 画笔绘出第一段路；小队起立走进队形（墨粒）
+        departBlend = Math.min(1, departBlend + dt / 1.1);
+        cameraX += P.speed * Math.min(1, modeT * 1.2) * dt;
+        ensureWorld(cameraX + W + 200);
+        revealByPen(dt);
+        if (rnd() < dt * 3) emitParticles(W * 0.85, terrainY(cameraX + W * 0.85) - 2, 1, false);
+        if (modeT > 2.8) enterPlay(false);
+      } else if (mode === "play") {
+        idleT += dt;
+        // 踉跄：先失速，后 1.15× 归队（文档 §5.3）
+        const rejoin = stumbleT > 0 && stumbleT <= 0.55;
+        const spd = stumbleT > 0 ? (rejoin ? P.speed * P.rejoinBoost : P.speed * 0.25) : P.speed;
+        gaitBoost = rejoin ? P.rejoinBoost : 1;
+        if (stumbleT > 0) stumbleT -= dt;
+        departBlend = Math.min(1, departBlend + dt * 1.6);
 
-    for (let i = particles.length - 1; i >= 0; i--) {
-      const p = particles[i];
-      p.t += dt;
-      if (p.t > p.life) { particles.splice(i, 1); continue; }
-      p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 200 * dt;
+        cameraX += spd * dt;
+        ensureWorld(cameraX + W * 1.3);
+        revealByPen(dt);
+
+        if (jumpBuf > 0) {
+          jumpBuf -= dt;
+          if (playerY > -2) doJump();
+        }
+        if (rolling > 0) rolling -= dt;
+        if (jumping || playerY < 0) {
+          vy += P.gravity * dt;
+          playerY += vy * dt;
+          if (playerY >= 0) { playerY = 0; vy = 0; jumping = false; coyote = P.coyote; }
+        } else coyote -= dt;
+
+        if (rnd() < dt * 4) emitParticles(W * 0.85, terrainY(cameraX + W * 0.85) - 2, 1, false);
+        collide();
+      } else if (mode === "await") {
+        revealByPen(dt);   // reduced-motion：静态营地，无仪式
+      }
+
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.t += dt;
+        if (p.t > p.life) { particles.splice(i, 1); continue; }
+        p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 200 * dt;
+      }
     }
 
     baseY = H * 0.64;
@@ -1668,11 +1930,10 @@
     ctx.fillStyle = "#FFFFFF";
     ctx.fillRect(0, 0, W, H);
 
-    // soft clouds — 参考图小云朵
+    // 软云 — 天空原有，不参与描出
     ctx.strokeStyle = "rgba(24,24,26,0.2)";
     ctx.lineWidth = 1.1;
     ctx.lineCap = "round";
-    ctx.fillStyle = "none";
     for (let i = 0; i < 5; i++) {
       const cx = ((i * 210 - cameraX * 0.06) % (W + 200)) - 50;
       const cy = 42 + (i % 3) * 28;
@@ -1683,22 +1944,27 @@
       ctx.stroke();
     }
 
-    // 云朵为天空原有；其余场景全部由笔描出（不画远山）
-    if (cameraX < 480) drawCampFire();
+    drawCampFire();
     drawPath();
     drawObjects("back");
-    drawPen();
 
-    if (mode !== "camp") drawPlayerGroup();
-    else {
-      const gy = terrainY(210);
-      drawChestnut(195, gy, 0, false, 0);
-      drawCloudy(220, gy, 0, 0.3, false, 1.3);
-      drawKuro(245, gy, 0, 0.3, false, 2.6);
-    }
-    // 前景遮挡：桥面/洞顶压在角色上（滑行穿越时的遮挡）
-    drawObjects("front");
+    const penShow = mode === "camp" ? 0
+      : mode === "point" ? penDrop * penDrop * (3 - 2 * penDrop) : 1;
+    drawPen(penShow, paused ? 0 : dt);
+
+    drawMascots();
+    drawObjects("front");   // 前景遮挡：桥面/洞顶压在角色上
     drawParticles();
+
+    if (mode === "play" && idleT > 4 && idleT < 5.8) drawIdleWave((idleT - 4) / 1.8);
+
+    if (flashT > 0) {
+      flashT -= dt;
+      ctx.globalAlpha = Math.max(0, flashT / 0.2) * 0.6;
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fillRect(0, 0, W, H);
+      ctx.globalAlpha = 1;
+    }
 
     requestAnimationFrame(frame);
   }
@@ -1718,12 +1984,13 @@
 
   // boot
   resize();
-  srand(seed);
   resetWorld(seed);
   applyI18n();
 
   const introUI = document.getElementById("intro-ui");
   if (reduceMotion) {
+    // 无仪式动画：静态营地 + 「出发」按钮（文档 §9.2），页面可正常滚动
+    document.body.classList.remove("intro-lock");
     introUI.classList.remove("hidden");
     document.getElementById("btn-skip").style.display = "none";
   } else {
@@ -1733,8 +2000,25 @@
     document.getElementById("hero-hint").textContent = t("hero.skipping");
   }
 
+  if ("IntersectionObserver" in window) {
+    new IntersectionObserver((es) => {
+      stageVisible = es[es.length - 1].isIntersecting;
+    }, { threshold: 0 }).observe(canvas);
+  }
+
   requestAnimationFrame(frame);
-  window.__lucky = { resetWorld, skipIntro, get mode() { return mode; } };
+  window.__lucky = {
+    resetWorld, skipIntro, enterPlay,
+    get mode() { return mode; },
+    // 只读调试探针（供本地验证）
+    get debug() {
+      return {
+        mode, cameraX, playerY, rolling: rolling > 0, stumbleT,
+        particles: particles.length, objects: objects.length,
+        pathPoints: pathPoints.length, stageVisible,
+      };
+    },
+  };
 })();
 </script>
 </body>
