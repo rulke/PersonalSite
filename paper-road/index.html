@@ -113,7 +113,7 @@
   #stage {
     display: block;
     width: 100%;
-    height: min(72vh, 640px);
+    height: min(68vh, 560px);
     touch-action: none;
     cursor: default;
     background: var(--paper);
@@ -121,14 +121,14 @@
 
   .hero-copy {
     text-align: center;
-    padding: 12px 24px 8px;
-    margin-top: -20px;
+    padding: 8px 24px 4px;
+    margin-top: -36px;
   }
   .hero-title {
     font-family: var(--font-display);
     font-weight: 600;
-    font-size: clamp(34px, 6.2vw, 72px);
-    line-height: 1.08;
+    font-size: clamp(28px, 4.8vw, 56px);
+    line-height: 1.12;
     letter-spacing: -0.035em;
   }
   .hero-title .zh {
@@ -138,8 +138,8 @@
     line-height: 1.4;
   }
   .hero-sub {
-    margin-top: 18px;
-    font-size: 14px;
+    margin-top: 14px;
+    font-size: 13px;
     color: var(--ink-soft);
     letter-spacing: 0.04em;
   }
@@ -165,8 +165,9 @@
   }
   .ctrl-btn:hover { color: var(--ink); border-color: var(--ink-soft); }
   .hero-hint {
-    font-family: var(--font-mono);
-    font-size: 11px;
+    font-family: var(--font-display);
+    font-size: 12px;
+    font-weight: 500;
     color: var(--ink-soft);
     letter-spacing: 0.02em;
     text-align: right;
@@ -195,10 +196,10 @@
 
   /* ── Sections ── */
   .section {
-    padding: 100px 56px 72px;
+    padding: 72px 56px 56px;
     max-width: 980px;
     margin: 0 auto;
-    scroll-margin-top: 88px;
+    scroll-margin-top: 96px;
   }
   .openroad { scroll-margin-top: 88px; }
   .section-head {
@@ -219,13 +220,14 @@
   .hollow {
     font-family: var(--font-display);
     font-weight: 600;
-    font-size: clamp(42px, 8vw, 72px);
-    letter-spacing: 0.02em;
-    line-height: 0.95;
+    font-size: clamp(40px, 7.5vw, 68px);
+    letter-spacing: 0.04em;
+    line-height: 1;
     color: transparent;
-    -webkit-text-stroke: 1.6px var(--line-soft);
-    text-stroke: 1.6px var(--line-soft);
+    -webkit-text-stroke: 2px #cfcdc8;
+    text-stroke: 2px #cfcdc8;
     user-select: none;
+    white-space: nowrap;
   }
   .section-sub {
     margin-top: 14px;
@@ -246,24 +248,24 @@
   .works-featured {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 56px 48px;
-    margin-bottom: 48px;
+    gap: 40px 40px;
+    margin-bottom: 32px;
   }
   .work-card {
     display: block;
     border-radius: 24px;
-    padding: 28px 28px 32px;
+    padding: 20px 20px 28px;
     transition: transform .4s cubic-bezier(.22,1,.36,1);
     position: relative;
   }
   .work-card:hover { transform: translateY(-3px); }
-  .work-card.featured:nth-child(even) { margin-top: 56px; }
+  .work-card.featured:nth-child(even) { margin-top: 40px; }
   .work-art {
-    height: 160px;
+    height: 120px;
     display: flex; align-items: center; justify-content: center;
-    margin-bottom: 28px;
+    margin-bottom: 12px;
   }
-  .work-art svg { width: 180px; height: 130px; overflow: visible; }
+  .work-art svg { width: 140px; height: 100px; overflow: visible; }
   .work-title {
     font-family: var(--font-display);
     font-size: 28px; font-weight: 600;
@@ -325,7 +327,7 @@
     font-size: clamp(22px, 3.2vw, 34px);
     font-weight: 500;
     letter-spacing: -0.02em;
-    margin-bottom: 72px;
+    margin-bottom: 48px;
   }
   .timeline {
     list-style: none;
@@ -491,12 +493,12 @@
     transition-delay: var(--rvd, 0s);
   }
   .js .rv.in { opacity: 1; transform: none; }
-  /* 空心标题由未被裁剪的父容器触发描出（clip-path 会令 IO 交叉比恒为 0） */
+  /* 空心标题：由父级 .in 触发描出 */
   .js .hollow {
-    clip-path: inset(-30% 100% -30% -6px);
-    transition: clip-path .9s cubic-bezier(.4,0,.2,1) .15s;
+    clip-path: inset(-40% 100% -40% -12px);
+    transition: clip-path .55s cubic-bezier(.4,0,.2,1) .05s;
   }
-  .js .section-head.in .hollow { clip-path: inset(-30% -6px -30% -6px); }
+  .js .section-head.in .hollow { clip-path: inset(-40% -12px -40% -12px); }
 
   .hint-pulse { animation: hintPulse 1.8s ease 1; }
   @keyframes hintPulse {
@@ -521,25 +523,34 @@
 
   @media (max-width: 880px) {
     .sheet { margin: 0; border-radius: 0; border-left: none; border-right: none; }
-    .section { padding: 72px 24px 56px; }
-    .works-featured { grid-template-columns: 1fr; gap: 28px; }
+    .section { padding: 56px 20px 40px; scroll-margin-top: 80px; }
+    #stage { height: min(48vh, 360px); }
+    .hero-copy { margin-top: -20px; padding: 4px 16px; }
+    .hero-title { font-size: clamp(26px, 7vw, 40px); }
+    .works-featured { grid-template-columns: 1fr; gap: 20px; }
     .work-card.featured:nth-child(even) { margin-top: 0; }
     .works-bento { grid-template-columns: 1fr 1fr; }
     .section-head {
       grid-template-columns: 1fr;
       justify-items: center;
-      gap: 10px;
+      gap: 8px;
+      margin-bottom: 36px;
     }
     .section-head .side { justify-content: center !important; }
-    .hero-bar { padding: 4px 18px 18px; }
-    .hero-hint { text-align: left; }
+    .hollow { font-size: clamp(32px, 10vw, 48px); }
+    .hero-bar { padding: 4px 14px 14px; gap: 8px; }
+    .hero-hint { text-align: left; min-width: 0; width: 100%; font-size: 11px; }
+    .ctrl-btn { padding: 7px 10px; font-size: 10px; }
+    .intro-ui { padding-bottom: 10px; }
   }
   @media (max-width: 540px) {
     .works-bento { grid-template-columns: 1fr; }
-    .nav { left: 10px; right: 10px; transform: none; width: auto; max-width: none; overflow-x: auto; }
-    .nav-links a { padding: 7px 8px; font-size: 10px; }
-    .note-row { grid-template-columns: 92px 1fr 20px; gap: 8px; padding: 20px 4px; }
-    .hero-title { font-size: clamp(28px, 9vw, 40px); }
+    .nav { left: 8px; right: 8px; transform: none; width: auto; max-width: none; overflow-x: auto; top: 10px; padding: 6px 6px 6px 10px; }
+    .nav-links a { padding: 6px 7px; font-size: 10px; }
+    .nav-brand { font-size: 13px; margin-right: 2px; }
+    .note-row { grid-template-columns: 88px 1fr 18px; gap: 8px; padding: 16px 2px; }
+    .about-manifesto { margin-bottom: 32px; }
+    .timeline li { padding-bottom: 32px; }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -688,12 +699,12 @@
       "nav.works": "作品", "nav.about": "关于", "nav.notes": "手记", "nav.contact": "联系",
       "hero.title": "用匠心写代码，<br>以灵魂做设计。",
       "hero.sub": "边走边画，把每天画得更新一点。",
-      "hero.hint": "[左键] 跳跃 · [右键] 翻滚 ｜ [↺ 重绘] ｜ [⏸ 暂停]",
-      "hero.hint.touch": "[轻点] 跳跃 · [下滑] 翻滚",
+      "hero.hint": "[左键] 跳跃 · [右键] 滑行 ｜ [↺ 重绘] ｜ [⏸ 暂停]",
+      "hero.hint.touch": "[轻点] 跳跃 · [下滑] 滑行",
       "hero.setout": "出发", "hero.skip": "跳过出发",
       "hero.redraw": "↺ 重绘", "hero.pause": "⏸ 暂停", "hero.play": "▶ 继续",
       "hero.skipping": "出发中… 点击跳过",
-      "a11y.controls": "键盘：空格或上箭头跳跃，Shift、S 或下箭头翻滚，Esc 跳过开场或暂停。",
+      "a11y.controls": "键盘：空格或上箭头跳跃，Shift、S 或下箭头滑行，Esc 跳过开场或暂停。",
       "works.sub": "精选项目", "works.empty": "还在路上收集。",
       "about.sub": "路上的人", "about.manifesto": "路是边走边画出来的。",
       "notes.sub": "制作笔记", "notes.all": "阅读全部 ↗",
@@ -705,12 +716,12 @@
       "nav.works": "Works", "nav.about": "About", "nav.notes": "Notes", "nav.contact": "Contact",
       "hero.title": "Code with craft.<br>Design with soul.",
       "hero.sub": "Keep walking, keep drawing.",
-      "hero.hint": "[LMB] Jump · [RMB] Roll ｜ [↺ Redraw] ｜ [⏸ Pause]",
-      "hero.hint.touch": "[Tap] Jump · [Swipe down] Roll",
+      "hero.hint": "[LMB] Jump · [RMB] Slide ｜ [↺ Redraw] ｜ [⏸ Pause]",
+      "hero.hint.touch": "[Tap] Jump · [Swipe down] Slide",
       "hero.setout": "Set out", "hero.skip": "Skip intro",
       "hero.redraw": "↺ Redraw", "hero.pause": "⏸ Pause", "hero.play": "▶ Resume",
       "hero.skipping": "Departing… click to skip",
-      "a11y.controls": "Keyboard: Space or Up to jump, Shift, S or Down to roll. Esc skips the intro or pauses.",
+      "a11y.controls": "Keyboard: Space or Up to jump, Shift, S or Down to slide. Esc skips the intro or pauses.",
       "works.sub": "Selected projects", "works.empty": "Still collecting on the road.",
       "about.sub": "Who is on the road", "about.manifesto": "Draw the road as we go.",
       "notes.sub": "Making notes", "notes.all": "Read all notes ↗",
@@ -918,8 +929,8 @@
 
   // 物理初值（文档 §5.3）
   const P = {
-    gravity: 2200, jumpV: -820, rollDur: 0.55, speed: 180,
-    bufferJump: 0.08, bufferRoll: 0.06, coyote: 0.08,
+    gravity: 2200, jumpV: -820, slideDur: 0.7, speed: 175,
+    bufferJump: 0.08, bufferSlide: 0.06, coyote: 0.08,
     stumbleDur: 1.5, rejoinBoost: 1.15,
   };
 
@@ -932,7 +943,7 @@
   let particles = [];
   let hills = [];
   let stumbleT = 0, jumpBuf = 0, coyote = 0;
-  let jumping = false, rolling = 0, vy = 0, playerY = 0;
+  let jumping = false, sliding = 0, slideBuf = 0, vy = 0, playerY = 0;
   let penAng = 0.35, penDrop = 0, pointLand = false, flashT = 0;
   let idleT = 0;          // 无输入计时 → idle 波浪示范
   let departBlend = 0;    // 角色从营地休息位自然融入行进队形
@@ -1117,7 +1128,7 @@
   function ensureWorld(xTo) {
     while (obstacles.length < 50) {
       const last = obstacles.length ? obstacles[obstacles.length - 1].x : 620;
-      const x = last + 320 + rnd() * 380;
+      const x = last + 230 + rnd() * 280;
       if (x > xTo + 1500 && obstacles.length > 3) break;
       const r = rnd();
 
@@ -1138,7 +1149,7 @@
         obstacles.push({ x, type: "stone", w: 18, h: 16 });
         objects.push({ x, kind: "stone", s: 1, p: 0, on: false, strokes: null });
       } else if (r < 0.64) {
-        // 石桥洞 → 翻滚（clear=站立必撞、翻滚可穿）
+        // 石桥洞 → 滑行（clear=站立必撞、滑行可穿）
         obstacles.push({ x, type: "roll", w: 34, clear: 20 });
         objects.push({ x, kind: "bridge", s: 1, p: 0, on: false, strokes: null });
       } else if (r < 0.78) {
@@ -1201,7 +1212,7 @@
     ];
     hills = [];
     particles = [];
-    playerY = 0; vy = 0; jumping = false; rolling = 0;
+    playerY = 0; vy = 0; jumping = false; sliding = 0;
     stumbleT = 0; gaitBoost = 1;
     departBlend = mode === "camp" || mode === "point" ? 0 : departBlend;
     ensureWorld(cameraX + W + 200);
@@ -1415,11 +1426,10 @@
     };
   }
   // 翻滚姿态：以身体中心为轴 720° 自旋 + 压扁（hitbox ×0.4）
-  function applyRoll(roll, sx, sy, pivot) {
-    ctx.translate(0, -pivot);
-    ctx.rotate(roll * Math.PI * 4);
+  /** 滑行：压低身姿 + 前倾，不自旋 */
+  function applySlide(sx, sy) {
+    ctx.rotate(-0.28);
     ctx.scale(sx, sy);
-    ctx.translate(0, pivot);
   }
 
   function drawChestnut(x, y, squash, time, roll, phase, pose) {
@@ -1427,7 +1437,7 @@
     ctx.save();
     ctx.translate(x, y);
     const s = 0.8;
-    if (roll != null) applyRoll(roll, s * 1.12, s * 0.6, 9);
+    if (roll != null) applySlide(s * 1.18, s * 0.48);
     else {
       ctx.translate(0, -w.bob);
       ctx.rotate(w.lean);
@@ -1502,7 +1512,7 @@
     ctx.save();
     ctx.translate(x, y);
     const s = 0.8;
-    if (roll != null) applyRoll(roll, s * 1.12, s * 0.6, 11);
+    if (roll != null) applySlide(s * 1.18, s * 0.48);
     else {
       ctx.translate(0, -w.bob);
       ctx.rotate(w.lean);
@@ -1553,7 +1563,7 @@
     ctx.save();
     ctx.translate(x, y);
     const s = 0.8;
-    if (roll != null) applyRoll(roll, s * 1.1, s * 0.62, 10);
+    if (roll != null) applySlide(s * 1.15, s * 0.5);
     else {
       ctx.translate(0, -w.bob * 0.85);
       ctx.rotate(w.lean);
@@ -1635,7 +1645,7 @@
     const worldX = playerWorldX();
     const gy = terrainY(worldX) + playerY;
     const ang = Math.atan(tangentAt(worldX)) * 0.35;
-    const rollSpin = rolling > 0 ? 1 - rolling / P.rollDur : null;
+    const slideT = sliding > 0 ? 1 - sliding / P.slideDur : null;
     const squash = jumping && playerY < -16 ? 0.2 : stumbleT > 0 ? 0.15 : 0;
 
     const b = (mode === "walk" || mode === "play")
@@ -1645,9 +1655,9 @@
     const pose = mode === "camp" ? (modeT > 0.9 ? "stretch" : "idle")
       : mode === "point" ? "point" : null;
 
-    const spots = [196, 224, 252];            // 营地休息位（世界坐标）
+    const spots = [180, 232, 284];            // 营地休息位（世界坐标，保持间距）
     const phases = [0, 1.3, 2.6];
-    const forms = [-20, 0, 18];                // 行进队形偏移（屏幕坐标）
+    const forms = [-32, 0, 30];                // 行进队形：三只分离
 
     for (let i = 0; i < 3; i++) {
       const campScreenX = spots[i] - cameraX;            // 世界锚定
@@ -1655,19 +1665,19 @@
       const X = campScreenX + (formScreenX - campScreenX) * b;
       const campY = terrainY(spots[i]);
       const Y = campY + (gy - campY) * b;
-      const tilt = ang * b + (rollSpin == null && stumbleT > 0 ? Math.sin(modeT * 26) * 0.05 : 0);
+      const tilt = ang * b + (slideT == null && stumbleT > 0 ? Math.sin(modeT * 26) * 0.05 : 0);
       ctx.save();
       ctx.translate(X, Y);
       ctx.rotate(tilt);
       ctx.translate(-X, -Y);
-      if (i === 0) drawChestnut(X, Y, squash, tAnim, rollSpin, phases[i], pose);
-      else if (i === 1) drawCloudy(X, Y, squash, tAnim, rollSpin, phases[i]);
-      else drawKuro(X, Y, squash, tAnim, rollSpin, phases[i]);
+      if (i === 0) drawChestnut(X, Y, squash, tAnim, slideT, phases[i], pose);
+      else if (i === 1) drawCloudy(X, Y, squash, tAnim, slideT, phases[i]);
+      else drawKuro(X, Y, squash, tAnim, slideT, phases[i]);
       ctx.restore();
     }
 
     // 滑行扬尘（翻滚拖出的短线）
-    if (rollSpin != null) {
+    if (slideT != null) {
       ctx.strokeStyle = "rgba(24,24,26,0.22)";
       ctx.lineWidth = 1;
       ctx.lineCap = "round";
@@ -1704,7 +1714,7 @@
     if (mode !== "play" || stumbleT > 0) return;
     const wx = playerWorldX();
     const gy = terrainY(wx);
-    const standH = rolling > 0 ? 11 : 28;   // 翻滚 hitbox ×0.4
+    const standH = sliding > 0 ? 11 : 28;   // 滑行 hitbox 压低
     const head = gy + playerY - standH;
     const feet = gy + playerY;
 
@@ -1714,7 +1724,7 @@
       const u = (wx - o.x) / o.w;
 
       if (o.type === "roll") {
-        // 桥洞 / 山洞：站立或跳跃撞顶 → 踉跄；翻滚可穿过
+        // 桥洞 / 山洞：站立或跳跃撞顶 → 踉跄；滑行可穿过
         const lintel = terrainY(o.x) - (o.clear || 20);
         if (head < lintel && Math.abs(u) < 0.88) { stun(); return; }
       } else if (o.type === "stone") {
@@ -1729,21 +1739,23 @@
 
   function stun() {
     stumbleT = P.stumbleDur;
-    jumping = false; rolling = 0; playerY = 0; vy = 0;
+    jumping = false; sliding = 0; playerY = 0; vy = 0;
     emitParticles(W * 0.22, terrainY(playerWorldX()) - 24, 5, true);
   }
 
   function doJump() {
-    if (mode !== "play" || rolling > 0) return;
+    if (mode !== "play" || sliding > 0) return;
     if (jumping && playerY < -5) { jumpBuf = P.bufferJump; return; }
     if (coyote > 0 || playerY > -2) {
       vy = P.jumpV; jumping = true; jumpBuf = 0;
     } else jumpBuf = P.bufferJump;
   }
 
-  function doRoll() {
-    if (mode !== "play" || rolling > 0) return;
-    rolling = P.rollDur;
+  function doSlide() {
+    if (mode !== "play" || sliding > 0) return;
+    if (jumping && playerY < -8) { slideBuf = P.bufferSlide; return; }
+    sliding = P.slideDur;
+    slideBuf = 0;
   }
 
   /** 完成交权：进入行进态。withFlash: 跳过时补 200ms 交叉淡入 */
@@ -1768,31 +1780,29 @@
   function skipIntro() { enterPlay(true); }
 
   canvas.addEventListener("contextmenu", (e) => e.preventDefault());
-  let touchStart = null, lpTimer = 0;
+  let touchStart = null;
 
   canvas.addEventListener("pointerdown", (e) => {
     idleT = 0;
-    if (e.button === 2) { e.preventDefault(); skipIntro(); doRoll(); return; }
+    if (e.button === 2) { e.preventDefault(); skipIntro(); doSlide(); return; }
     if (e.button !== 0) return;
     skipIntro();
     if (e.pointerType === "touch") {
       touchStart = { x: e.clientX, y: e.clientY, t: performance.now() };
       return;
     }
-    lpTimer = window.setTimeout(() => { if (mode === "play") doRoll(); }, 200);
+    // 左键只跳，绝不长按误触滑行（滑行 = 右键 / Shift / ↓）
     doJump();
   });
   canvas.addEventListener("pointerup", (e) => {
-    clearTimeout(lpTimer);
     if (!touchStart || e.pointerType !== "touch") return;
     const dx = e.clientX - touchStart.x;
     const dy = e.clientY - touchStart.y;
     const dt = performance.now() - touchStart.t;
     touchStart = null;
-    if (dy > 36 && Math.abs(dx) < 50) doRoll();
+    if (dy > 36 && Math.abs(dx) < 50) doSlide();
     else if (dt < 320) doJump();
   });
-  window.addEventListener("pointerup", () => clearTimeout(lpTimer));
 
   window.addEventListener("keydown", (e) => {
     idleT = 0;
@@ -1806,7 +1816,7 @@
       e.preventDefault(); skipIntro(); doJump(); return;
     }
     if (e.code === "ShiftLeft" || e.code === "ShiftRight" || e.code === "KeyS" || e.code === "ArrowDown") {
-      e.preventDefault(); skipIntro(); doRoll(); return;
+      e.preventDefault(); skipIntro(); doSlide(); return;
     }
     if (mode === "camp" || mode === "point" || mode === "walk") skipIntro();
   });
@@ -1863,10 +1873,11 @@
   function frame(now) {
     const dt = Math.min(0.033, (now - last) / 1000);
     last = now;
-    if (!stageVisible) { requestAnimationFrame(frame); return; }   // 离屏冻结，省电
-    if (!paused) modeT += dt;
+    // 离屏只跳过模拟，始终重绘，避免 resize/回滚后画布空白
+    const sim = !paused && stageVisible;
+    if (sim) modeT += dt;
 
-    if (!paused) {
+    if (sim) {
       if (mode === "camp") {
         // t 0–1.8s 营地呼吸：火苗轻晃、伸懒腰（文档 §6.1）
         revealByPen(dt);
@@ -1904,7 +1915,11 @@
           jumpBuf -= dt;
           if (playerY > -2) doJump();
         }
-        if (rolling > 0) rolling -= dt;
+        if (slideBuf > 0) {
+          slideBuf -= dt;
+          if (sliding <= 0 && playerY > -4) doSlide();
+        }
+        if (sliding > 0) sliding -= dt;
         if (jumping || playerY < 0) {
           vy += P.gravity * dt;
           playerY += vy * dt;
@@ -2013,7 +2028,7 @@
     // 只读调试探针（供本地验证）
     get debug() {
       return {
-        mode, cameraX, playerY, rolling: rolling > 0, stumbleT,
+        mode, cameraX, playerY, sliding: sliding > 0, stumbleT,
         particles: particles.length, objects: objects.length,
         pathPoints: pathPoints.length, stageVisible,
       };

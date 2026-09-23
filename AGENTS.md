@@ -30,8 +30,9 @@ in the repo root.
   ritual (5–8s, skippable). Contact is a **roadside mailbox (Waystation)** the
   mascots walk past. The page ends on **Open Road** (`未完，还在画。 /
   To be drawn…`). Never ship “The End / 终点 / 旅程结束” copy.
-- Controls: Jump = left click / tap / Space / ↑; Roll = right click / Shift / S / ↓ /
-  swipe-down. Long-press left = fallback only. **Never bind Roll to double-click.**
+- Controls: Jump = left click / tap / Space / ↑; **Slide** = right click / Shift / S / ↓ /
+  swipe-down. Long-press left must NOT trigger Slide (Jump only on left click).
+  **Never bind Slide to double-click.**
   `preventDefault` on canvas `contextmenu`. Any input skips the intro ritual.
 - Works are **pluggable**: one file per work under `content/works/` (or
   `data/works.json` in the prototype). Add/delete a file to add/delete a work.
@@ -52,6 +53,6 @@ in the repo root.
 - Works: add/remove a sample work file only — list must update without code edits.
   Run `npm run works:check` when the site exists (id unique, zh/en complete).
 - After any HTML prototype edit, open locally; verify camp intro, skip, pen ahead
-  of mascots, jump/roll, and that the footer has no “end camp”.
+  of mascots, jump/slide, and that the footer has no “end camp”.
 - Visual checks: desktop + mobile viewports when browser tooling is available;
   confirm `prefers-reduced-motion` shows Start Camp + 「出发 / Set out」.
