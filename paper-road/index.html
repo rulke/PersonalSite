@@ -1009,14 +1009,16 @@
       [-22, -22], [-12, -22], [-6, -28], [6, -28], [12, -22], [22, -22], [16, -28],
       [16, 0], [-16, 0], [-7, 0], [-7, -12], [7, -12], [7, 0],
     ]];
-    // 石桥外轮廓（一笔）；洞口内缘在 back 第二笔仅作内线
-    if (kind === "bridge") return [[
-      [-38, 0], [-38, -10], [-30, -24], [-12, -34], [12, -34], [30, -24], [38, -10], [38, 0],
-    ]];
-    // 山洞外轮廓（一笔）
-    if (kind === "cave") return [[
-      [-36, 0], [-36, -14], [-24, -32], [0, -42], [24, -32], [36, -14], [36, 0],
-    ]];
+    // 石桥：外拱 + 内缘（两笔，随笔尖 reveal）
+    if (kind === "bridge") return [
+      [[-38, 0], [-38, -10], [-30, -24], [-12, -34], [12, -34], [30, -24], [38, -10], [38, 0]],
+      [[-26, 0], [-26, -8], [-14, -16], [0, -20], [14, -16], [26, -8], [26, 0]],
+    ];
+    // 山洞：外轮廓 + 洞口内缘（两笔，随笔尖 reveal）
+    if (kind === "cave") return [
+      [[-36, 0], [-36, -14], [-24, -32], [0, -42], [24, -32], [36, -14], [36, 0]],
+      [[-22, 0], [-20, -8], [0, -18], [20, -8], [22, 0]],
+    ];
     // 山坡
     if (kind === "hill") return [[
       [-42, 0], [-22, -16], [0, -22], [22, -16], [42, 0],
@@ -1183,7 +1185,8 @@
     const penX = cameraX + W * 0.85;
     if (!pathPoints.length) pathPoints.push({ x: 0, y: terrainY(0) });
     let lastX = pathPoints[pathPoints.length - 1].x;
-    while (lastX < penX + 16) {
+    // 线只画到笔尖，不越过 tip
+    while (lastX < penX) {
       lastX += 6;
       pathPoints.push({ x: lastX, y: terrainY(lastX) });
       if (pathPoints.length > 2400) pathPoints.splice(0, 240);
@@ -1199,16 +1202,11 @@
     cameraX = 0;
     pathPoints = [{ x: 0, y: terrainY(0) }];
     obstacles = [];
-    // 起点营地构图（首帧静态可读，文档 §6.3）：屋—火—箱—树—小店—指路牌—钟楼
+    // 起点营地极简：屋 — 火+小队 — 树 —（留白）— 钟楼
     objects = [
-      { x: 52, kind: "cabin", s: 1.0, p: 1, on: true, strokes: null },
-      { x: 168, kind: "crate", s: 0.95, p: 1, on: true, strokes: null },
-      { x: 226, kind: "tree", s: 1.05, p: 1, on: true, strokes: null },
-      { x: 288, kind: "shop", s: 0.95, p: 1, on: true, strokes: null },
-      { x: 366, kind: "flower", s: 0.8, p: 1, on: true, strokes: null },
-      { x: 396, kind: "mush", s: 0.85, p: 1, on: true, strokes: null },
-      { x: 470, kind: "sign", s: 1.0, p: 1, on: true, strokes: null },
-      { x: 560, kind: "clocktower", s: 0.9, p: 1, on: true, strokes: null },
+      { x: 64, kind: "cabin", s: 1.0, p: 1, on: true, strokes: null },
+      { x: 250, kind: "tree", s: 1.05, p: 1, on: true, strokes: null },
+      { x: 520, kind: "clocktower", s: 0.88, p: 1, on: true, strokes: null },
     ];
     hills = [];
     particles = [];
@@ -1258,13 +1256,26 @@
     ctx.strokeStyle = "#18181A";
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
-    // 一笔画：地面是一条不断开的线，只留极轻微笔触呼吸
+
+    // 洞/桥开口区间：不画地面线
+    const inTunnel = (x) => {
+      for (const o of obstacles) {
+        if (o.type !== "roll") continue;
+        const half = (o.w || 30) * 0.78;
+        if (x > o.x - half && x < o.x + half) return true;
+      }
+      return false;
+    };
+
+    // 地面一笔（洞内断开）
     ctx.beginPath();
+    let penDown = false;
     for (let i = 0; i < pathPoints.length; i++) {
       const p = pathPoints[i];
       const sx = p.x - cameraX;
       const sy = p.y;
-      if (i === 0) ctx.moveTo(sx, sy);
+      if (inTunnel(p.x)) { penDown = false; continue; }
+      if (!penDown) { ctx.moveTo(sx, sy); penDown = true; }
       else ctx.lineTo(sx, sy);
     }
     ctx.stroke();
@@ -1324,7 +1335,7 @@
         if (!front || o.p < 0.85) continue;
         const fade = Math.min(1, (o.p - 0.85) / 0.15);
         for (const f of front) {
-          // 白填充实体 → 角色被遮挡
+          // 白填充实体 → 角色被遮挡（轮廓已在 back 随笔尖描出，这里只填遮挡）
           ctx.save();
           ctx.globalAlpha = fade;
           ctx.fillStyle = "#FFFFFF";
@@ -1335,8 +1346,6 @@
             ctx.lineTo(sx + fp[i][0] * sc, sy + fp[i][1] * sc);
           ctx.closePath();
           ctx.fill();
-          ctx.globalAlpha = 1;
-          for (const sp of f.stroke) drawStrokeReveal(sp, 1, sx, sy, sc);
           ctx.restore();
         }
       }
@@ -1348,25 +1357,30 @@
     if (show <= 0) return;
     const penX = W * 0.85;
     const worldPen = cameraX + penX;
-    const penY = terrainY(worldPen) - 1;
-    // 倾角 = 基础握笔角 + 切线(×0.85, clamp ±15°) 的低通，±0.8° 噪声
-    const target = 0.35 + Math.max(-0.26, Math.min(0.26, Math.atan(tangentAt(worldPen)) * 0.85));
+    // 笔尖严格锁在路径最前端（与 ensureWorld / particles 同一公式）
+    const tipX = worldPen;
+    const tipY = terrainY(tipX);
+    const target = 0.22 + Math.max(-0.26, Math.min(0.26, Math.atan(tangentAt(tipX)) * 0.85));
     penAng += (target - penAng) * Math.min(1, (dt || 0.016) * 8);
     const still = mode === "await";
-    const bob = still ? 0 : Math.sin(modeT * 10) * 0.45;
+    // bob 只作用笔杆，不作用笔尖
+    const bob = still ? 0 : Math.sin(modeT * 10) * 0.35;
 
     ctx.save();
     ctx.globalAlpha = show;
-    const drop = 1 + (1 - show) * 0.22;
-    ctx.translate(penX, penY - (1 - show) * 26 + bob);
-    ctx.rotate(penAng + (still ? 0 : noise1(modeT * 3) * 0.014));
+    const drop = 1 + (1 - show) * 0.18;
+    // 锚点 = 笔尖 (0,0)，且该点就是 (penX, tipY)
+    ctx.translate(penX, tipY);
+    ctx.rotate(penAng + (still ? 0 : noise1(modeT * 3) * 0.012));
     ctx.scale(drop, drop);
+    // 笔杆相对尖端的微浮（尖端保持贴线）
+    ctx.translate(0, bob);
 
-    // 笔长 ≈ 视口高 18%，≥72px（文档 §4.2）
-    const L = Math.max(72, Math.min(H * 0.18, 132));
-    const hw = L * 0.034;
+    // 小笔：约视口高 5%，36–48px
+    const L = Math.max(36, Math.min(H * 0.05, 48));
+    const hw = L * 0.03;
 
-    ctx.lineWidth = 1.3;
+    ctx.lineWidth = 1.15;
     ctx.strokeStyle = "#18181A";
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
@@ -1381,8 +1395,8 @@
     ctx.stroke();
 
     ctx.beginPath();
-    ctx.moveTo(-hw * 0.94, -L + L * 0.14);
-    ctx.lineTo(hw * 0.94, -L + L * 0.14);
+    ctx.moveTo(-hw * 0.94, -L + L * 0.16);
+    ctx.lineTo(hw * 0.94, -L + L * 0.16);
     ctx.stroke();
 
     ctx.restore();
@@ -1896,7 +1910,7 @@
         cameraX += P.speed * Math.min(1, modeT * 1.2) * dt;
         ensureWorld(cameraX + W + 200);
         revealByPen(dt);
-        if (rnd() < dt * 3) emitParticles(W * 0.85, terrainY(cameraX + W * 0.85) - 2, 1, false);
+        if (rnd() < dt * 3) emitParticles(W * 0.85, terrainY(cameraX + W * 0.85), 1, false);
         if (modeT > 2.8) enterPlay(false);
       } else if (mode === "play") {
         idleT += dt;
@@ -1945,17 +1959,22 @@
     ctx.fillStyle = "#FFFFFF";
     ctx.fillRect(0, 0, W, H);
 
-    // 软云 — 天空原有，不参与描出
-    ctx.strokeStyle = "rgba(24,24,26,0.2)";
-    ctx.lineWidth = 1.1;
+    // 软云 — 天空原有，一笔云（底平线 + 鼓包），不参与描出
+    ctx.strokeStyle = "rgba(24,24,26,0.22)";
+    ctx.lineWidth = 1.15;
     ctx.lineCap = "round";
-    for (let i = 0; i < 5; i++) {
-      const cx = ((i * 210 - cameraX * 0.06) % (W + 200)) - 50;
-      const cy = 42 + (i % 3) * 28;
+    ctx.lineJoin = "round";
+    for (let i = 0; i < 4; i++) {
+      const cx = ((i * 240 - cameraX * 0.06) % (W + 260)) - 60;
+      const cy = 36 + (i % 3) * 32;
+      const s = 1 + (i % 2) * 0.2;
       ctx.beginPath();
-      ctx.arc(cx, cy, 8, Math.PI * 0.15, Math.PI * 0.85);
-      ctx.arc(cx + 10, cy - 3, 7, Math.PI * 0.2, Math.PI * 0.8);
-      ctx.arc(cx + 20, cy, 6, Math.PI * 0.25, Math.PI * 0.75);
+      // 底线左→右，再鼓包回左
+      ctx.moveTo(cx - 22 * s, cy);
+      ctx.lineTo(cx + 22 * s, cy);
+      ctx.arc(cx + 10 * s, cy, 12 * s, 0, -Math.PI, true);
+      ctx.arc(cx - 4 * s, cy - 4 * s, 11 * s, 0, Math.PI * 0.2, true);
+      ctx.arc(cx - 16 * s, cy, 9 * s, Math.PI, Math.PI * 1.5, false);
       ctx.stroke();
     }
 
