@@ -864,81 +864,102 @@
   }
   const tangentAt = (wx) => (terrainY(wx + 4) - terrainY(wx - 4)) / 8;
 
-  /* ── 一笔画场景（对齐参考图比例与连续线）──
-     local coords: x 水平, y 负向上，原点在地面 */
+  /* ── 一笔画场景 ──
+     除天空云朵外，全部由笔尖 stroke-reveal 描出。
+     back: 角色身后的单线轮廓（一笔一条）
+     front: 滑行时的前景遮挡（桥面/洞顶，白填充压在角色上） */
   function objectStrokes(kind) {
-    // 小屋：参考图左侧房子
-    if (kind === "cabin") return [
-      [[-18, 0], [-18, -28], [-2, -28], [-2, -14], [10, -14], [10, -28], [18, -28], [18, 0]],
-      [[-20, -28], [0, -48], [20, -28]],
-    ];
-    // 树：云朵状树冠 + 细干（参考图大树）
-    if (kind === "tree") return [
-      [[0, 0], [0, -20]],
-      [[0, -20],
-       [-4, -26], [-14, -30], [-18, -40], [-12, -48], [-2, -50],
-       [8, -52], [16, -46], [18, -36], [12, -28], [4, -22], [0, -20]],
-    ];
-    // 钟楼：参考图右侧高塔
-    if (kind === "clocktower") return [
-      [[-10, 0], [-10, -70], [10, -70], [10, 0]],
-      [[-10, -70], [0, -86], [10, -70]],
-      // clock face as small loop
-      [[0, -52], [-6, -56], [-8, -62], [-4, -66], [4, -66], [8, -62], [6, -56], [0, -52]],
-      // hands
-      [[0, -60], [0, -56], [3, -54]],
-    ];
-    // 带雨棚的小店（参考图中部建筑）
-    if (kind === "shop") return [
-      [[-16, 0], [-16, -30], [16, -30], [16, 0], [-16, 0]],
-      [[-18, -30], [-22, -24], [-10, -24], [-6, -30], [6, -30], [10, -24], [22, -24], [18, -30]],
-      [[-8, 0], [-8, -14], [8, -14], [8, 0]],
-    ];
-    // 石桥：可从桥洞下滑行穿过
-    if (kind === "bridge") return [
-      [[-36, 0], [-36, -8], [-28, -22], [-10, -32], [10, -32], [28, -22], [36, -8], [36, 0]],
-      // 桥洞内缘
-      [[-24, 0], [-24, -6], [-14, -16], [0, -20], [14, -16], [24, -6], [24, 0]],
-    ];
-    // 山洞：下滑行穿过
-    if (kind === "cave") return [
-      [[-34, 0], [-34, -16], [-22, -34], [0, -42], [22, -34], [34, -16], [34, 0]],
-      [[-20, 0], [-18, -8], [0, -18], [18, -8], [20, 0]],
-    ];
-    // 山坡 / 远丘（近景小丘）
-    if (kind === "hill") return [
-      [[-40, 0], [-20, -18], [0, -24], [20, -18], [40, 0]],
-    ];
-    // 小溪：浅水纹
-    if (kind === "stream") return [
-      [[-16, -2], [-8, -5], [0, -2], [8, -5], [16, -2]],
-      [[-12, -8], [-4, -11], [4, -8], [12, -11]],
-    ];
-    // 山谷：地面已下陷，两侧草痕
-    if (kind === "valley") return [
-      [[-20, -2], [-10, -6], [0, -8], [10, -6], [20, -2]],
-    ];
-    // 花丛
-    if (kind === "flower") return [
-      [[-8, 0], [-8, -10], [-12, -14], [-8, -18], [-4, -14], [-8, -10]],
-      [[0, 0], [0, -12], [-4, -16], [0, -20], [4, -16], [0, -12]],
-      [[8, 0], [8, -9], [5, -13], [8, -17], [11, -13], [8, -9]],
-    ];
-    // 石头
-    if (kind === "stone") return [
-      [[-12, 0], [-14, -10], [-4, -18], [10, -14], [12, -4], [8, 0], [-12, 0]],
-    ];
-    // 土坑（边缘）
-    if (kind === "mud") return [
-      [[-14, 0], [-10, 4], [0, 6], [10, 4], [14, 0]],
-      [[-4, 2], [0, 4], [4, 2]],
-    ];
-    // 蘑菇（点缀）
-    if (kind === "mush") return [
-      [[-3, 0], [-2, -8], [2, -8], [3, 0]],
-      [[-8, -8], [-5, -16], [0, -18], [6, -15], [8, -8], [-8, -8]],
-    ];
+    // 小屋：一笔从左脚落地 → 墙 → 屋顶 → 右墙 → 回地
+    if (kind === "cabin") return [[
+      [-20, 0], [-20, -26], [-2, -46], [20, -26], [20, 0], [-20, 0],
+      [-8, 0], [-8, -13], [8, -13], [8, 0],
+    ]];
+    // 树：一笔干→云朵冠→回干脚
+    if (kind === "tree") return [[
+      [-2, 0], [-2, -16],
+      [-8, -22], [-16, -28], [-18, -38], [-10, -46], [0, -48],
+      [10, -46], [18, -38], [16, -28], [8, -22], [2, -16], [2, 0],
+    ]];
+    // 钟楼：一笔尖顶塔身 + 表盘回线
+    if (kind === "clocktower") return [[
+      [-10, 0], [-10, -68], [0, -84], [10, -68], [10, 0], [-10, 0],
+      [0, -48], [-6, -52], [0, -58], [6, -52], [0, -48], [0, -56], [4, -54],
+    ]];
+    // 小店：一笔墙 + 波浪雨棚 + 门
+    if (kind === "shop") return [[
+      [-16, 0], [-16, -28],
+      [-22, -22], [-12, -22], [-6, -28], [6, -28], [12, -22], [22, -22], [16, -28],
+      [16, 0], [-16, 0], [-7, 0], [-7, -12], [7, -12], [7, 0],
+    ]];
+    // 石桥外轮廓（一笔）；洞口内缘在 back 第二笔仅作内线
+    if (kind === "bridge") return [[
+      [-38, 0], [-38, -10], [-30, -24], [-12, -34], [12, -34], [30, -24], [38, -10], [38, 0],
+    ]];
+    // 山洞外轮廓（一笔）
+    if (kind === "cave") return [[
+      [-36, 0], [-36, -14], [-24, -32], [0, -42], [24, -32], [36, -14], [36, 0],
+    ]];
+    // 山坡
+    if (kind === "hill") return [[
+      [-42, 0], [-22, -16], [0, -22], [22, -16], [42, 0],
+    ]];
+    // 小溪水纹（一笔）
+    if (kind === "stream") return [[
+      [-18, -3], [-10, -6], [-2, -3], [6, -6], [14, -3], [18, -5],
+    ]];
+    // 山谷底线
+    if (kind === "valley") return [[
+      [-22, -1], [-12, -5], [0, -7], [12, -5], [22, -1],
+    ]];
+    // 花丛：一笔连画三朵
+    if (kind === "flower") return [[
+      [-10, 0], [-10, -10], [-13, -13], [-10, -16], [-7, -13], [-10, -10],
+      [-2, -2], [-2, -14], [-5, -17], [-2, -20], [1, -17], [-2, -14],
+      [8, -1], [8, -9], [5, -12], [8, -15], [11, -12], [8, -9],
+    ]];
+    // 石头：一笔闭合
+    if (kind === "stone") return [[
+      [-13, 0], [-15, -9], [-4, -17], [11, -13], [13, -4], [8, 0], [-13, 0],
+    ]];
+    // 土坑
+    if (kind === "mud") return [[
+      [-16, 0], [-10, 5], [0, 7], [10, 5], [16, 0],
+    ]];
+    // 蘑菇：一笔
+    if (kind === "mush") return [[
+      [-3, 0], [-3, -8], [-9, -8], [-6, -15], [0, -18], [7, -14], [9, -8], [3, -8], [3, 0],
+    ]];
     return [[[0, 0], [0, -8]]];
+  }
+
+  /** 前景遮挡：滑行时压住角色（白填充 + 轮廓） */
+  function objectFrontStrokes(kind) {
+    if (kind === "bridge") {
+      // 桥体实体：外拱与内拱之间填白
+      return [{
+        fill: [[
+          [-38, 0], [-38, -10], [-30, -24], [-12, -34], [12, -34], [30, -24], [38, -10], [38, 0],
+          [26, 0], [26, -8], [14, -16], [0, -20], [-14, -16], [-26, -8], [-26, 0], [-38, 0],
+        ]],
+        stroke: [
+          [[-38, 0], [-38, -10], [-30, -24], [-12, -34], [12, -34], [30, -24], [38, -10], [38, 0]],
+          [[-26, 0], [-26, -8], [-14, -16], [0, -20], [14, -16], [26, -8], [26, 0]],
+        ],
+      }];
+    }
+    if (kind === "cave") {
+      return [{
+        fill: [[
+          [-36, 0], [-36, -14], [-24, -32], [0, -42], [24, -32], [36, -14], [36, 0],
+          [22, 0], [20, -8], [0, -18], [-20, -8], [-22, 0], [-36, 0],
+        ]],
+        stroke: [
+          [[-36, 0], [-36, -14], [-24, -32], [0, -42], [24, -32], [36, -14], [36, 0]],
+          [[-22, 0], [-20, -8], [0, -18], [20, -8], [22, 0]],
+        ],
+      }];
+    }
+    return null;
   }
 
   function strokeTotal(points) {
@@ -1147,23 +1168,46 @@
     }
   }
 
-  function drawObjects() {
-    ctx.lineWidth = 1.6;
+  function drawObjects(layer) {
+    // layer: 'back' | 'front'
+    ctx.lineWidth = 1.55;
     ctx.strokeStyle = "#18181A";
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     for (const o of objects) {
       const sx = o.x - cameraX;
-      if (sx < -100 || sx > W + 100) continue;
+      if (sx < -120 || sx > W + 120) continue;
       if (o.p <= 0) continue;
       const sy = terrainY(o.x);
-      if (!o.strokes) o.strokes = objectStrokes(o.kind);
       const sc = o.s || 1;
-      // 一笔画：纯线稿，不填色
-      for (let si = 0; si < o.strokes.length; si++) {
-        const sp = Math.max(0, Math.min(1, (o.p - si * 0.15) / (1 - si * 0.05)));
-        if (sp <= 0) continue;
-        drawStrokeReveal(o.strokes[si], sp, sx, sy, sc);
+
+      if (layer === "back") {
+        if (!o.strokes) o.strokes = objectStrokes(o.kind);
+        for (let si = 0; si < o.strokes.length; si++) {
+          const sp = Math.max(0, Math.min(1, (o.p - si * 0.15) / (1 - si * 0.05)));
+          if (sp <= 0) continue;
+          drawStrokeReveal(o.strokes[si], sp, sx, sy, sc);
+        }
+      } else if (layer === "front") {
+        const front = objectFrontStrokes(o.kind);
+        if (!front || o.p < 0.85) continue;
+        const fade = Math.min(1, (o.p - 0.85) / 0.15);
+        for (const f of front) {
+          // 白填充实体 → 角色被遮挡
+          ctx.save();
+          ctx.globalAlpha = fade;
+          ctx.fillStyle = "#FFFFFF";
+          ctx.beginPath();
+          const fp = f.fill[0];
+          ctx.moveTo(sx + fp[0][0] * sc, sy + fp[0][1] * sc);
+          for (let i = 1; i < fp.length; i++)
+            ctx.lineTo(sx + fp[i][0] * sc, sy + fp[i][1] * sc);
+          ctx.closePath();
+          ctx.fill();
+          ctx.globalAlpha = 1;
+          for (const sp of f.stroke) drawStrokeReveal(sp, 1, sx, sy, sc);
+          ctx.restore();
+        }
       }
     }
   }
@@ -1227,93 +1271,151 @@
     ctx.globalAlpha = 1;
   }
 
-  /* 一笔画角色（小比例，贴地） */
-  function drawChestnut(x, y, squash, slide) {
+  /* 角色：干净比例 + 自然行走循环（对齐参考图小精灵） */
+  function walkPose(time, phase) {
+    const p = time * 9 + phase;
+    return {
+      bob: Math.sin(p * 2) * 0.7,
+      legL: Math.sin(p) * 3.4,
+      legR: Math.sin(p + Math.PI) * 3.4,
+      lean: Math.sin(p) * 0.035,
+    };
+  }
+
+  function drawChestnut(x, y, squash, slide, phase) {
+    const w = walkPose(modeT, phase || 0);
     ctx.save();
-    ctx.translate(x, y);
-    const s = 0.72 * (1 + squash * 0.04);
+    ctx.translate(x, y - (slide ? 0 : w.bob));
+    const s = 0.8;
     if (slide) {
-      // 滑行：压低身姿
-      ctx.translate(2, 0);
-      ctx.rotate(-0.25);
-      ctx.scale(s * 1.15, s * 0.55);
+      ctx.rotate(-0.3);
+      ctx.scale(s * 1.2, s * 0.48);
     } else {
-      ctx.scale(s, s * (1 - squash * 0.07));
+      ctx.rotate(w.lean);
+      ctx.scale(s, s * (1 - squash * 0.08));
     }
-    ctx.lineWidth = 1.7;
+    ctx.lineWidth = 1.5;
     ctx.strokeStyle = "#18181A";
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.fillStyle = "none";
 
+    // 黄背包一笔
     ctx.beginPath();
-    ctx.moveTo(-8, -28);
-    ctx.quadraticCurveTo(-4, -34, 0, -30);
-    ctx.quadraticCurveTo(4, -34, 8, -30);
-    ctx.quadraticCurveTo(14, -28, 14, -18);
-    ctx.lineTo(16, -16); ctx.lineTo(16, -6); ctx.lineTo(11, -6); ctx.lineTo(11, -14);
-    ctx.lineTo(8, -4); ctx.moveTo(8, -2); ctx.lineTo(-4, -2); ctx.lineTo(-6, 0);
-    ctx.quadraticCurveTo(-16, -4, -16, -14);
-    ctx.quadraticCurveTo(-12, -24, -8, -28);
+    ctx.moveTo(11, -17); ctx.lineTo(16, -17); ctx.lineTo(16, -6); ctx.lineTo(11, -6);
     ctx.stroke();
+
+    // 身 + 头 + 双耳：一笔连续
     ctx.beginPath();
-    ctx.arc(-3, -20, 1, 0, Math.PI * 2); ctx.arc(3, -20, 1, 0, Math.PI * 2);
+    ctx.moveTo(-5, -7);
+    ctx.quadraticCurveTo(-7, -16, -5, -22);
+    ctx.quadraticCurveTo(-8, -29, -2, -27);
+    ctx.quadraticCurveTo(1, -33, 5, -28);
+    ctx.quadraticCurveTo(11, -28, 11, -20);
+    ctx.quadraticCurveTo(12, -12, 8, -7);
+    ctx.stroke();
+
+    // 尾
+    ctx.beginPath();
+    ctx.moveTo(-5, -11);
+    ctx.quadraticCurveTo(-13, -15, -11, -23);
+    ctx.stroke();
+
+    // 腿
+    if (slide) {
+      ctx.beginPath();
+      ctx.moveTo(-3, -3); ctx.lineTo(-11, 0);
+      ctx.moveTo(3, -3); ctx.lineTo(13, 0);
+      ctx.stroke();
+    } else {
+      ctx.beginPath();
+      ctx.moveTo(-2, -5); ctx.lineTo(-2 + w.legL, 0);
+      ctx.moveTo(3, -5); ctx.lineTo(3 + w.legR, 0);
+      ctx.stroke();
+    }
+
+    ctx.beginPath();
+    ctx.arc(0, -21, 0.85, 0, Math.PI * 2);
+    ctx.arc(5, -21, 0.85, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
   }
 
-  function drawCloudy(x, y, squash, time, slide) {
+  function drawCloudy(x, y, squash, time, slide, phase) {
+    const w = walkPose(time, phase != null ? phase : 1.3);
     ctx.save();
-    const hop = slide ? 0 : Math.abs(Math.sin(time * 7)) * 1;
-    ctx.translate(x, y - hop);
-    const s = 0.72 * (1 + squash * 0.04);
-    if (slide) { ctx.rotate(-0.2); ctx.scale(s * 1.15, s * 0.55); }
-    else ctx.scale(s, s * (1 - squash * 0.07));
-    ctx.lineWidth = 1.7;
+    ctx.translate(x, y - (slide ? 0 : w.bob));
+    const s = 0.8;
+    if (slide) { ctx.rotate(-0.26); ctx.scale(s * 1.2, s * 0.48); }
+    else { ctx.rotate(w.lean); ctx.scale(s, s * (1 - squash * 0.08)); }
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = "#18181A";
+    ctx.lineCap = "round";
+    ctx.fillStyle = "none";
+
+    // 垂耳兔：一笔耳→头→身→耳
+    ctx.beginPath();
+    ctx.moveTo(-7, -12);
+    ctx.quadraticCurveTo(-13, -4, -11, 3);
+    ctx.quadraticCurveTo(-7, -1, -6, -11);
+    ctx.quadraticCurveTo(-4, -24, 3, -25);
+    ctx.quadraticCurveTo(9, -24, 10, -16);
+    ctx.quadraticCurveTo(14, -8, 15, 1);
+    ctx.quadraticCurveTo(12, -6, 9, -12);
+    ctx.quadraticCurveTo(10, -5, 5, -3);
+    ctx.stroke();
+
+    if (slide) {
+      ctx.beginPath();
+      ctx.moveTo(-3, -2); ctx.lineTo(-11, 0);
+      ctx.moveTo(4, -2); ctx.lineTo(12, 0);
+      ctx.stroke();
+    } else {
+      ctx.beginPath();
+      ctx.moveTo(-1, -3); ctx.lineTo(-1 + w.legL, 0);
+      ctx.moveTo(3, -3); ctx.lineTo(3 + w.legR, 0);
+      ctx.stroke();
+    }
+
+    ctx.beginPath();
+    ctx.arc(1, -17, 0.85, 0, Math.PI * 2);
+    ctx.arc(6, -17, 0.85, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawKuro(x, y, squash, time, slide, phase) {
+    const w = walkPose(time * 1.25, phase != null ? phase : 2.6);
+    ctx.save();
+    ctx.translate(x, y - (slide ? 0 : w.bob * 0.85));
+    const s = 0.8;
+    if (slide) { ctx.rotate(-0.26); ctx.scale(s * 1.16, s * 0.48); }
+    else { ctx.rotate(w.lean); ctx.scale(s, s * (1 - squash * 0.08)); }
+    ctx.lineWidth = 1.5;
     ctx.strokeStyle = "#18181A";
     ctx.lineCap = "round";
     ctx.fillStyle = "none";
 
     ctx.beginPath();
-    ctx.moveTo(-10, -24);
-    ctx.quadraticCurveTo(-16, -14, -12, -8);
-    ctx.quadraticCurveTo(-8, -12, -8, -20);
-    ctx.quadraticCurveTo(-2, -32, 6, -30);
-    ctx.quadraticCurveTo(12, -28, 12, -18);
-    ctx.quadraticCurveTo(16, -12, 18, -8);
-    ctx.quadraticCurveTo(18, -18, 12, -24);
-    ctx.quadraticCurveTo(12, -8, 6, -4);
-    ctx.lineTo(4, 0); ctx.moveTo(4, -2); ctx.lineTo(-4, -2); ctx.lineTo(-6, 0);
-    ctx.quadraticCurveTo(-12, -6, -10, -24);
+    ctx.arc(0, -10, 8.2, 0, Math.PI * 2);
     ctx.stroke();
-    ctx.beginPath();
-    ctx.arc(-2, -20, 1, 0, Math.PI * 2); ctx.arc(4, -20, 1, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-  }
 
-  function drawKuro(x, y, squash, time, slide) {
-    ctx.save();
-    ctx.translate(x, y);
-    const step = Math.sin(time * 14) * 1.2;
-    const s = 0.72 * (1 + squash * 0.04);
-    if (slide) { ctx.rotate(-0.2); ctx.scale(s * 1.1, s * 0.55); }
-    else ctx.scale(s, s * (1 - squash * 0.07));
-    ctx.lineWidth = 1.7;
-    ctx.strokeStyle = "#18181A";
-    ctx.lineCap = "round";
-    ctx.fillStyle = "none";
+    if (slide) {
+      ctx.beginPath();
+      ctx.moveTo(-2, -3); ctx.lineTo(-9, 0);
+      ctx.moveTo(2, -3); ctx.lineTo(10, 0);
+      ctx.stroke();
+    } else {
+      ctx.beginPath();
+      ctx.moveTo(-2, -3); ctx.lineTo(-2 + w.legL, 0);
+      ctx.moveTo(2, -3); ctx.lineTo(2 + w.legR, 0);
+      ctx.stroke();
+    }
 
+    // 空心豆豆眼
     ctx.beginPath();
-    ctx.arc(0, -14, 9, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(-2, -6); ctx.lineTo(-3 + (slide ? 3 : step), 0);
-    ctx.moveTo(3, -6); ctx.lineTo(4 + (slide ? 3 : -step), 0);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.arc(-2.5, -16, 1.4, 0, Math.PI * 2);
-    ctx.arc(3, -16, 1.4, 0, Math.PI * 2);
+    ctx.arc(-2.4, -12, 1.35, 0, Math.PI * 2);
+    ctx.arc(2.8, -12, 1.35, 0, Math.PI * 2);
     ctx.stroke();
     ctx.restore();
   }
@@ -1357,22 +1459,19 @@
     ctx.rotate(isSlide ? 0 : ang);
 
     if (isSlide) {
-      // 贴地滑行：前后拉开，身姿压低
-      drawChestnut(-22, 0, 0.1, true);
-      drawCloudy(0, 0, 0.1, modeT, true);
-      drawKuro(20, 0, 0.1, modeT, true);
-      // 滑行尘线
-      ctx.strokeStyle = "rgba(24,24,26,0.25)";
-      ctx.lineWidth = 1.1;
+      drawChestnut(-20, 0, 0.1, true, 0);
+      drawCloudy(0, 0, 0.1, modeT, true, 1.3);
+      drawKuro(18, 0, 0.1, modeT, true, 2.6);
+      ctx.strokeStyle = "rgba(24,24,26,0.22)";
+      ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.moveTo(-36, 2); ctx.lineTo(-28, 1);
-      ctx.moveTo(-34, 5); ctx.lineTo(-24, 4);
-      ctx.moveTo(-30, 8); ctx.lineTo(-20, 7);
+      ctx.moveTo(-34, 1); ctx.lineTo(-26, 0);
+      ctx.moveTo(-32, 4); ctx.lineTo(-23, 3);
       ctx.stroke();
     } else {
-      drawChestnut(-22, 0, squash, false);
-      drawCloudy(0, 0, squash, modeT, false);
-      drawKuro(22, 0, squash, modeT, false);
+      drawChestnut(-20, 0, squash, false, 0);
+      drawCloudy(0, 0, squash, modeT, false, 1.3);
+      drawKuro(18, 0, squash, modeT, false, 2.6);
     }
     ctx.restore();
 
@@ -1584,19 +1683,21 @@
       ctx.stroke();
     }
 
-    drawHills(0.2);
+    // 云朵为天空原有；其余场景全部由笔描出（不画远山）
     if (cameraX < 480) drawCampFire();
-    drawPath();          // ground first
-    drawObjects();       // pen-drawn trees/houses/rocks/arches
+    drawPath();
+    drawObjects("back");
     drawPen();
 
     if (mode !== "camp") drawPlayerGroup();
     else {
       const gy = terrainY(210);
-      drawChestnut(195, gy, 0, false);
-      drawCloudy(220, gy, 0, 0.3, false);
-      drawKuro(245, gy, 0, 0.3, false);
+      drawChestnut(195, gy, 0, false, 0);
+      drawCloudy(220, gy, 0, 0.3, false, 1.3);
+      drawKuro(245, gy, 0, 0.3, false, 2.6);
     }
+    // 前景遮挡：桥面/洞顶压在角色上（滑行穿越时的遮挡）
+    drawObjects("front");
     drawParticles();
 
     requestAnimationFrame(frame);
