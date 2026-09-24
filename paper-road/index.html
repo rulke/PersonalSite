@@ -953,7 +953,8 @@
   function resize() {
     dpr = Math.min(window.devicePixelRatio || 1, 2);
     W = canvas.clientWidth || window.innerWidth;
-    H = canvas.clientHeight || 640;
+    // 未布局时不写死 640，避免 baseY 算歪
+    H = canvas.clientHeight || Math.round((window.innerHeight || 800) * 0.55);
     canvas.width = Math.floor(W * dpr);
     canvas.height = Math.floor(H * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -1008,21 +1009,37 @@
   }
 
   function terrainY(worldX) {
-    // 自然缓坡 + 微小有机起伏（对齐参考图连续手绘感）
+    // 营地段（0–500）严格水平，保证开场地线与脚底对齐、连续
+    if (worldX <= 500) {
+      let y = baseY;
+      for (const o of obstacles) {
+        const dx = worldX - o.x;
+        const hw = o.w;
+        if (o.x < 500 && dx > -hw && dx < hw) {
+          const u = dx / hw;
+          const bell = Math.cos((u * Math.PI) / 2);
+          if (o.type === "pit" || o.type === "stream") y += (o.depth || 22) * bell * bell;
+          if (o.type === "valley") y += 18 * bell * bell;
+          if (o.type === "rock" || o.type === "stone") y -= (o.h || 14) * bell * bell;
+          if (o.type === "mud") y += 10 * bell * bell;
+        }
+      }
+      return y;
+    }
+    // 营地外：自然缓坡 + 微起伏
     let y = baseY + 10 * Math.sin(worldX / 320) + 4 * Math.sin(worldX / 110 + 0.7);
     for (const o of obstacles) {
       const dx = worldX - o.x;
       const hw = o.w;
       if (dx > -hw && dx < hw) {
-        const u = dx / hw; // -1..1
-        const bell = Math.cos((u * Math.PI) / 2); // 0 at edges, 1 center
+        const u = dx / hw;
+        const bell = Math.cos((u * Math.PI) / 2);
         if (o.type === "pit" || o.type === "stream") y += (o.depth || 22) * bell * bell;
         if (o.type === "valley") y += 18 * bell * bell;
         if (o.type === "rock" || o.type === "stone") y -= (o.h || 14) * bell * bell;
         if (o.type === "mud") y += 10 * bell * bell;
       }
     }
-    // 小尺度手绘抖动
     return y + noise1(worldX * 0.11) * 0.7 + noise1(worldX * 0.03) * 0.5;
   }
   const tangentAt = (wx) => (terrainY(wx + 4) - terrainY(wx - 4)) / 8;
@@ -1292,12 +1309,12 @@
       });
     }
     const penX = cameraX + W * 0.85;
-    if (!pathPoints.length) pathPoints.push({ x: 0, y: terrainY(0) });
+    if (!pathPoints.length) pathPoints.push({ x: 0 });
     let lastX = pathPoints[pathPoints.length - 1].x;
-    // 线只画到笔尖，不越过 tip
+    // 统一 5px 步长，避免 5/6 混用在衔接处留缝
     while (lastX < penX) {
-      lastX += 6;
-      pathPoints.push({ x: lastX, y: terrainY(lastX) });
+      lastX += 5;
+      pathPoints.push({ x: lastX });
       if (pathPoints.length > 2400) pathPoints.splice(0, 240);
     }
     // 回收离场对象：内存平稳，路径点有上限
@@ -1309,17 +1326,17 @@
   function resetWorld(newSeed) {
     srand(newSeed);
     cameraX = 0;
-    // 营地段预画地线（t=0 即可见）：从原点画到火后小队脚下再接到塔前
+    // 营地段预画地线（t=0 即可见、略粗）：只存 x，Y 绘制时现算
     pathPoints = [];
-    for (let x = 0; x <= 360; x += 6) {
-      pathPoints.push({ x, y: terrainY(x) });
+    for (let x = 0; x <= 420; x += 5) {
+      pathPoints.push({ x });
     }
     obstacles = [];
-    // 起点营地极简：屋 — 火+小队 — 树 — 钟楼（大间距，禁止叠影）
+    // 起点营地极简：屋 — 火+小队 — 树 — 钟楼（整体居中，不贴边）
     objects = [
-      { x: 24, kind: "cabin", s: 0.95, p: 1, on: true, strokes: null },
-      { x: 520, kind: "tree", s: 1.0, p: 1, on: true, strokes: null },
-      { x: 820, kind: "clocktower", s: 0.85, p: 1, on: true, strokes: null },
+      { x: 90, kind: "cabin", s: 0.95, p: 1, on: true, strokes: null },
+      { x: 560, kind: "tree", s: 1.0, p: 1, on: true, strokes: null },
+      { x: 880, kind: "clocktower", s: 0.85, p: 1, on: true, strokes: null },
     ];
     hills = [];
     particles = [];
@@ -1370,30 +1387,17 @@
 
   function drawPath() {
     if (pathPoints.length < 2) return;
-    ctx.lineWidth = 1.6;
+    ctx.lineWidth = 2.2;
     ctx.strokeStyle = "#18181A";
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
-
-    // 洞/桥开口区间：不画地面线
-    const inTunnel = (x) => {
-      for (const o of obstacles) {
-        if (o.type !== "roll") continue;
-        const half = (o.w || 30) * 0.78;
-        if (x > o.x - half && x < o.x + half) return true;
-      }
-      return false;
-    };
-
-    // 地面一笔（洞内断开）
+    // 单条连续折线：无分段、无断口，杜绝竖线接缝
     ctx.beginPath();
-    let penDown = false;
     for (let i = 0; i < pathPoints.length; i++) {
-      const p = pathPoints[i];
-      const sx = p.x - cameraX;
-      const sy = p.y;
-      if (inTunnel(p.x)) { penDown = false; continue; }
-      if (!penDown) { ctx.moveTo(sx, sy); penDown = true; }
+      const x = pathPoints[i].x;
+      const sx = x - cameraX;
+      const sy = terrainY(x);
+      if (i === 0) ctx.moveTo(sx, sy);
       else ctx.lineTo(sx, sy);
     }
     ctx.stroke();
@@ -1742,10 +1746,10 @@
   }
 
   function drawCampFire() {
-    const fx = 175 - cameraX;               // 锚定在世界坐标，随路一起离场
+    const fx = 250 - cameraX;               // 锚定在世界坐标，随路一起离场
     if (fx < -60 || fx > W + 60) return;
-    const fade = Math.max(0, Math.min(1, 1 - (cameraX - 520) / 250));
-    const fy = terrainY(175);
+    const fade = Math.max(0, Math.min(1, 1 - (cameraX - 600) / 250));
+    const fy = terrainY(250);
     ctx.save();
     ctx.globalAlpha = fade;
     ctx.translate(fx, fy);
@@ -1794,7 +1798,7 @@
     const pose = mode === "camp" ? (modeT > 0.9 ? "stretch" : "idle")
       : mode === "point" ? "point" : null;
 
-    const spots = [155, 185, 215];            // 营地休息：围坐在篝火旁（火 x≈175）
+    const spots = [230, 265, 300];            // 营地休息：围坐在篝火旁（火 x≈250）
     const phases = [0, 1.3, 2.6];
     const forms = [-26, 0, 24];               // 行进队形：紧凑一小队
 
@@ -2021,25 +2025,27 @@
 
     if (sim) {
       if (mode === "camp") {
-        // t 0–1.8s 营地呼吸：火苗轻晃、伸懒腰（文档 §6.1）
+        // 营地呼吸约 2.4s：镜头锁死，完整看到屋/火+小队/树/塔/预画线
+        cameraX = 0;
         revealByPen(dt);
-        if (modeT > 1.8) { mode = "point"; modeT = 0; }
+        if (modeT > 2.4) { mode = "point"; modeT = 0; }
       } else if (mode === "point") {
-        // t 1.8–3.2s 栗子鼠指向前方；画笔在 85% 处轻轻落位
+        // 指路 + 笔落位，仍不卷动
+        cameraX = 0;
         penDrop = Math.min(1, penDrop + dt / 0.9);
         if (penDrop >= 1 && !pointLand) {
           pointLand = true;
           emitParticles(W * 0.85, terrainY(cameraX + W * 0.85) - 2, 4, true);
         }
-        if (modeT > 1.4) { mode = "walk"; modeT = 0; }
+        if (modeT > 1.6) { mode = "walk"; modeT = 0; }
       } else if (mode === "walk") {
-        // t 3.2–6.0s 画笔绘出第一段路；小队起立走进队形（墨粒）
-        departBlend = Math.min(1, departBlend + dt / 1.1);
-        cameraX += P.speed * Math.min(1, modeT * 1.2) * dt;
+        // 小队起身进队形；笔在原地描出第一段，镜头仍不卷（全程约 6–8s 在营地）
+        cameraX = 0;
+        departBlend = Math.min(1, departBlend + dt / 1.2);
         ensureWorld(cameraX + W + 200);
         revealByPen(dt);
         if (rnd() < dt * 3) emitParticles(W * 0.85, terrainY(cameraX + W * 0.85), 1, false);
-        if (modeT > 2.8) enterPlay(false);
+        if (modeT > 2.6) enterPlay(false);
       } else if (mode === "play") {
         idleT += dt;
         // 踉跄：先失速，后 1.15× 归队（文档 §5.3）
@@ -2147,9 +2153,12 @@
     };
   }
 
-  // boot
+  // boot：等布局完成后再建世界，避免 clientHeight=0 时 baseY 算歪
+  function bootWorld() {
+    resize();
+    resetWorld(seed);
+  }
   resize();
-  resetWorld(seed);
   applyI18n();
 
   const introUI = document.getElementById("intro-ui");
@@ -2171,7 +2180,11 @@
     }, { threshold: 0 }).observe(canvas);
   }
 
-  requestAnimationFrame(frame);
+  // 若 canvas 已有高度则立即建；否则等一帧布局
+  if (canvas.clientHeight > 0) bootWorld();
+  else requestAnimationFrame(() => { bootWorld(); requestAnimationFrame(frame); });
+
+  if (canvas.clientHeight > 0) requestAnimationFrame(frame);
   window.__lucky = {
     resetWorld, skipIntro, enterPlay,
     get mode() { return mode; },
@@ -2181,6 +2194,9 @@
         mode, cameraX, playerY, sliding: sliding > 0, stumbleT,
         particles: particles.length, objects: objects.length,
         pathPoints: pathPoints.length, stageVisible,
+        pathX0: pathPoints[0] && pathPoints[0].x,
+        pathXN: pathPoints[pathPoints.length - 1] && pathPoints[pathPoints.length - 1].x,
+        baseY: Math.round(baseY), W, H,
       };
     },
   };
