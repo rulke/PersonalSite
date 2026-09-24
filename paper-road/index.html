@@ -50,6 +50,10 @@
   button {
     font: inherit; color: inherit; background: none; border: none; cursor: pointer;
   }
+  a:focus-visible, button:focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 3px;
+  }
 
   /* ── Paper sheet ── */
   .sheet {
@@ -622,7 +626,7 @@
     </div>
     <div class="intro-ui hidden" id="intro-ui">
       <button class="btn-setout" id="btn-setout" type="button" data-i18n="hero.setout">出发</button>
-      <button class="btn-skip" id="btn-skip" type="button" data-i18n="hero.skip">跳过出发</button>
+      <button class="btn-skip" id="btn-skip" type="button" data-i18n="hero.skip">出发</button>
     </div>
     <div class="hero-bar">
       <div class="hero-controls">
@@ -723,13 +727,13 @@
   const I18N = {
     zh: {
       "nav.works": "作品", "nav.about": "关于", "nav.notes": "手记", "nav.contact": "联系",
-      "hero.title": "用匠心写代码，<br>以灵魂做设计。",
+      "hero.title": "用匠心写代码， <br>以灵魂做设计。",
       "hero.sub": "边走边画，把每天画得更新一点。",
       "hero.hint": "[左键] 跳跃 · [右键] 滑行 ｜ [↺ 重绘] ｜ [⏸ 暂停]",
       "hero.hint.touch": "[轻点] 跳跃 · [下滑] 滑行",
-      "hero.setout": "出发", "hero.skip": "跳过出发",
+      "hero.setout": "出发", "hero.skip": "出发",
       "hero.redraw": "↺ 重绘", "hero.pause": "⏸ 暂停", "hero.play": "▶ 继续",
-      "hero.skipping": "出发中… 点击跳过",
+      "hero.skipping": "点击出发，开始上路",
       "a11y.controls": "键盘：空格或上箭头跳跃，Shift、S 或下箭头滑行，Esc 跳过开场或暂停。",
       "works.sub": "精选项目", "works.empty": "还在路上收集。",
       "about.sub": "路上的人", "about.manifesto": "路是边走边画出来的。",
@@ -740,13 +744,13 @@
     },
     en: {
       "nav.works": "Works", "nav.about": "About", "nav.notes": "Notes", "nav.contact": "Contact",
-      "hero.title": "Code with craft.<br>Design with soul.",
+      "hero.title": "Code with craft. <br>Design with soul.",
       "hero.sub": "Keep walking, keep drawing.",
       "hero.hint": "[LMB] Jump · [RMB] Slide ｜ [↺ Redraw] ｜ [⏸ Pause]",
       "hero.hint.touch": "[Tap] Jump · [Swipe down] Slide",
-      "hero.setout": "Set out", "hero.skip": "Skip intro",
+      "hero.setout": "Set out", "hero.skip": "Set out",
       "hero.redraw": "↺ Redraw", "hero.pause": "⏸ Pause", "hero.play": "▶ Resume",
-      "hero.skipping": "Departing… click to skip",
+      "hero.skipping": "Click to set out",
       "a11y.controls": "Keyboard: Space or Up to jump, Shift, S or Down to slide. Esc skips the intro or pauses.",
       "works.sub": "Selected projects", "works.empty": "Still collecting on the road.",
       "about.sub": "Who is on the road", "about.manifesto": "Draw the road as we go.",
@@ -905,6 +909,12 @@
 
   document.body.classList.add("js");
 
+  /* 占位链接（href="#"）：原型期拦截默认跳转，避免「点一下飞回开头」 */
+  document.addEventListener("click", (e) => {
+    const a = e.target && e.target.closest ? e.target.closest('a[href="#"]') : null;
+    if (a) e.preventDefault();
+  });
+
   /* ── 滚动描出：进入视口后一笔画出 ── */
   const revealIO = "IntersectionObserver" in window
     ? new IntersectionObserver((entries) => {
@@ -959,6 +969,8 @@
     canvas.height = Math.floor(H * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     baseY = H * 0.64;
+    // 未出发时篝火始终对齐小队中心；出发后为世界物，不再随窗口挪动
+    if (cameraX === 0) fireX = W * 0.22;
   }
   window.addEventListener("resize", () => { resize(); });
 
@@ -975,7 +987,7 @@
 
   // 物理初值（文档 §5.3）
   const P = {
-    gravity: 2200, jumpV: -820, slideDur: 0.7, speed: 175,
+    gravity: 2200, jumpV: -820, slideDur: 0.7, speed: 105,
     bufferJump: 0.08, bufferSlide: 0.06, coyote: 0.08,
     stumbleDur: 1.5, rejoinBoost: 1.15,
   };
@@ -992,10 +1004,11 @@
   let jumping = false, sliding = 0, slideBuf = 0, vy = 0, playerY = 0;
   let penAng = 0.35, penDrop = 0, pointLand = false, flashT = 0;
   let idleT = 0;          // 无输入计时 → idle 波浪示范
-  let departBlend = 0;    // 角色从营地休息位自然融入行进队形
+  let departBlend = 0;    // 起身起跑进度：步频/贴地姿态渐入行进（位置恒在队形上，无位移混合）
   let gaitBoost = 1;      // 踉跄归队 1.15×
   let hintPulsed = false;
   let stageVisible = true;
+  let fireX = 263;        // 篝火世界坐标 = 开镜小队中心（0.22·W），由 resetWorld/resize 派生
 
   // 平滑值噪声（手绘抖动），替代毛糙的白噪声
   function hash1(i) {
@@ -1009,25 +1022,10 @@
   }
 
   function terrainY(worldX) {
-    // 营地段（0–500）严格水平，保证开场地线与脚底对齐、连续
-    if (worldX <= 500) {
-      let y = baseY;
-      for (const o of obstacles) {
-        const dx = worldX - o.x;
-        const hw = o.w;
-        if (o.x < 500 && dx > -hw && dx < hw) {
-          const u = dx / hw;
-          const bell = Math.cos((u * Math.PI) / 2);
-          if (o.type === "pit" || o.type === "stream") y += (o.depth || 22) * bell * bell;
-          if (o.type === "valley") y += 18 * bell * bell;
-          if (o.type === "rock" || o.type === "stone") y -= (o.h || 14) * bell * bell;
-          if (o.type === "mud") y += 10 * bell * bell;
-        }
-      }
-      return y;
-    }
-    // 营地外：自然缓坡 + 微起伏
-    let y = baseY + 10 * Math.sin(worldX / 320) + 4 * Math.sin(worldX / 110 + 0.7);
+    // 营地段近水平，500 后平滑接入起伏（避免台阶/折角）
+    const k = worldX < 420 ? 0 : worldX > 620 ? 1 : (worldX - 420) / 200;
+    const s = k * k * (3 - 2 * k);
+    let y = baseY + (10 * Math.sin(worldX / 320) + 4 * Math.sin(worldX / 110 + 0.7)) * s;
     for (const o of obstacles) {
       const dx = worldX - o.x;
       const hw = o.w;
@@ -1040,7 +1038,7 @@
         if (o.type === "mud") y += 10 * bell * bell;
       }
     }
-    return y + noise1(worldX * 0.11) * 0.7 + noise1(worldX * 0.03) * 0.5;
+    return y + (noise1(worldX * 0.11) * 0.7 + noise1(worldX * 0.03) * 0.5) * s;
   }
   const tangentAt = (wx) => (terrainY(wx + 4) - terrainY(wx - 4)) / 8;
 
@@ -1326,15 +1324,16 @@
   function resetWorld(newSeed) {
     srand(newSeed);
     cameraX = 0;
+    fireX = W * 0.22;   // 单一锚点：篝火 = 开镜小队中心（与队形同源，任意窗宽重合）
     // 营地段预画地线（t=0 即可见、略粗）：只存 x，Y 绘制时现算
     pathPoints = [];
     for (let x = 0; x <= 420; x += 5) {
       pathPoints.push({ x });
     }
     obstacles = [];
-    // 起点营地极简：屋 — 火+小队 — 树 — 钟楼（整体居中，不贴边）
+    // 从篝火开镜：小屋在出发点背后（屏外），前方只有路
     objects = [
-      { x: 90, kind: "cabin", s: 0.95, p: 1, on: true, strokes: null },
+      { x: -120, kind: "cabin", s: 0.95, p: 1, on: true, strokes: null },
       { x: 560, kind: "tree", s: 1.0, p: 1, on: true, strokes: null },
       { x: 880, kind: "clocktower", s: 0.85, p: 1, on: true, strokes: null },
     ];
@@ -1560,12 +1559,13 @@
 
   /* 角色：干净比例 + 自然行走循环 + 翻滚（720°/0.55s，文档 §3/§5.3） */
   function walkPose(time, phase) {
-    const p = time * 9 + phase;
+    // 快步跑：大一点的步幅 + 前倾，避免「原地滑步」
+    const p = time * 13 + phase;
     return {
-      bob: Math.sin(p * 2) * 0.7,
-      legL: Math.sin(p) * 3.4,
-      legR: Math.sin(p + Math.PI) * 3.4,
-      lean: Math.sin(p) * 0.035,
+      bob: Math.abs(Math.sin(p)) * 1.4,
+      legL: Math.sin(p) * 7,
+      legR: Math.sin(p + Math.PI) * 7,
+      lean: 0.1 + Math.sin(p) * 0.03,
     };
   }
   // 翻滚姿态：以身体中心为轴 720° 自旋 + 压扁（hitbox ×0.4）
@@ -1746,10 +1746,11 @@
   }
 
   function drawCampFire() {
-    const fx = 250 - cameraX;               // 锚定在世界坐标，随路一起离场
+    // 篝火 = 小队中心的世界锚点（resetWorld 由 0.22·W 派生），出发后随路自然离场
+    const fx = fireX - cameraX;
     if (fx < -60 || fx > W + 60) return;
     const fade = Math.max(0, Math.min(1, 1 - (cameraX - 600) / 250));
-    const fy = terrainY(250);
+    const fy = terrainY(fireX);
     ctx.save();
     ctx.globalAlpha = fade;
     ctx.translate(fx, fy);
@@ -1798,16 +1799,14 @@
     const pose = mode === "camp" ? (modeT > 0.9 ? "stretch" : "idle")
       : mode === "point" ? "point" : null;
 
-    const spots = [230, 265, 300];            // 营地休息：围坐在篝火旁（火 x≈250）
+    // 单一锚点：休息位 = cameraX=0 时的队形位（同由 0.22·W 派生）。
+    // 起点与终点恒重合，混合只剩步频/贴地姿态过渡——任意窗宽下零位移残差。
     const phases = [0, 1.3, 2.6];
-    const forms = [-26, 0, 24];               // 行进队形：紧凑一小队
+    const forms = [-26, 0, 24];
 
     for (let i = 0; i < 3; i++) {
-      const campScreenX = spots[i] - cameraX;            // 世界锚定
-      const formScreenX = px + forms[i];                 // 屏幕锚定
-      const X = campScreenX + (formScreenX - campScreenX) * b;
-      const campY = terrainY(spots[i]);
-      const Y = campY + (gy - campY) * b;
+      const X = px + forms[i];
+      const Y = terrainY(cameraX + X) + playerY * b;
       const tilt = ang * b + (slideT == null && stumbleT > 0 ? Math.sin(modeT * 26) * 0.05 : 0);
       ctx.save();
       ctx.translate(X, Y);
@@ -1909,7 +1908,7 @@
     if (mode === "play") return;
     mode = "play";
     modeT = 0;
-    departBlend = Math.max(departBlend, 0.35);
+    departBlend = 1;   // 交权即满速步频（位置恒在队形上，无位移混合）
     penDrop = 1; pointLand = true;
     if (withFlash) flashT = 0.2;
     document.body.classList.remove("intro-lock");
@@ -2039,12 +2038,12 @@
         }
         if (modeT > 1.6) { mode = "walk"; modeT = 0; }
       } else if (mode === "walk") {
-        // 小队起身进队形；笔在原地描出第一段，镜头仍不卷（全程约 6–8s 在营地）
-        cameraX = 0;
-        departBlend = Math.min(1, departBlend + dt / 1.2);
+        // 小队原地起跑（追笔行走），镜头缓缓跟上；篝火作为世界物自然留在身后
+        departBlend = Math.min(1, departBlend + dt / 1.1);
+        cameraX += P.speed * Math.min(1, modeT * 0.8) * dt;
         ensureWorld(cameraX + W + 200);
         revealByPen(dt);
-        if (rnd() < dt * 3) emitParticles(W * 0.85, terrainY(cameraX + W * 0.85), 1, false);
+        if (rnd() < dt * 3) emitParticles(W * 0.85, terrainY(cameraX + W * 0.85) - 2, 1, false);
         if (modeT > 2.6) enterPlay(false);
       } else if (mode === "play") {
         idleT += dt;
@@ -2053,7 +2052,6 @@
         const spd = stumbleT > 0 ? (rejoin ? P.speed * P.rejoinBoost : P.speed * 0.25) : P.speed;
         gaitBoost = rejoin ? P.rejoinBoost : 1;
         if (stumbleT > 0) stumbleT -= dt;
-        departBlend = Math.min(1, departBlend + dt * 1.6);
 
         cameraX += spd * dt;
         ensureWorld(cameraX + W * 1.3);
