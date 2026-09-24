@@ -987,7 +987,7 @@
 
   // 物理初值（文档 §5.3）
   const P = {
-    gravity: 2600, jumpV: -860, slideDur: 1.0, speed: 120,
+    gravity: 2600, jumpV: -860, slideDur: 0.75, speed: 120,
     bufferJump: 0.08, bufferSlide: 0.06, coyote: 0.08,
     stumbleDur: 1.5, rejoinBoost: 1.15,
   };
@@ -2065,7 +2065,8 @@
         }
         if (sliding > 0) sliding -= dt;
         if (jumping || playerY < 0) {
-          vy += P.gravity * dt;
+          // 抛物线加弧度：顶点附近(|vy|<160)减重力悬挂，起跳/落地依旧干脆
+          vy += (Math.abs(vy) < 160 ? 1500 : P.gravity) * dt;
           playerY += vy * dt;
           if (playerY >= 0) { playerY = 0; vy = 0; jumping = false; coyote = P.coyote; }
         } else coyote -= dt;
