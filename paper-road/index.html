@@ -987,7 +987,7 @@
 
   // 物理初值（文档 §5.3）
   const P = {
-    gravity: 2200, jumpV: -820, slideDur: 1.0, speed: 105,
+    gravity: 2600, jumpV: -860, slideDur: 1.0, speed: 120,
     bufferJump: 0.08, bufferSlide: 0.06, coyote: 0.08,
     stumbleDur: 1.5, rejoinBoost: 1.15,
   };
@@ -1860,7 +1860,8 @@
         const ground = terrainY(o.x);
         const lintel = ground - (o.clear || 20);
         const roof = ground - (o.tall || 40);
-        if (head < lintel && feet > roof && Math.abs(u) < 0.88) { stun(); return; }
+        // 判定带只算洞口正上方（0.65）：两侧拱脚不撞头，整体跃过放行
+        if (head < lintel && feet > roof && Math.abs(u) < 0.65) { stun(); return; }
       } else if (o.type === "stone") {
         const top = terrainY(o.x) - (o.h || 16);
         if (feet > top + 4 && playerY > -(o.h || 16) * 0.6) { stun(); return; }
@@ -1887,7 +1888,12 @@
 
   function doSlide() {
     if (mode !== "play" || sliding > 0) return;
-    if (jumping && playerY < -8) { slideBuf = P.bufferSlide; return; }
+    if (jumping && playerY < -8) {
+      // 空中下滑 = 快速下坠（参考 Chrome 小恐龙），落地即滑
+      vy = Math.max(vy, 1100);
+      slideBuf = P.bufferSlide;
+      return;
+    }
     sliding = P.slideDur;
     slideBuf = 0;
   }
