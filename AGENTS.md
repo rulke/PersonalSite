@@ -10,6 +10,7 @@ Canonical spec: `个人主页设计与开发方案.md` (v1.2). Implementation st
 in the repo root.
 
 ## Structure
+- `README.md`: 仓库说明（运行方式 / 操作 / 玩法 / 结构 / 约定）。
 - `个人主页设计与开发方案.md`: design/dev plan (lucky, ZH/EN, no-ending road).
 - `AGENTS.md`: this file.
 - `.gitignore`: local backups (`*副本*`), secrets, editor/build noise.
