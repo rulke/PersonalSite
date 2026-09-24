@@ -987,7 +987,7 @@
 
   // 物理初值（文档 §5.3）
   const P = {
-    gravity: 2200, jumpV: -820, slideDur: 0.7, speed: 105,
+    gravity: 2200, jumpV: -820, slideDur: 1.0, speed: 105,
     bufferJump: 0.08, bufferSlide: 0.06, coyote: 0.08,
     stumbleDur: 1.5, rejoinBoost: 1.15,
   };
@@ -999,7 +999,6 @@
   let objects = [];
   let obstacles = [];
   let particles = [];
-  let hills = [];
   let stumbleT = 0, jumpBuf = 0, coyote = 0;
   let jumping = false, sliding = 0, slideBuf = 0, vy = 0, playerY = 0;
   let penAng = 0.35, penDrop = 0, pointLand = false, flashT = 0;
@@ -1009,6 +1008,7 @@
   let hintPulsed = false;
   let stageVisible = true;
   let fireX = 263;        // 篝火世界坐标 = 开镜小队中心（0.22·W），由 resetWorld/resize 派生
+  let drawnX = 420;       // 地线已画到哪（补画前沿）：skip/重绘后从营地端快速追到笔尖
 
   // 平滑值噪声（手绘抖动），替代毛糙的白噪声
   function hash1(i) {
@@ -1047,10 +1047,12 @@
      back: 角色身后的单线轮廓（一笔一条）
      front: 滑行时的前景遮挡（桥面/洞顶，白填充压在角色上） */
   function objectStrokes(kind) {
-    // 小屋：墙 + 坡顶 + 门
+    // 小屋：墙 + 坡顶 + 门 + 烟囱与一缕淡烟
     if (kind === "cabin") return [
       [[-22, 0], [-22, -24], [0, -44], [22, -24], [22, 0], [-22, 0]],
       [[-7, 0], [-7, -14], [7, -14], [7, 0]],
+      [[9, -33], [9, -42], [14, -42], [14, -36]],
+      [[13, -48], [11, -53], [15, -58], [13, -63]],
     ];
     // 树：细干 + 圆云冠（避免像屋顶）
     if (kind === "tree") return [[
@@ -1238,8 +1240,8 @@
     else if (withObstacle === "jump-valley") obstacles.push({ x, type: "valley", w: 36, depth: 22 });
     else if (withObstacle === "jump-mud") obstacles.push({ x, type: "mud", w: 22, depth: 14 });
     else if (withObstacle === "jump-stone") obstacles.push({ x, type: "stone", w: 18, h: 16 });
-    else if (withObstacle === "roll-bridge") obstacles.push({ x, type: "roll", w: 36, clear: 22 });
-    else if (withObstacle === "roll-cave") obstacles.push({ x, type: "roll", w: 34, clear: 20 });
+    else if (withObstacle === "roll-bridge") obstacles.push({ x, type: "roll", w: 36, clear: 22, tall: 38 });
+    else if (withObstacle === "roll-cave") obstacles.push({ x, type: "roll", w: 34, clear: 20, tall: 44 });
     return x + hw;
   }
 
@@ -1297,15 +1299,6 @@
       }
       ensureWorld._cursor = right + 60 + rnd() * 80;
     }
-    while (hills.length < 20) {
-      const last = hills.length ? hills[hills.length - 1].x : -180;
-      hills.push({
-        x: last + 240 + rnd() * 280,
-        h: 36 + rnd() * 64,
-        w: 110 + rnd() * 130,
-        kind: rnd() < 0.22 ? "tower" : "hill",
-      });
-    }
     const penX = cameraX + W * 0.85;
     if (!pathPoints.length) pathPoints.push({ x: 0 });
     let lastX = pathPoints[pathPoints.length - 1].x;
@@ -1325,19 +1318,20 @@
     srand(newSeed);
     cameraX = 0;
     fireX = W * 0.22;   // 单一锚点：篝火 = 开镜小队中心（与队形同源，任意窗宽重合）
+    drawnX = 420;       // 重绘/重开：地线回到营地预画段，之后由笔快速补画
     // 营地段预画地线（t=0 即可见、略粗）：只存 x，Y 绘制时现算
     pathPoints = [];
     for (let x = 0; x <= 420; x += 5) {
       pathPoints.push({ x });
     }
     obstacles = [];
-    // 从篝火开镜：小屋在出发点背后（屏外），前方只有路
+    // 村落开镜：屋舍在小队身后（跟随 0.22·W 锚点，pre-drawn），前方只有路
     objects = [
-      { x: -120, kind: "cabin", s: 0.95, p: 1, on: true, strokes: null },
-      { x: 560, kind: "tree", s: 1.0, p: 1, on: true, strokes: null },
-      { x: 880, kind: "clocktower", s: 0.85, p: 1, on: true, strokes: null },
+      { x: fireX - 205, kind: "cabin", s: 0.92, p: 1, on: true, strokes: null },
+      { x: fireX - 112, kind: "shop", s: 0.88, p: 1, on: true, strokes: null },
+      { x: fireX + 300, kind: "tree", s: 1.0, p: 1, on: true, strokes: null },
+      { x: fireX + 620, kind: "clocktower", s: 0.85, p: 1, on: true, strokes: null },
     ];
-    hills = [];
     particles = [];
     playerY = 0; vy = 0; jumping = false; sliding = 0;
     stumbleT = 0; gaitBoost = 1;
@@ -1371,17 +1365,24 @@
 
   /** Reveal objects as the pen passes — pen draws them into existence */
   function revealByPen(dt) {
-    const penX = cameraX + W * 0.85;
+    // 描出前沿 = 地线已画到的位置；skip/重绘后的快速补画时物件随前沿一起出现
+    const front = mode === "await" ? cameraX + W * 0.85 : drawnX;
     for (const o of objects) {
       const m = ensureMetrics(o);
       // 笔尖进入物件左缘即开始描出
       const start = o.x - m.halfW - 6;
-      if (!o.on && penX >= start) o.on = true;
+      if (!o.on && front >= start) o.on = true;
       if (!o.on) continue;
       if (mode === "await") { o.p = 1; continue; }
-      // 空间描出：p 跟笔尖位移走；复杂件 travel 更长 → 画得更慢
-      o.p = Math.max(0, Math.min(1, (penX - start) / m.travel));
+      // 空间描出：p 跟前沿位移走；复杂件 travel 更长 → 画得更慢
+      o.p = Math.max(0, Math.min(1, (front - start) / m.travel));
     }
+  }
+
+  /** 补画前沿追赶笔尖：正常行进时贴着笔，skip/重绘后 0.3–0.5s 把欠账快速画完 */
+  function advanceFront(dt) {
+    const penX = cameraX + W * 0.85;
+    drawnX = Math.min(penX, drawnX + Math.max(P.speed * dt, (penX - drawnX) * Math.min(1, dt * 6)));
   }
 
   function drawPath() {
@@ -1390,45 +1391,17 @@
     ctx.strokeStyle = "#18181A";
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
-    // 单条连续折线：无分段、无断口，杜绝竖线接缝
+    // 单条连续折线：无分段、无断口，杜绝竖线接缝；只画到补画前沿
     ctx.beginPath();
     for (let i = 0; i < pathPoints.length; i++) {
       const x = pathPoints[i].x;
+      if (x > drawnX) break;
       const sx = x - cameraX;
       const sy = terrainY(x);
       if (i === 0) ctx.moveTo(sx, sy);
       else ctx.lineTo(sx, sy);
     }
     ctx.stroke();
-  }
-
-  function drawHills(parallax) {
-    ctx.lineWidth = 1.2;
-    ctx.strokeStyle = "rgba(24,24,26,0.28)";
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.fillStyle = "none";
-    for (const h of hills) {
-      let x = (h.x - cameraX * parallax);
-      const span = W + 500;
-      x = ((x % span) + span) % span - 150;
-      const y = baseY - 8;
-      if (h.kind === "tower") {
-        // one-line tower
-        ctx.beginPath();
-        ctx.moveTo(x, y);
-        ctx.lineTo(x, y - h.h);
-        ctx.lineTo(x + 7, y - h.h - 12);
-        ctx.lineTo(x + 14, y - h.h);
-        ctx.lineTo(x + 14, y);
-        ctx.stroke();
-      } else {
-        ctx.beginPath();
-        ctx.moveTo(x - h.w / 2, y);
-        ctx.quadraticCurveTo(x, y - h.h, x + h.w / 2, y);
-        ctx.stroke();
-      }
-    }
   }
 
   function drawObjects(layer) {
@@ -1759,26 +1732,40 @@
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
 
-    // 一笔柴堆
+    // 柴堆：三根交叉（二下一上）
     ctx.beginPath();
-    ctx.moveTo(-16, 0); ctx.lineTo(16, -3);
-    ctx.moveTo(-12, -3); ctx.lineTo(12, 2);
+    ctx.moveTo(-17, -1); ctx.lineTo(15, -5);
+    ctx.moveTo(-15, -4); ctx.lineTo(13, 0);
+    ctx.moveTo(-8, -2); ctx.lineTo(9, -7);
     ctx.stroke();
 
-    // 火苗（营地唯一的暖橙浓度点）
-    const fl = reduceMotion ? 1 : 1 + Math.sin(modeT * 5) * 0.08;
+    // 石圈：五颗小弧
     ctx.beginPath();
-    ctx.moveTo(0, -6);
-    ctx.quadraticCurveTo(-10, -18, 0, -34 * fl);
-    ctx.quadraticCurveTo(10, -18, 0, -6);
+    for (const st of [[-20, 2], [-11, 4], [0, 5], [11, 4], [20, 2]]) {
+      ctx.moveTo(st[0] - 3, st[1]);
+      ctx.quadraticCurveTo(st[0], st[1] - 4, st[0] + 3, st[1]);
+    }
+    ctx.stroke();
+
+    // 火焰：外焰墨线 + 焰尖分叉小苗（营地唯一的暖橙浓度点）
+    const fl = reduceMotion ? 1 : 1 + Math.sin(modeT * 5) * 0.08;
+    const sway = reduceMotion ? 0 : Math.sin(modeT * 3.1) * 2;
+    ctx.beginPath();
+    ctx.moveTo(0, -7);
+    ctx.quadraticCurveTo(-11, -20, -1 + sway * 0.4, -36 * fl);
+    ctx.quadraticCurveTo(9, -22, 0, -7);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(-1 + sway * 0.4, -36 * fl);
+    ctx.quadraticCurveTo(2 + sway, -43 * fl, 6 + sway, -40 * fl);
     ctx.stroke();
 
     ctx.strokeStyle = "#FF9F43";
     ctx.lineWidth = 1.4;
     ctx.beginPath();
-    ctx.moveTo(0, -7);
-    ctx.quadraticCurveTo(-4.5, -15, 0, -24 * fl);
-    ctx.quadraticCurveTo(4.5, -15, 0, -7);
+    ctx.moveTo(0, -8);
+    ctx.quadraticCurveTo(-5, -16, 0, -26 * fl);
+    ctx.quadraticCurveTo(5, -16, 0, -8);
     ctx.stroke();
     ctx.restore();
   }
@@ -1869,9 +1856,11 @@
       const u = (wx - o.x) / o.w;
 
       if (o.type === "roll") {
-        // 桥洞 / 山洞：站立或跳跃撞顶 → 踉跄；滑行可穿过
-        const lintel = terrainY(o.x) - (o.clear || 20);
-        if (head < lintel && Math.abs(u) < 0.88) { stun(); return; }
+        // 桥洞 / 山洞：身体撞在结构带上才踉跄；滑行可穿过、整体跃过放行
+        const ground = terrainY(o.x);
+        const lintel = ground - (o.clear || 20);
+        const roof = ground - (o.tall || 40);
+        if (head < lintel && feet > roof && Math.abs(u) < 0.88) { stun(); return; }
       } else if (o.type === "stone") {
         const top = terrainY(o.x) - (o.h || 16);
         if (feet > top + 4 && playerY > -(o.h || 16) * 0.6) { stun(); return; }
@@ -2024,9 +2013,10 @@
 
     if (sim) {
       if (mode === "camp") {
-        // 营地呼吸约 2.4s：镜头锁死，完整看到屋/火+小队/树/塔/预画线
+        // 营地呼吸约 2.4s：镜头锁死，完整看到村舍/火+小队/预画线；篝火偶尔冒火星
         cameraX = 0;
         revealByPen(dt);
+        if (rnd() < dt * 1.5) emitParticles(fireX - cameraX, terrainY(fireX) - 34, 1, false);
         if (modeT > 2.4) { mode = "point"; modeT = 0; }
       } else if (mode === "point") {
         // 指路 + 笔落位，仍不卷动
@@ -2038,9 +2028,10 @@
         }
         if (modeT > 1.6) { mode = "walk"; modeT = 0; }
       } else if (mode === "walk") {
-        // 小队原地起跑（追笔行走），镜头缓缓跟上；篝火作为世界物自然留在身后
+        // 小队原地起跑（追笔行走），镜头缓缓跟上；补画前沿扫过树/钟楼；篝火留在身后
         departBlend = Math.min(1, departBlend + dt / 1.1);
         cameraX += P.speed * Math.min(1, modeT * 0.8) * dt;
+        advanceFront(dt);
         ensureWorld(cameraX + W + 200);
         revealByPen(dt);
         if (rnd() < dt * 3) emitParticles(W * 0.85, terrainY(cameraX + W * 0.85) - 2, 1, false);
@@ -2054,6 +2045,7 @@
         if (stumbleT > 0) stumbleT -= dt;
 
         cameraX += spd * dt;
+        advanceFront(dt);
         ensureWorld(cameraX + W * 1.3);
         revealByPen(dt);
 
@@ -2075,7 +2067,8 @@
         if (rnd() < dt * 4) emitParticles(W * 0.85, terrainY(cameraX + W * 0.85) - 2, 1, false);
         collide();
       } else if (mode === "await") {
-        revealByPen(dt);   // reduced-motion：静态营地，无仪式
+        drawnX = cameraX + W * 0.85;   // reduced-motion：静态营地，地线一次画全
+        revealByPen(dt);
       }
 
       for (let i = particles.length - 1; i >= 0; i--) {
@@ -2194,6 +2187,7 @@
         pathPoints: pathPoints.length, stageVisible,
         pathX0: pathPoints[0] && pathPoints[0].x,
         pathXN: pathPoints[pathPoints.length - 1] && pathPoints[pathPoints.length - 1].x,
+        drawnX: Math.round(drawnX),
         baseY: Math.round(baseY), W, H,
       };
     },
