@@ -141,15 +141,41 @@
     display: block;
     width: 100%;
     height: min(68vh, 560px);
-    touch-action: none;
+    touch-action: pan-y;
     cursor: default;
     background: var(--paper);
   }
 
+  .stage-wrap { position: relative; }
+  .stage-hud {
+    position: absolute; top: 12px; right: 16px;
+    font-family: var(--font-mono); font-size: 12px;
+    color: var(--ink-soft); letter-spacing: 0.08em;
+    pointer-events: none; opacity: 0.85;
+  }
+  .stage-hud.pulse { animation: hintPulse 1.2s ease 1; }
+  .hud-btns { position: absolute; top: 10px; left: 12px; display: flex; gap: 8px; }
+  .hud-btn {
+    width: 34px; height: 34px; border-radius: 999px;
+    border: 1px solid var(--line-faint);
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    font-size: 13px; color: var(--ink-soft);
+    transition: color .2s, border-color .2s;
+  }
+  .hud-btn:hover { color: var(--ink); border-color: var(--ink-soft); }
+  .nav-sound {
+    margin-left: 4px; padding: 8px 10px; border-radius: 999px;
+    border: 1px solid var(--line-faint); color: var(--ink-soft);
+    font-size: 12px; transition: color .2s, opacity .2s;
+  }
+  .nav-sound[aria-pressed="true"] { color: var(--ink); }
+  .nav-sound[aria-pressed="false"] { opacity: 0.55; }
+
   .hero-copy {
     text-align: center;
-    padding: 8px 24px 4px;
-    margin-top: -36px;
+    padding: 12px 24px 8px;
+    margin-top: -20px;
   }
   .hero-title {
     font-family: var(--font-display);
@@ -549,6 +575,7 @@
   }
 
   @media (max-width: 880px) {
+    #stage { height: min(58vh, 480px); }
     .sheet { margin: 0; border-radius: 0; border-left: none; border-right: none; }
     .section { padding: 56px 20px 40px; scroll-margin-top: 80px; }
     #stage { height: min(48vh, 360px); }
@@ -613,11 +640,19 @@
       <a href="#contact" data-i18n="nav.contact">联系</a>
     </div>
     <button class="nav-lang" id="lang-btn" type="button" aria-label="Switch language">EN</button>
+    <button class="nav-sound" id="btn-sound" type="button" aria-pressed="false" aria-label="Sound">♪</button>
   </div>
 </nav>
 
 <div class="sheet">
-  <canvas id="stage" aria-label="Interactive road scene" role="img"></canvas>
+  <div class="stage-wrap">
+    <canvas id="stage" aria-label="Interactive road scene" role="img"></canvas>
+    <div class="stage-hud" id="hud-km"></div>
+    <div class="hud-btns">
+      <button class="hud-btn" id="btn-pause" type="button" aria-label="Pause">⏸</button>
+      <button class="hud-btn" id="btn-redraw" type="button" aria-label="Redraw">↺</button>
+    </div>
+  </div>
 
   <header class="hero" id="hero">
     <div class="hero-copy">
@@ -629,10 +664,6 @@
       <button class="btn-skip" id="btn-skip" type="button" data-i18n="hero.skip">出发</button>
     </div>
     <div class="hero-bar">
-      <div class="hero-controls">
-        <button class="ctrl-btn" id="btn-redraw" type="button">↺ 重绘</button>
-        <button class="ctrl-btn" id="btn-pause" type="button">⏸ 暂停</button>
-      </div>
       <p class="hero-hint" id="hero-hint"></p>
     </div>
     <p class="sr-only" id="a11y-controls"></p>
@@ -730,7 +761,7 @@
       "hero.title": "用匠心写代码， <br>以灵魂做设计。",
       "hero.sub": "边走边画，把每天画得更新一点。",
       "hero.hint": "[左键] 跳跃 · [右键] 滑行 ｜ [↺ 重绘] ｜ [⏸ 暂停]",
-      "hero.hint.touch": "[轻点] 跳跃 · [下滑] 滑行",
+      "hero.hint.touch": "[轻点] 跳跃",
       "hero.setout": "出发", "hero.skip": "出发",
       "hero.redraw": "↺ 重绘", "hero.pause": "⏸ 暂停", "hero.play": "▶ 继续",
       "hero.skipping": "点击出发，开始上路",
@@ -747,7 +778,7 @@
       "hero.title": "Code with craft. <br>Design with soul.",
       "hero.sub": "Keep walking, keep drawing.",
       "hero.hint": "[LMB] Jump · [RMB] Slide ｜ [↺ Redraw] ｜ [⏸ Pause]",
-      "hero.hint.touch": "[Tap] Jump · [Swipe down] Slide",
+      "hero.hint.touch": "[Tap] Jump",
       "hero.setout": "Set out", "hero.skip": "Set out",
       "hero.redraw": "↺ Redraw", "hero.pause": "⏸ Pause", "hero.play": "▶ Resume",
       "hero.skipping": "Click to set out",
@@ -801,19 +832,24 @@
     updateHint();
     document.getElementById("a11y-controls").textContent = t("a11y.controls");
     document.getElementById("openroad-title").innerHTML = t("openroad.title");
-    document.getElementById("btn-redraw").textContent = t("hero.redraw");
-    document.getElementById("btn-pause").textContent =
-      (window.__paused ? t("hero.play") : t("hero.pause"));
+    document.getElementById("btn-redraw").textContent = "↺";
+    document.getElementById("btn-redraw").setAttribute("aria-label", t("hero.redraw"));
+    const pauseBtn = document.getElementById("btn-pause");
+    pauseBtn.textContent = window.__paused ? "▶" : "⏸";
+    pauseBtn.setAttribute("aria-label", window.__paused ? t("hero.play") : t("hero.pause"));
     document.getElementById("lang-btn").textContent = lang === "zh" ? "EN" : "中文";
     renderWorks(); renderTimeline(); renderNotes();
     bindReveals();
   }
 
   function updateHint() {
-    const isTouch = matchMedia("(hover: none), (pointer: coarse)").matches;
-    document.getElementById("hero-hint").textContent = t(
-      isTouch ? "hero.hint.touch" : "hero.hint"
-    );
+    const touchHint = matchMedia("(hover: none), (pointer: coarse)").matches;
+    const hint = document.getElementById("hero-hint");
+    hint.textContent = t(touchHint ? "hero.hint.touch" : "hero.hint");
+    // 交权后提示自动淡出
+    if (hintTimer) clearTimeout(hintTimer);
+    hint.style.opacity = "";
+    if (mode === "play") hintTimer = setTimeout(() => { hint.style.opacity = "0"; }, 6000);
   }
 
   /* illustrations */
@@ -958,6 +994,7 @@
   /* ═══════════ Canvas scene ═══════════ */
   const canvas = document.getElementById("stage");
   const ctx = canvas.getContext("2d");
+  const hudKmEl = document.getElementById("hud-km");
   let W = 0, H = 0, dpr = 1, baseY = 0;
 
   function resize() {
@@ -1009,6 +1046,17 @@
   let stageVisible = true;
   let fireX = 263;        // 篝火世界坐标 = 开镜小队中心（0.22·W），由 resetWorld/resize 派生
   let drawnX = 420;       // 地线已画到哪（补画前沿）：skip/重绘后从营地端快速追到笔尖
+  let speedRamp = 120;    // 节奏曲线：120 → 190（+0.8/s），踉跄回落 40
+  let prevY = 0;          // 落地检测（上一帧高度）
+  let lastMile = 0;       // 里程碑计数（每 1000px = 100m）
+  let bestMile = 0;       // 本 seed 最佳里程碑（localStorage，仅本地）
+  let hintTimer = 0;
+  const isTouch = matchMedia("(pointer: coarse)").matches;
+  // 纸色随系统时间：白 / 暖黄（黄昏）/ 暮色（夜）
+  const hourNow = new Date().getHours();
+  const paperTone = hourNow >= 22 || hourNow < 5 ? "#F4F1EA"
+    : hourNow >= 17 ? "#FFF6E8" : "#FFFFFF";
+  const isNight = hourNow >= 22 || hourNow < 5;
 
   // 平滑值噪声（手绘抖动），替代毛糙的白噪声
   function hash1(i) {
@@ -1128,6 +1176,17 @@
       [[-2, 0], [-2, -26], [-16, -26], [-16, -38], [16, -38], [16, -26], [5, -26], [5, 0]],
       [[-9, -32], [7, -32], [2.5, -35.5], [7, -32], [2.5, -28.5]],
     ];
+    // 纸飞机：折纸镖 + 折痕 + 尾迹（飞行感由 bob 提供）
+    if (kind === "plane") return [
+      [[-14, 0], [14, -7], [2, 3], [-14, 0]],
+      [[-13, -1], [12, -4]],
+      [[18, -4], [25, -6]],
+    ];
+    // 里程碑石：立石 + 小旗
+    if (kind === "milestone") return [
+      [[-6, 0], [-8, -14], [-3, -26], [5, -26], [7, -12], [4, 0], [-6, 0]],
+      [[5, -26], [14, -23], [5, -19]],
+    ];
     return [[[0, 0], [0, -8]]];
   }
 
@@ -1235,6 +1294,7 @@
       x += 70;
     }
     const obj = { x, kind, s: s || 1, p: 0, on: false, strokes: null };
+    if (withObstacle === "plane-low" || withObstacle === "plane-high") obj.fly = withObstacle === "plane-low" ? -30 : -60;
     objects.push(obj);
     if (withObstacle === "jump-pit") obstacles.push({ x, type: "stream", w: 28, depth: 18 });
     else if (withObstacle === "jump-valley") obstacles.push({ x, type: "valley", w: 36, depth: 22 });
@@ -1242,6 +1302,8 @@
     else if (withObstacle === "jump-stone") obstacles.push({ x, type: "stone", w: 18, h: 16 });
     else if (withObstacle === "roll-bridge") obstacles.push({ x, type: "roll", w: 36, clear: 22, tall: 38 });
     else if (withObstacle === "roll-cave") obstacles.push({ x, type: "roll", w: 34, clear: 20, tall: 44 });
+    else if (withObstacle === "plane-low") obstacles.push({ x, type: "plane", w: 20, fly: -30 });
+    else if (withObstacle === "plane-high") obstacles.push({ x, type: "plane", w: 20, fly: -60 });
     return x + hw;
   }
 
@@ -1251,7 +1313,8 @@
       ensureWorld._deck = [
         "cabin", "tree", "hill", "stream", "flower", "stone",
         "valley", "bridge", "mud", "cave", "clocktower", "shop",
-        "tree", "flower", "hill", "mush",
+        "plane", "combo-pits", "tree", "flower", "hill", "mush",
+        "combo-bridge-pit",
       ];
     }
     if (ensureWorld._i == null) ensureWorld._i = 0;
@@ -1287,8 +1350,20 @@
       else if (k === "valley") right = placeObject(xHint, "valley", 1, "jump-valley");
       else if (k === "mud") right = placeObject(xHint, "mud", 1, "jump-mud");
       else if (k === "stone") right = placeObject(xHint, "stone", 1, "jump-stone");
-      else if (k === "bridge") right = placeObject(xHint, "bridge", 1, "roll-bridge");
-      else if (k === "cave") right = placeObject(xHint, "cave", 1, "roll-cave");
+      else if (k === "bridge") right = placeObject(xHint, "bridge", 1, isTouch && ensureWorld._i % 2 === 0 ? null : "roll-bridge");
+      else if (k === "cave") right = placeObject(xHint, "cave", 1, isTouch && ensureWorld._i % 2 === 0 ? null : "roll-cave");
+      else if (k === "plane") {
+        // 触屏无滑行输入：只出高空档（直行勿跳）
+        right = placeObject(xHint, "plane", 1, isTouch ? "plane-high" : (rnd() < 0.5 ? "plane-low" : "plane-high"));
+      }
+      else if (k === "combo-pits") {
+        const x1 = placeObject(xHint, "stream", 1, "jump-pit");
+        right = placeObject(x1 + 58, "stream", 1, "jump-pit");
+      }
+      else if (k === "combo-bridge-pit") {
+        const x1 = placeObject(xHint, "bridge", 1, isTouch && ensureWorld._i % 2 === 0 ? null : "roll-bridge");
+        right = placeObject(x1 + 70, "stream", 1, "jump-pit");
+      }
       else {
         right = placeObject(xHint, k, 0.88 + rnd() * 0.28, null);
         // 伴生也走防重叠
@@ -1297,7 +1372,14 @@
           right = placeObject(right, ck, 0.75 + rnd() * 0.25, null);
         }
       }
-      ensureWorld._cursor = right + 60 + rnd() * 80;
+      // 间距随节奏曲线等比放大：速度上升时时间节奏保持连贯
+      ensureWorld._cursor = right + (60 + rnd() * 80) * (speedRamp / 120);
+    }
+    // 里程碑石：每 1000px（100m）由笔画出
+    ensureWorld._mile = ensureWorld._mile || 1000;
+    while (ensureWorld._mile < xTo) {
+      placeObject(ensureWorld._mile, "milestone", 1, null);
+      ensureWorld._mile += 1000;
     }
     const penX = cameraX + W * 0.85;
     if (!pathPoints.length) pathPoints.push({ x: 0 });
@@ -1319,6 +1401,8 @@
     cameraX = 0;
     fireX = W * 0.22;   // 单一锚点：篝火 = 开镜小队中心（与队形同源，任意窗宽重合）
     drawnX = 420;       // 重绘/重开：地线回到营地预画段，之后由笔快速补画
+    speedRamp = 120; lastMile = 0;
+    try { bestMile = parseInt(localStorage.getItem("lucky.best." + newSeed), 10) || 0; } catch (err) { bestMile = 0; }
     // 营地段预画地线（t=0 即可见、略粗）：只存 x，Y 绘制时现算
     pathPoints = [];
     for (let x = 0; x <= 420; x += 5) {
@@ -1338,6 +1422,7 @@
     departBlend = mode === "camp" || mode === "point" ? 0 : departBlend;
     // 生成游标从营地塔之后开始，禁止与营地地貌重合
     ensureWorld._cursor = 880;
+    ensureWorld._mile = 1000;
     ensureWorld._i = ensureWorld._i || 0;
     ensureWorld(cameraX + W + 200);
   }
@@ -1414,7 +1499,8 @@
       const sx = o.x - cameraX;
       if (sx < -120 || sx > W + 120) continue;
       if (o.p <= 0) continue;
-      const sy = terrainY(o.x);
+      const sy = terrainY(o.x) + (o.fly || 0)
+        + (o.kind === "plane" && !reduceMotion ? Math.sin(modeT * 7 + o.x * 0.01) * 3 : 0);
       const sc = o.s || 1;
 
       if (layer === "back") {
@@ -1718,6 +1804,32 @@
     ctx.restore();
   }
 
+  /** 铅笔底稿远景：0.45× 视差的淡灰山影，纯装饰不碰撞 */
+  function drawPencilUnderlay() {
+    ctx.strokeStyle = "rgba(24,24,26,0.11)";
+    ctx.lineWidth = 1.3;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    const step = 300, span = W + step * 2;
+    const n = Math.ceil(span / step) + 1;
+    for (let i = -1; i < n; i++) {
+      const bx = ((((i * step - cameraX * 0.45) % span) + span) % span) - step;
+      const h = 26 + hash1(i * 7.3) * 18;
+      const y = baseY + 4;
+      ctx.beginPath();
+      ctx.moveTo(bx - 70, y);
+      ctx.quadraticCurveTo(bx - 20, y - h, bx + 18, y - h * 0.4);
+      ctx.quadraticCurveTo(bx + 40, y - h * 0.9, bx + 76, y);
+      ctx.stroke();
+      if (hash1(i * 3.1) > 0) {
+        ctx.beginPath();
+        ctx.moveTo(bx + 110, y);
+        ctx.lineTo(bx + 110, y - 16 - hash1(i * 5.7) * 10);
+        ctx.stroke();
+      }
+    }
+  }
+
   function drawCampFire() {
     // 篝火 = 小队中心的世界锚点（resetWorld 由 0.22·W 派生），出发后随路自然离场
     const fx = fireX - cameraX;
@@ -1862,6 +1974,10 @@
         const roof = ground - (o.tall || 40);
         // 判定带只算洞口正上方（0.65）：两侧拱脚不撞头，整体跃过放行
         if (head < lintel && feet > roof && Math.abs(u) < 0.65) { stun(); return; }
+      } else if (o.type === "plane") {
+        // 纸飞机：低空须滑行/高跳越过，高空直行勿跳（身体带与机身带相交才踉跄）
+        const py = terrainY(o.x) + o.fly;
+        if (Math.abs(u) < 0.6 && head < py + 10 && feet > py - 10) { stun(); return; }
       } else if (o.type === "stone") {
         const top = terrainY(o.x) - (o.h || 16);
         if (feet > top + 4 && playerY > -(o.h || 16) * 0.6) { stun(); return; }
@@ -1882,7 +1998,7 @@
     if (mode !== "play" || sliding > 0) return;
     if (jumping && playerY < -5) { jumpBuf = P.bufferJump; return; }
     if (coyote > 0 || playerY > -2) {
-      vy = P.jumpV; jumping = true; jumpBuf = 0;
+      vy = P.jumpV; jumping = true; jumpBuf = 0; sJump();
     } else jumpBuf = P.bufferJump;
   }
 
@@ -1896,6 +2012,7 @@
     }
     sliding = P.slideDur;
     slideBuf = 0;
+    sSlide();
   }
 
   /** 完成交权：进入行进态。withFlash: 跳过时补 200ms 交叉淡入 */
@@ -1919,6 +2036,32 @@
   }
   function skipIntro() { enterPlay(true); }
 
+  /* ── 声音：WebAudio 三枚极简音，默认静音（导航 ♪ 开关） ── */
+  let audioOn = false, actx = null;
+  function tone(freq, dur, delay, type) {
+    if (!audioOn) return;
+    try {
+      actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+      const t0 = actx.currentTime + (delay || 0);
+      const osc = actx.createOscillator(), gn = actx.createGain();
+      osc.type = type || "sine";
+      osc.frequency.setValueAtTime(freq, t0);
+      gn.gain.setValueAtTime(0.0001, t0);
+      gn.gain.linearRampToValueAtTime(0.05, t0 + 0.012);
+      gn.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      osc.connect(gn).connect(actx.destination);
+      osc.start(t0); osc.stop(t0 + dur + 0.02);
+    } catch (err) {}
+  }
+  const sJump = () => { tone(540, 0.09); tone(720, 0.08, 0.05); };
+  const sSlide = () => tone(190, 0.14, 0, "triangle");
+  const sMile = () => { tone(660, 0.09); tone(880, 0.12, 0.07); };
+  document.getElementById("btn-sound").addEventListener("click", (e) => {
+    audioOn = !audioOn;
+    e.currentTarget.setAttribute("aria-pressed", String(audioOn));
+    if (audioOn) tone(660, 0.08);
+  });
+
   canvas.addEventListener("contextmenu", (e) => e.preventDefault());
   let touchStart = null;
 
@@ -1940,8 +2083,8 @@
     const dy = e.clientY - touchStart.y;
     const dt = performance.now() - touchStart.t;
     touchStart = null;
-    if (dy > 36 && Math.abs(dx) < 50) doSlide();
-    else if (dt < 320) doJump();
+    // 触屏只保留轻点跳跃；滑动交给页面滚动（touch-action: pan-y）
+    if (dt < 320 && Math.abs(dy) < 24) doJump();
   });
 
   window.addEventListener("keydown", (e) => {
@@ -1949,7 +2092,9 @@
     if (e.code === "Escape") {
       if (mode !== "play") { skipIntro(); return; }
       paused = !paused; window.__paused = paused;
-      document.getElementById("btn-pause").textContent = paused ? t("hero.play") : t("hero.pause");
+      const pb = document.getElementById("btn-pause");
+    pb.textContent = paused ? "▶" : "⏸";
+    pb.setAttribute("aria-label", paused ? t("hero.play") : t("hero.pause"));
       return;
     }
     if (e.code === "Space" || e.code === "ArrowUp") {
@@ -1976,7 +2121,9 @@
   document.getElementById("btn-pause").addEventListener("click", () => {
     paused = !paused;
     window.__paused = paused;
-    document.getElementById("btn-pause").textContent = paused ? t("hero.play") : t("hero.pause");
+    const pb = document.getElementById("btn-pause");
+    pb.textContent = paused ? "▶" : "⏸";
+    pb.setAttribute("aria-label", paused ? t("hero.play") : t("hero.pause"));
   });
 
   window.addEventListener("scroll", () => {
@@ -2023,6 +2170,7 @@
         cameraX = 0;
         revealByPen(dt);
         if (rnd() < dt * 1.5) emitParticles(fireX - cameraX, terrainY(fireX) - 34, 1, false);
+        if (hudKmEl) hudKmEl.textContent = bestMile > 0 ? "BEST " + (bestMile / 10).toFixed(1) + " km" : "";
         if (modeT > 2.4) { mode = "point"; modeT = 0; }
       } else if (mode === "point") {
         // 指路 + 笔落位，仍不卷动
@@ -2044,9 +2192,11 @@
         if (modeT > 2.6) enterPlay(false);
       } else if (mode === "play") {
         idleT += dt;
+        // 节奏曲线：120 → 190（+0.8/s），踉跄时冻结爬升
+        if (stumbleT <= 0) speedRamp = Math.min(190, speedRamp + 0.8 * dt);
         // 踉跄：先失速，后 1.15× 归队（文档 §5.3）
         const rejoin = stumbleT > 0 && stumbleT <= 0.55;
-        const spd = stumbleT > 0 ? (rejoin ? P.speed * P.rejoinBoost : P.speed * 0.25) : P.speed;
+        const spd = stumbleT > 0 ? (rejoin ? speedRamp * P.rejoinBoost : speedRamp * 0.25) : speedRamp;
         gaitBoost = rejoin ? P.rejoinBoost : 1;
         if (stumbleT > 0) stumbleT -= dt;
 
@@ -2054,6 +2204,8 @@
         advanceFront(dt);
         ensureWorld(cameraX + W * 1.3);
         revealByPen(dt);
+        // 纸飞机逆风慢飞：比地面滚动更慢地接近小队
+        for (const o of obstacles) if (o.type === "plane") o.x -= 25 * dt;
 
         if (jumpBuf > 0) {
           jumpBuf -= dt;
@@ -2064,15 +2216,36 @@
           if (sliding <= 0 && playerY > -4) doSlide();
         }
         if (sliding > 0) sliding -= dt;
+        prevY = playerY;
         if (jumping || playerY < 0) {
           // 抛物线加弧度：顶点附近(|vy|<160)减重力悬挂，起跳/落地依旧干脆
           vy += (Math.abs(vy) < 160 ? 1500 : P.gravity) * dt;
           playerY += vy * dt;
-          if (playerY >= 0) { playerY = 0; vy = 0; jumping = false; coyote = P.coyote; }
+          if (playerY >= 0) {
+            if (prevY < -40) emitParticles(W * 0.22, terrainY(playerWorldX()) - 1, 3, false);
+            playerY = 0; vy = 0; jumping = false; coyote = P.coyote;
+          }
         } else coyote -= dt;
 
         if (rnd() < dt * 4) emitParticles(W * 0.85, terrainY(cameraX + W * 0.85) - 2, 1, false);
         collide();
+
+        // 里程碑：每 1000px = 100m——HUD 轻脉冲 + 最佳里程落 localStorage
+        const mile = Math.floor(cameraX / 1000);
+        if (mile > lastMile) {
+          lastMile = mile;
+          sMile();
+          if (hudKmEl) {
+            hudKmEl.classList.remove("pulse");
+            void hudKmEl.offsetWidth;
+            hudKmEl.classList.add("pulse");
+          }
+          if (mile > bestMile) {
+            bestMile = mile;
+            try { localStorage.setItem("lucky.best." + seed, String(bestMile)); } catch (err) {}
+          }
+        }
+        if (hudKmEl) hudKmEl.textContent = (cameraX / 1000).toFixed(1) + " km";
       } else if (mode === "await") {
         drawnX = cameraX + W * 0.85;   // reduced-motion：静态营地，地线一次画全
         revealByPen(dt);
@@ -2086,17 +2259,41 @@
       }
     }
 
+    // 纸色随系统时间
     baseY = H * 0.64;
     ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = "#FFFFFF";
+    ctx.fillStyle = paperTone;
     ctx.fillRect(0, 0, W, H);
 
-    // 软云 — 天空原有，经典云形（平底 + 三圆顶）
+    // 夜：月牙与星（随系统时间，缓慢视差）
+    if (isNight) {
+      ctx.strokeStyle = "rgba(24,24,26,0.35)";
+      ctx.lineWidth = 1.2;
+      ctx.lineCap = "round";
+      const span2 = W + 200;
+      const mx = (((90 - cameraX * 0.04) % span2) + span2) % span2 - 60;
+      ctx.beginPath();
+      ctx.arc(mx, 58, 13, Math.PI * 0.3, Math.PI * 1.7, true);
+      ctx.stroke();
+      for (const st of [[180, 40], [330, 86], [520, 50]]) {
+        const x2 = (((st[0] - cameraX * 0.04) % span2) + span2) % span2 - 60;
+        ctx.beginPath();
+        ctx.moveTo(x2 - 2.5, st[1]); ctx.lineTo(x2 + 2.5, st[1]);
+        ctx.moveTo(x2, st[1] - 2.5); ctx.lineTo(x2, st[1] + 2.5);
+        ctx.stroke();
+      }
+    }
+
+    // 铅笔底稿远景 — 0.45× 视差的淡灰山影，纯装饰不碰撞
+    drawPencilUnderlay();
+
+    // 软云 — 天空原有，经典云形（平底 + 三圆顶）；随里程 3 → 6 缓增
     ctx.strokeStyle = "rgba(24,24,26,0.32)";
     ctx.lineWidth = 1.15;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
-    for (let i = 0; i < 3; i++) {
+    const cloudN = 3 + Math.min(3, Math.floor(cameraX / 2000));
+    for (let i = 0; i < cloudN; i++) {
       const cx = ((i * 320 - cameraX * 0.06) % (W + 360)) - 70;
       const cy = 36 + (i % 3) * 32;
       const w = 22 + (i % 2) * 6;
