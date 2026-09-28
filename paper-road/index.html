@@ -248,8 +248,64 @@
   .btn-skip:hover { color: var(--ink); }
 
   /* ── Sections ── */
+  /* Crafted surface pass */
+  .sheet {
+    border-color: rgba(24,24,26,0.08);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.92) inset, 0 28px 80px rgba(24,24,26,0.07);
+  }
+  .nav-brand { letter-spacing: -0.045em; }
+  .nav-links a, .nav-lang { transition: color .2s, background .2s, transform .2s; }
+  .nav-links a:hover, .nav-links a:focus-visible, .nav-lang:hover {
+    color: var(--accent-orange);
+    background: rgba(255,159,67,0.08);
+    border-radius: 999px;
+  }
+  .nav-links a.active { color: var(--accent-orange); }
+  .nav-links a.active::after { background: var(--accent-orange); }
+  .hero-copy { padding-top: 20px; }
+  .hero-title { text-wrap: balance; }
+  .hero-sub { max-width: 560px; margin-left: auto; margin-right: auto; }
+  .hero-bar { border-top: 1px solid rgba(24,24,26,0.06); }
+  .ctrl-btn { box-shadow: 0 3px 12px rgba(24,24,26,0.04); }
+  .ctrl-btn:hover { background: #fffaf1; border-color: var(--accent-orange); }
+  .btn-setout { box-shadow: 0 8px 20px rgba(24,24,26,0.14); }
+  .section { padding-top: 104px; }
+  .section-head { position: relative; }
+  .section-head::after {
+    content: "";
+    position: absolute;
+    left: 50%; bottom: -26px;
+    width: 34px; height: 3px;
+    transform: translateX(-50%) rotate(-2deg);
+    background: var(--accent-orange);
+    border-radius: 999px;
+    opacity: .78;
+  }
+  .hollow { -webkit-text-stroke-color: #d8d3ca; }
+  .work-card {
+    overflow: hidden;
+    border: 1px solid rgba(24,24,26,0.08);
+    background: linear-gradient(145deg, rgba(255,255,255,.96), rgba(249,247,241,.9));
+    box-shadow: 0 10px 28px rgba(24,24,26,0.045);
+  }
+  .work-card::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%; height: 3px;
+    background: linear-gradient(90deg, var(--accent-orange), var(--accent-lemon));
+    opacity: .8;
+  }
+  .work-card:hover { border-color: rgba(255,159,67,.55); box-shadow: 0 18px 36px rgba(24,24,26,0.09); }
+  .work-art { background: radial-gradient(circle at 50% 52%, rgba(255,222,89,.2), transparent 58%); border-radius: 18px; }
+  .work-card.bento { background: #fff; border-color: rgba(24,24,26,0.1); }
+  .note-row { padding-left: 12px; padding-right: 12px; border-radius: 14px; transition: background .25s, color .25s, transform .25s; }
+  .note-row:hover { background: #fffaf1; transform: translateX(4px); }
+  .about-manifesto { text-wrap: balance; }
+  .openroad { border-top-color: rgba(24,24,26,0.08); }
+
   .section {
-    padding: 72px 56px 56px;
+    padding: 104px 56px 56px;
     max-width: 980px;
     margin: 0 auto;
     scroll-margin-top: 96px;
@@ -1421,8 +1477,7 @@
     srand(newSeed);
     cameraX = 0;
     fireX = W * 0.22;   // 单一锚点：篝火 = 开镜小队中心（与队形同源，任意窗宽重合）
-    drawnX = mode === "play" ? 420      // 行进中重绘：地线回营地端，补画前沿快速重描
-      : cameraX + W * 0.85;             // 首次进入/营地态：预画到笔尖（LCP，地面已存在）
+    drawnX = 420;                         // the pen reveals terrain from the camp onward
     speedRamp = 120; lastMile = 0;
     try { bestMile = parseInt(localStorage.getItem("lucky.best." + newSeed), 10) || 0; } catch (err) { bestMile = 0; }
     // 营地段预画地线（t=0 即可见、略粗）：只存 x，Y 绘制时现算
@@ -1487,30 +1542,93 @@
   }
 
   /** 补画前沿追赶笔尖：正常行进时贴着笔，skip/重绘后 0.3–0.5s 把欠账快速画完 */
-  function advanceFront(dt) {
+  function advanceFront(dt, camSpd) {
     const penX = cameraX + W * 0.85;
-    drawnX = Math.min(penX, drawnX + Math.max(P.speed * dt, (penX - drawnX) * Math.min(1, dt * 6)));
+    drawnX = Math.min(penX, drawnX + Math.max((camSpd || P.speed) * dt, (penX - drawnX) * Math.min(1, dt * 6)));
   }
 
-  function drawPath() {
-    if (pathPoints.length < 2) return;
-    ctx.lineWidth = 2.2;
-    ctx.strokeStyle = "#18181A";
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    // 单条连续折线：无分段、无断口，杜绝竖线接缝；只画到补画前沿
+  function drawTerrainPass(startX, endX, options = {}) {
+    if (endX <= startX) return;
+    const step = options.step || 5;
+    const gapSize = options.gapSize || 0;
+    const jitter = options.jitter || 0;
+    const offset = options.offset || 0;
+    let drawing = false;
     ctx.beginPath();
-    for (let i = 0; i < pathPoints.length; i++) {
-      const x = pathPoints[i].x;
-      if (x > drawnX) break;
+    for (let x = startX; x <= endX; x += step) {
+      const gapSeed = Math.floor((x + offset) / 96);
+      const inGap = gapSize > 0 && (hash1(gapSeed * 17.13 + offset) > 0.72 || ((x + offset) % 173) < gapSize);
+      if (inGap) {
+        drawing = false;
+        continue;
+      }
+      const y = terrainY(x) + (jitter ? noise1(x * 0.08 + offset) * jitter : 0);
       const sx = x - cameraX;
-      const sy = terrainY(x);
-      if (i === 0) ctx.moveTo(sx, sy);
-      else ctx.lineTo(sx, sy);
+      if (!drawing) ctx.moveTo(sx, y);
+      else ctx.lineTo(sx, y);
+      drawing = true;
     }
     ctx.stroke();
   }
 
+  function drawTerrainHatching(startX, endX) {
+    ctx.save();
+    ctx.strokeStyle = "rgba(24,24,26,0.14)";
+    ctx.lineWidth = 0.8;
+    ctx.lineCap = "round";
+    for (let x = Math.ceil(startX / 74) * 74; x < endX; x += 74) {
+      const y = terrainY(x);
+      const slope = tangentAt(x);
+      const length = 7 + hash1(x * 0.17) * 9;
+      const lean = Math.max(-0.65, Math.min(0.65, slope * 2.5));
+      ctx.beginPath();
+      ctx.moveTo(x - cameraX - length * 0.5, y + 2);
+      ctx.lineTo(x - cameraX + length * 0.5 + lean * 4, y + 5 + length * 0.2);
+      ctx.stroke();
+      if (hash1(x * 0.31) > 0.55) {
+        ctx.beginPath();
+        ctx.moveTo(x - cameraX - length * 0.15, y + 3);
+        ctx.lineTo(x - cameraX + length * 0.65 + lean * 4, y + 6 + length * 0.2);
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
+
+  function drawPath() {
+    if (pathPoints.length < 2) return;
+    const firstX = Math.max(pathPoints[0].x, cameraX - 80);
+    const revealEnd = Math.min(drawnX, pathPoints[pathPoints.length - 1].x);
+    if (revealEnd <= firstX) return;
+
+    ctx.save();
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+
+    // A soft pencil bed makes the ink sit inside the paper instead of floating above it.
+    ctx.globalAlpha = 0.36;
+    ctx.lineWidth = 5.5;
+    ctx.strokeStyle = "rgba(112,160,123,0.24)";
+    drawTerrainPass(firstX, revealEnd, { step: 5, jitter: 1.4, offset: 13 });
+
+    // The contour is intentionally broken: the eye reads a hand-drawn stroke, not a generated spline.
+    ctx.globalAlpha = 0.9;
+    ctx.lineWidth = 2.15;
+    ctx.strokeStyle = "#18181A";
+    drawTerrainPass(firstX, revealEnd, { step: 5, gapSize: 7, jitter: 0.75, offset: 29 });
+
+    // Graphite hatching is revealed only after the contour reaches the same world position.
+    drawTerrainHatching(firstX + 28, revealEnd - 18);
+
+    // Wet ink near the nib gives the drawing a visible direction and a small amount of warmth.
+    const tailStart = Math.max(firstX, revealEnd - 150);
+    ctx.globalAlpha = 0.82;
+    ctx.lineWidth = 2.55;
+    ctx.strokeStyle = "#FF9F43";
+    drawTerrainPass(tailStart, revealEnd, { step: 4, gapSize: 2, jitter: 0.35, offset: 41 });
+
+    ctx.restore();
+  }
   function drawObjects(layer) {
     // layer: 'back' | 'front'
     ctx.lineWidth = 1.55;
@@ -2167,6 +2285,7 @@
         // 指路 + 笔落位，仍不卷动
         cameraX = 0;
         penDrop = Math.min(1, penDrop + dt / 0.9);
+        drawnX = 420 + (W * 0.85 - 420) * penDrop;
         if (penDrop >= 1 && !pointLand) {
           pointLand = true;
           emitParticles(W * 0.85, terrainY(cameraX + W * 0.85) - 2, 4, true);
@@ -2175,8 +2294,9 @@
       } else if (mode === "walk") {
         // 小队原地起跑（追笔行走），镜头缓缓跟上；补画前沿扫过树/钟楼；篝火留在身后
         departBlend = Math.min(1, departBlend + dt / 1.1);
-        cameraX += P.speed * Math.min(1, modeT * 0.8) * dt;
-        advanceFront(dt);
+        const walkSpd = P.speed * Math.min(1, modeT * 0.8);
+        cameraX += walkSpd * dt;
+        advanceFront(dt, walkSpd);
         ensureWorld(cameraX + W + 200);
         revealByPen(dt);
         if (rnd() < dt * 3) emitParticles(W * 0.85, terrainY(cameraX + W * 0.85) - 2, 1, false);
@@ -2192,7 +2312,7 @@
         if (stumbleT > 0) stumbleT -= dt;
 
         cameraX += spd * dt;
-        advanceFront(dt);
+        advanceFront(dt, spd);
         ensureWorld(cameraX + W * 1.3);
         revealByPen(dt);
 
