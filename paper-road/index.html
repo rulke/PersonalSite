@@ -1052,11 +1052,8 @@
   let bestMile = 0;       // 本 seed 最佳里程碑（localStorage，仅本地）
   let hintTimer = 0;
   const isTouch = matchMedia("(pointer: coarse)").matches;
-  // 纸色随系统时间：白 / 暖黄（黄昏）/ 暮色（夜）
-  const hourNow = new Date().getHours();
-  const paperTone = hourNow >= 22 || hourNow < 5 ? "#F4F1EA"
-    : hourNow >= 17 ? "#FFF6E8" : "#FFFFFF";
-  const isNight = hourNow >= 22 || hourNow < 5;
+  // 夜空点缀随系统时间（22:00–5:00 月牙与星）；纸面恒为纸白
+  const isNight = (() => { const h = new Date().getHours(); return h >= 22 || h < 5; })();
 
   // 平滑值噪声（手绘抖动），替代毛糙的白噪声
   function hash1(i) {
@@ -2259,10 +2256,10 @@
       }
     }
 
-    // 纸色随系统时间
+    // 纸面恒为纸白
     baseY = H * 0.64;
     ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = paperTone;
+    ctx.fillStyle = "#FFFFFF";
     ctx.fillRect(0, 0, W, H);
 
     // 夜：月牙与星（随系统时间，缓慢视差）
