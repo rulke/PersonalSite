@@ -1384,7 +1384,8 @@
     srand(newSeed);
     cameraX = 0;
     fireX = W * 0.22;   // 单一锚点：篝火 = 开镜小队中心（与队形同源，任意窗宽重合）
-    drawnX = 420;       // 重绘/重开：地线回到营地预画段，之后由笔快速补画
+    drawnX = mode === "play" ? 420      // 行进中重绘：地线回营地端，补画前沿快速重描
+      : cameraX + W * 0.85;             // 首次进入/营地态：预画到笔尖（LCP，地面已存在）
     speedRamp = 120; lastMile = 0;
     try { bestMile = parseInt(localStorage.getItem("lucky.best." + newSeed), 10) || 0; } catch (err) { bestMile = 0; }
     // 营地段预画地线（t=0 即可见、略粗）：只存 x，Y 绘制时现算
