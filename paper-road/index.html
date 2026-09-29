@@ -1114,7 +1114,8 @@
 
   // 物理初值（文档 §5.3）
   const P = {
-    gravity: 2600, jumpV: -860, slideDur: 0.75, speed: 120,
+    gravity: 2600, jumpV: -860, speed: 120,
+    slideMin: 0.25, slideRelease: 0.1, slideEase: 0.12,   // 按住持续滑：最短/松手起身/姿态过渡
     bufferJump: 0.08, bufferSlide: 0.06, coyote: 0.08,
     stumbleDur: 1.5, rejoinBoost: 1.15,
   };
@@ -1135,6 +1136,7 @@
   let particles = [];
   let stumbleT = 0, jumpBuf = 0, coyote = 0;
   let jumping = false, sliding = 0, slideBuf = 0, vy = 0, playerY = 0;
+  let slideHeld = false, slidePose = 0;   // 滑行=按住持续态；姿态 0→1 缓动
   let penAng = 0.35, penDrop = 0, pointLand = false, flashT = 0;
   let idleT = 0;          // 无输入计时 → idle 波浪示范
   let departBlend = 0;    // 起身起跑进度：步频/贴地姿态渐入行进（位置恒在队形上，无位移混合）
@@ -1463,9 +1465,10 @@
           [ensureRoute._deck[i], ensureRoute._deck[j]] = [ensureRoute._deck[j], ensureRoute._deck[i]];
         }
       }
-      const gap = 42 + rnd() * 58;
+      const gap = (42 + rnd() * 58) * (speedRamp / 120);   // 间隔随速度放大，反应时间守恒
       ensureRoute._cursor = appendFlat(ensureRoute._cursor, gap);
-      ensureRoute._cursor = appendRouteFeature(ensureRoute._cursor, kind).x;
+      const built = isTouch && kind === "tunnel" ? "stream" : kind;   // 触屏无滑行：隧道降级为溪流
+      ensureRoute._cursor = appendRouteFeature(ensureRoute._cursor, built).x;
     }
     const keepFrom = cameraX - 400;
     while (routeFeatures.length && routeFeatures[0].x1 < keepFrom) routeFeatures.shift();
@@ -2040,7 +2043,7 @@
     const px = W * 0.22;
     const worldX = playerWorldX();
     const ang = Math.atan(tangentAt(worldX)) * 0.35;
-    const slideT = sliding > 0 ? 1 - sliding / P.slideDur : null;
+    const slideT = slidePose > 0 ? slidePose : null;
     const squash = jumping && playerY < -16 ? 0.2 : stumbleT > 0 ? 0.15 : 0;
 
     const b = (mode === "walk" || mode === "play")
@@ -2130,15 +2133,16 @@
     const mid = (feature.x0 + feature.x1) / 2;
     const half = (feature.x1 - feature.x0) / 2;
     const u = (wx - mid) / half;
+    const zoneK = 0.5 * (speedRamp / 120);   // 难度正置：判定带随速度收紧，时间窗恒定
 
     if (feature.interaction === "slide") {
       // 拱顶下沿给站姿撞头、滑行通过；整跃能过、低跳会撞——与画出的拱线同源。
       const ground = heightAt(wx);
       const lintel = ground - TUNNEL_CLEAR;
       const roof = ground - TUNNEL_ROOF;
-      if (head < lintel && feet > roof && Math.abs(u) < 0.65) { stun(); return; }
+      if (head < lintel && feet > roof && Math.abs(u) < zoneK) { stun(); return; }
     } else if (feature.interaction === "jump") {
-      if (Math.abs(u) < 0.65 && playerY > -4) stun();
+      if (Math.abs(u) < zoneK && playerY > -4) stun();
     }
   }
 
@@ -2149,24 +2153,31 @@
   }
 
   function doJump() {
-    if (mode !== "play" || sliding > 0) return;
+    if (mode !== "play") return;
+    if (sliding > 0 && !slideHeld) return;   // 定长滑剩余段中不可跳
+    if (slideHeld) releaseSlide();           // 按住滑时跳跃 = 起身跳（恐龙同款）
     if (jumping && playerY < -5) { jumpBuf = P.bufferJump; return; }
     if (coyote > 0 || playerY > -2) {
       vy = P.jumpV; jumping = true; jumpBuf = 0; sJump();
     } else jumpBuf = P.bufferJump;
   }
 
-  function doSlide() {
-    if (mode !== "play" || sliding > 0) return;
+  function doSlide(held) {
+    if (mode !== "play") return;
     if (jumping && playerY < -8) {
       // 空中下滑 = 快速下坠（参考 Chrome 小恐龙），落地即滑
       vy = Math.max(vy, 1100);
       slideBuf = P.bufferSlide;
+      slideHeld = held;
       return;
     }
-    sliding = P.slideDur;
-    slideBuf = 0;
-    sSlide();
+    if (sliding <= 0) sSlide();
+    slideHeld = held;
+    sliding = Math.max(sliding, P.slideMin);
+  }
+  function releaseSlide() {
+    slideHeld = false;
+    if (sliding > P.slideRelease) sliding = P.slideRelease;   // 松手 0.1s 内起身
   }
 
   /** 完成交权：进入行进态。withFlash: 跳过时补 200ms 交叉淡入 */
@@ -2221,7 +2232,7 @@
 
   canvas.addEventListener("pointerdown", (e) => {
     idleT = 0;
-    if (e.button === 2) { e.preventDefault(); skipIntro(); doSlide(); return; }
+    if (e.button === 2) { e.preventDefault(); skipIntro(); doSlide(true); return; }
     if (e.button !== 0) return;
     skipIntro();
     if (e.pointerType === "touch") {
@@ -2238,10 +2249,11 @@
     // 只接管短距离、明确向下的意图；其余保留给页面纵向滚动。
     if (dy > 38 && dy > Math.abs(dx) * 1.25 && performance.now() - touchStart.t < 460) {
       touchStart.slid = true;
-      doSlide();
+      doSlide(false);
     }
   });
   canvas.addEventListener("pointerup", (e) => {
+    if (e.button === 2) { releaseSlide(); return; }
     if (!touchStart || e.pointerType !== "touch") return;
     const dx = e.clientX - touchStart.x;
     const dy = e.clientY - touchStart.y;
@@ -2266,9 +2278,12 @@
       e.preventDefault(); skipIntro(); doJump(); return;
     }
     if (e.code === "ShiftLeft" || e.code === "ShiftRight" || e.code === "KeyS" || e.code === "ArrowDown") {
-      e.preventDefault(); skipIntro(); doSlide(); return;
+      e.preventDefault(); skipIntro(); doSlide(true); return;
     }
     if (mode === "camp" || mode === "point" || mode === "walk") skipIntro();
+  });
+  window.addEventListener("keyup", (e) => {
+    if (e.code === "ArrowDown" || e.code === "ShiftLeft" || e.code === "ShiftRight" || e.code === "KeyS") releaseSlide();
   });
 
   document.getElementById("btn-skip").addEventListener("click", skipIntro);
@@ -2331,7 +2346,7 @@
 
     if (sim) {
       motionClock += dt;
-      mascotMotion.push({ t: motionClock, y: playerY, slide: sliding > 0 ? 1 - sliding / P.slideDur : null });
+      mascotMotion.push({ t: motionClock, y: playerY, slide: slidePose > 0 ? slidePose : null });
       while (mascotMotion.length > 12) mascotMotion.shift();
       if (mode === "camp") {
         // 营地呼吸约 2.4s：镜头锁死，完整看到村舍/火+小队/预画线；篝火偶尔冒火星
@@ -2382,7 +2397,9 @@
           slideBuf -= dt;
           if (sliding <= 0 && playerY > -4) doSlide();
         }
-        if (sliding > 0) sliding -= dt;
+        if (sliding > 0 && !slideHeld) sliding -= dt;
+        if (slideHeld && sliding <= 0 && playerY > -4) sliding = 0.02;   // 按住持续滑
+        slidePose = Math.max(0, Math.min(1, slidePose + ((sliding > 0) ? 1 : -1) * dt / P.slideEase));
         prevY = playerY;
         if (jumping || playerY < 0) {
           // 抛物线加弧度：顶点附近(|vy|<160)减重力悬挂，起跳/落地依旧干脆
