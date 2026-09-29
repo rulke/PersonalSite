@@ -1112,6 +1112,7 @@
   // 物理初值（文档 §5.3）
   const P = {
     gravity: 2600, jumpV: -860, speed: 120,
+    rampA: 0.35, rampMax: 210,          // 节奏曲线：每秒 +0.35、封顶 210（里程碑节奏换算同源）
     slideMin: 0.25, slideRelease: 0.1, slideEase: 0.12,   // 按住持续滑：最短/松手起身/姿态过渡
     bufferJump: 0.08, bufferSlide: 0.06, coyote: 0.08,
     stumbleDur: 1.5, rejoinBoost: 1.15,
@@ -1375,11 +1376,6 @@
       [[-2, 0], [-2, -26], [-16, -26], [-16, -38], [16, -38], [16, -26], [5, -26], [5, 0]],
       [[-9, -32], [7, -32], [2.5, -35.5], [7, -32], [2.5, -28.5]],
     ];
-    // 里程碑矮石（每 0.5 km）：圆头石 + 碑面刻字（统计物，不参与碰撞）
-    if (kind === "milestoneSmall") return [
-      [[-11, 0], [-14, -12], [-9, -26], [9, -26], [14, -12], [11, 0], [-11, 0]],
-      ...textStrokes(label, -10, 0.7, 20),
-    ];
     // 里程碑大碑（每 1 km）：石柱 + 峰顶 + 基石线 + 刻字
     if (kind === "milestoneBig") return [
       [[-13, 0], [-15, -13], [-11, -30], [11, -30], [15, -13], [13, 0], [-13, 0]],
@@ -1481,7 +1477,7 @@
       cabin: 22, tree: 22, clocktower: 14, shop: 20, hill: 46,
       stream: 18, valley: 22, flower: 14, stone: 16, mud: 18,
       bridge: 40, cave: 38, mush: 10, crate: 14, sign: 16,
-      milestoneSmall: 14, milestoneBig: 18, record: 28,
+      milestoneBig: 18, record: 28,
     };
     return (rough[kind] || 16) * (s || 1);
   }
@@ -1501,7 +1497,7 @@
         if (x + hw > f.x0 - clear && x - hw < f.x1 + clear) x = f.x1 + clear + hw;
       }
       for (const e of objects) {
-        if (e.kind === "record" || e.kind === "milestoneBig" || e.kind === "milestoneSmall") continue;
+        if (e.kind === "record" || e.kind === "milestoneBig") continue;
         const eh = halfWidthOf(e.kind, e.s || 1);
         if (Math.abs(x - e.x) < hw + eh + 14) e.x += hw + eh + 26;
       }
@@ -1589,25 +1585,31 @@
     while (routePoints.length > ROUTE_MAX) routePoints.splice(0, Math.min(160, routePoints.length - ROUTE_MAX));
   }
 
+  /* ── 里程碑节奏 ──
+     大碑之间至少隔 MILE_MIN_GAP 秒：按最坏情况（顶速）换算距离再向上取到整公里——
+     30s × 210px/s = 6300 → 7km。速度只会更低（起步 120px/s 时约 55s），
+     所以「至少 30 秒」在任何时刻都成立；碑面里程也总是整公里（7km / 14km / 21km…）。 */
+  const MILE_MIN_GAP = 30;                                                // s
+  const MILE_STEP = Math.ceil((MILE_MIN_GAP * P.rampMax) / 1000) * 1000;   // px
+
   function ensureWorld(xTo) {
     ensureRoute(xTo + 700);   // 路线先于物件生成：物件落点可避开坑
     if (ensureWorld._deck == null) {
       ensureWorld._deck = ["tree", "hill", "flower", "mush", "sign", "tree"];
       ensureWorld._i = 0;
       ensureWorld._cursor = 700;
-      ensureWorld._mile = 500;
+      ensureWorld._mile = 0;
     }
     while (ensureWorld._cursor < xTo + 700) {
       const kind = ensureWorld._deck[ensureWorld._i++ % ensureWorld._deck.length];
       ensureWorld._cursor = placeObject(ensureWorld._cursor, kind, 0.78 + rnd() * 0.28)
         + 70 + rnd() * 90;
     }
-    // 里程碑统计物：0.5 km 一块矮石、整 1 km 一座大碑，碑面刻里程（与 HUD 同一把尺）
-    while (ensureWorld._mile < xTo) {
-      const isBig = ensureWorld._mile % 1000 === 0;
-      const label = isBig ? ensureWorld._mile / 1000 + "km" : ensureWorld._mile + "m";
-      placeObject(ensureWorld._mile, isBig ? "milestoneBig" : "milestoneSmall", 1, label, true);
-      ensureWorld._mile += 500;
+    // 里程碑统计物：每 MILE_STEP（7km）一座大碑，碑面刻里程（与 HUD 同一把尺）——
+    // 稀疏到每一次都算个「章节」，而不是路边又一块石头
+    while (ensureWorld._mile + MILE_STEP < xTo) {
+      ensureWorld._mile += MILE_STEP;
+      placeObject(ensureWorld._mile, "milestoneBig", 1, ensureWorld._mile / 1000 + "km", true);
     }
     const keepFrom = cameraX - 400;
     while (objects.length && objects[0].x < keepFrom) objects.shift();
@@ -1648,7 +1650,7 @@
     ensureRoute._i = 0;
     ensureRoute._deck = null;
     ensureWorld._cursor = 880;
-    ensureWorld._mile = 500;
+    ensureWorld._mile = 0;
     ensureWorld._i = 0;
     ensureWorld._deck = null;
     ensureWorld(cameraX + W + 200);
@@ -2671,7 +2673,7 @@
       } else if (mode === "play") {
         idleT += dt;
         // 节奏曲线：120 → 190（+0.8/s），踉跄时冻结爬升
-        if (stumbleT <= 0) speedRamp = Math.min(210, speedRamp + 0.35 * dt);
+        if (stumbleT <= 0) speedRamp = Math.min(P.rampMax, speedRamp + P.rampA * dt);
         // 踉跄：先失速，后 1.15× 归队（文档 §5.3）
         const rejoin = stumbleT > 0 && stumbleT <= 0.55;
         const spd = stumbleT > 0 ? (rejoin ? speedRamp * P.rejoinBoost : speedRamp * 0.25) : speedRamp;
