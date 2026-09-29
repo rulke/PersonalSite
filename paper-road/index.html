@@ -1473,20 +1473,20 @@
         }
       }
       // 滑跳连招模板：动词切换（落地续跳 / 滑完即跳 / 跳完即滑）
-      if (k === "combo-dual-valley") {
+      if (kind === "combo-dual-valley") {
         const f1 = appendRouteFeature(ensureRoute._cursor, "valley");
         const land = appendFlat(f1.x, 56);            // 落地续跳区
         ensureRoute._cursor = appendRouteFeature(land, "valley").x;
         continue;
       }
-      if (k === "combo-slide-jump") {
+      if (kind === "combo-slide-jump") {
         const built = isTouch ? "stream" : "tunnel";   // 触屏：双溪节奏
         const f1 = appendRouteFeature(ensureRoute._cursor, built);
         const land = appendFlat(f1.x, 90);            // 滑完起身，立刻要跳
         ensureRoute._cursor = appendRouteFeature(land, "stream").x;
         continue;
       }
-      if (k === "combo-jump-slide") {
+      if (kind === "combo-jump-slide") {
         const f1 = appendRouteFeature(ensureRoute._cursor, "stone");
         const land = appendFlat(f1.x, 70);            // 跳完落地，立刻要滑
         const built = isTouch ? "stone" : "branch";
