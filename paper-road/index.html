@@ -180,7 +180,7 @@
   .hero-title {
     font-family: var(--font-display);
     font-weight: 600;
-    font-size: clamp(28px, 4.8vw, 56px);
+    font-size: clamp(34px, 5vw, 64px);
     line-height: 1.12;
     letter-spacing: -0.035em;
   }
@@ -486,10 +486,6 @@
     transition: background .25s, padding .25s;
   }
   .note-row:last-child { border-bottom: 1px solid var(--line-faint); }
-  .note-row:hover {
-    background: rgba(24,24,26,0.015);
-    padding-left: 14px;
-  }
   .note-date {
     font-family: var(--font-mono);
     font-size: 12px;
@@ -578,6 +574,7 @@
   /* Open Road */
   .openroad {
     text-align: center;
+    margin-top: 88px;
     padding: 96px 24px 100px;
     border-top: 1px solid var(--line-faint);
   }
@@ -1477,7 +1474,8 @@
     srand(newSeed);
     cameraX = 0;
     fireX = W * 0.22;   // 单一锚点：篝火 = 开镜小队中心（与队形同源，任意窗宽重合）
-    drawnX = 420;                         // the pen reveals terrain from the camp onward
+    drawnX = mode === "play" ? 420      // redraw starts at the camp edge
+      : cameraX + W * 0.85;             // camp state is pre-drawn to the pen
     speedRamp = 120; lastMile = 0;
     try { bestMile = parseInt(localStorage.getItem("lucky.best." + newSeed), 10) || 0; } catch (err) { bestMile = 0; }
     // 营地段预画地线（t=0 即可见、略粗）：只存 x，Y 绘制时现算
@@ -1490,6 +1488,8 @@
     objects = [
       { x: fireX - 205, kind: "cabin", s: 0.92, p: 1, on: true, strokes: null },
       { x: fireX - 112, kind: "shop", s: 0.88, p: 1, on: true, strokes: null },
+      { x: fireX + 120, kind: "mush", s: 0.95, p: 1, on: true, strokes: null },
+      { x: fireX + 168, kind: "flower", s: 0.85, p: 1, on: true, strokes: null },
       { x: fireX + 300, kind: "tree", s: 1.0, p: 1, on: true, strokes: null },
       { x: fireX + 620, kind: "clocktower", s: 0.85, p: 1, on: true, strokes: null },
     ];
@@ -1547,88 +1547,25 @@
     drawnX = Math.min(penX, drawnX + Math.max((camSpd || P.speed) * dt, (penX - drawnX) * Math.min(1, dt * 6)));
   }
 
-  function drawTerrainPass(startX, endX, options = {}) {
-    if (endX <= startX) return;
-    const step = options.step || 5;
-    const gapSize = options.gapSize || 0;
-    const jitter = options.jitter || 0;
-    const offset = options.offset || 0;
-    let drawing = false;
+  function drawPath() {
+    if (pathPoints.length < 2) return;
+    ctx.lineWidth = 2.2;
+    ctx.strokeStyle = "#18181A";
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    // Continuous terrain polyline, clipped at the current reveal front.
     ctx.beginPath();
-    for (let x = startX; x <= endX; x += step) {
-      const gapSeed = Math.floor((x + offset) / 96);
-      const inGap = gapSize > 0 && (hash1(gapSeed * 17.13 + offset) > 0.72 || ((x + offset) % 173) < gapSize);
-      if (inGap) {
-        drawing = false;
-        continue;
-      }
-      const y = terrainY(x) + (jitter ? noise1(x * 0.08 + offset) * jitter : 0);
+    for (let i = 0; i < pathPoints.length; i++) {
+      const x = pathPoints[i].x;
+      if (x > drawnX) break;
       const sx = x - cameraX;
-      if (!drawing) ctx.moveTo(sx, y);
-      else ctx.lineTo(sx, y);
-      drawing = true;
+      const sy = terrainY(x);
+      if (i === 0) ctx.moveTo(sx, sy);
+      else ctx.lineTo(sx, sy);
     }
     ctx.stroke();
   }
 
-  function drawTerrainHatching(startX, endX) {
-    ctx.save();
-    ctx.strokeStyle = "rgba(24,24,26,0.14)";
-    ctx.lineWidth = 0.8;
-    ctx.lineCap = "round";
-    for (let x = Math.ceil(startX / 74) * 74; x < endX; x += 74) {
-      const y = terrainY(x);
-      const slope = tangentAt(x);
-      const length = 7 + hash1(x * 0.17) * 9;
-      const lean = Math.max(-0.65, Math.min(0.65, slope * 2.5));
-      ctx.beginPath();
-      ctx.moveTo(x - cameraX - length * 0.5, y + 2);
-      ctx.lineTo(x - cameraX + length * 0.5 + lean * 4, y + 5 + length * 0.2);
-      ctx.stroke();
-      if (hash1(x * 0.31) > 0.55) {
-        ctx.beginPath();
-        ctx.moveTo(x - cameraX - length * 0.15, y + 3);
-        ctx.lineTo(x - cameraX + length * 0.65 + lean * 4, y + 6 + length * 0.2);
-        ctx.stroke();
-      }
-    }
-    ctx.restore();
-  }
-
-  function drawPath() {
-    if (pathPoints.length < 2) return;
-    const firstX = Math.max(pathPoints[0].x, cameraX - 80);
-    const revealEnd = Math.min(drawnX, pathPoints[pathPoints.length - 1].x);
-    if (revealEnd <= firstX) return;
-
-    ctx.save();
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-
-    // A soft pencil bed makes the ink sit inside the paper instead of floating above it.
-    ctx.globalAlpha = 0.36;
-    ctx.lineWidth = 5.5;
-    ctx.strokeStyle = "rgba(112,160,123,0.24)";
-    drawTerrainPass(firstX, revealEnd, { step: 5, jitter: 1.4, offset: 13 });
-
-    // The contour is intentionally broken: the eye reads a hand-drawn stroke, not a generated spline.
-    ctx.globalAlpha = 0.9;
-    ctx.lineWidth = 2.15;
-    ctx.strokeStyle = "#18181A";
-    drawTerrainPass(firstX, revealEnd, { step: 5, gapSize: 7, jitter: 0.75, offset: 29 });
-
-    // Graphite hatching is revealed only after the contour reaches the same world position.
-    drawTerrainHatching(firstX + 28, revealEnd - 18);
-
-    // Wet ink near the nib gives the drawing a visible direction and a small amount of warmth.
-    const tailStart = Math.max(firstX, revealEnd - 150);
-    ctx.globalAlpha = 0.82;
-    ctx.lineWidth = 2.55;
-    ctx.strokeStyle = "#FF9F43";
-    drawTerrainPass(tailStart, revealEnd, { step: 4, gapSize: 2, jitter: 0.35, offset: 41 });
-
-    ctx.restore();
-  }
   function drawObjects(layer) {
     // layer: 'back' | 'front'
     ctx.lineWidth = 1.55;
@@ -2285,7 +2222,6 @@
         // 指路 + 笔落位，仍不卷动
         cameraX = 0;
         penDrop = Math.min(1, penDrop + dt / 0.9);
-        drawnX = 420 + (W * 0.85 - 420) * penDrop;
         if (penDrop >= 1 && !pointLand) {
           pointLand = true;
           emitParticles(W * 0.85, terrainY(cameraX + W * 0.85) - 2, 4, true);
