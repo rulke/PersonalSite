@@ -1459,6 +1459,7 @@
       ensureRoute._deck = [
         "flat", "hill", "stream", "cloud", "mud", "arch", "valley",
         "tunnel", "flat", "stone", "branch", "clothesline", "hill", "stream", "cloud", "bar", "tunnel", "longtunnel", "ruin",
+        "combo-dual-valley", "combo-slide-jump", "combo-jump-slide",
       ];
       ensureRoute._i = 0;
       ensureRoute._cursor = CAMP_END;
@@ -1470,6 +1471,27 @@
           const j = (rnd() * (i + 1)) | 0;
           [ensureRoute._deck[i], ensureRoute._deck[j]] = [ensureRoute._deck[j], ensureRoute._deck[i]];
         }
+      }
+      // 滑跳连招模板：动词切换（落地续跳 / 滑完即跳 / 跳完即滑）
+      if (k === "combo-dual-valley") {
+        const f1 = appendRouteFeature(ensureRoute._cursor, "valley");
+        const land = appendFlat(f1.x, 56);            // 落地续跳区
+        ensureRoute._cursor = appendRouteFeature(land, "valley").x;
+        continue;
+      }
+      if (k === "combo-slide-jump") {
+        const built = isTouch ? "stream" : "tunnel";   // 触屏：双溪节奏
+        const f1 = appendRouteFeature(ensureRoute._cursor, built);
+        const land = appendFlat(f1.x, 90);            // 滑完起身，立刻要跳
+        ensureRoute._cursor = appendRouteFeature(land, "stream").x;
+        continue;
+      }
+      if (k === "combo-jump-slide") {
+        const f1 = appendRouteFeature(ensureRoute._cursor, "stone");
+        const land = appendFlat(f1.x, 70);            // 跳完落地，立刻要滑
+        const built = isTouch ? "stone" : "branch";
+        ensureRoute._cursor = appendRouteFeature(land, built).x;
+        continue;
       }
       const gap = (42 + rnd() * 58) * (speedRamp / 120);   // 间隔随速度放大，反应时间守恒
       ensureRoute._cursor = appendFlat(ensureRoute._cursor, gap);
