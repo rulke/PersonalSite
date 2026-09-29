@@ -1463,13 +1463,16 @@
       ensureRoute._deck = [
         "flat", "hill", "stream", "cloud", "mud", "arch", "valley",
         "tunnel", "flat", "stone", "branch", "clothesline", "hill", "stream", "cloud", "bar", "tunnel", "longtunnel", "ruin",
-        "combo-dual-valley", "combo-slide-jump", "combo-jump-slide",
+        "combo-dual-valley", "combo-slide-jump", "combo-jump-slide", "combo-triple",
       ];
       ensureRoute._i = 0;
       ensureRoute._cursor = CAMP_END;
     }
     while (ensureRoute._cursor < xTo + 220) {
-      const kind = ensureRoute._deck[ensureRoute._i++ % ensureRoute._deck.length];
+      let kind = ensureRoute._deck[ensureRoute._i++ % ensureRoute._deck.length];
+      // 词汇按速度解锁：连招 ≥150 才出现，三连 ≥175（新东西=新难度）
+      if (kind === "combo-triple" && speedRamp < 175) kind = "flat";
+      else if (kind.startsWith("combo") && speedRamp < 150) kind = "flat";
       if (ensureRoute._i % ensureRoute._deck.length === 0) {
         for (let i = ensureRoute._deck.length - 1; i > 0; i--) {
           const j = (rnd() * (i + 1)) | 0;
@@ -1495,6 +1498,17 @@
         const land = appendFlat(f1.x, 70);            // 跳完落地，立刻要滑
         const built = isTouch ? "stone" : "branch";
         ensureRoute._cursor = appendRouteFeature(land, built).x;
+        continue;
+      }
+      if (kind === "combo-triple") {
+        // 三连：通道 → 溪谷 → 矮枝（滑-跳-滑，高速段专属）
+        const built1 = isTouch ? "stream" : "tunnel";
+        const f1 = appendRouteFeature(ensureRoute._cursor, built1);
+        const land1 = appendFlat(f1.x, 84);
+        const f2 = appendRouteFeature(land1, "stream");
+        const land2 = appendFlat(f2.x, 64);
+        const built2 = isTouch ? "stone" : "branch";
+        ensureRoute._cursor = appendRouteFeature(land2, built2).x;
         continue;
       }
       const gap = (42 + rnd() * 58) * (speedRamp / 120);   // 间隔随速度放大，反应时间守恒
@@ -1634,7 +1648,7 @@
   /** 矮枝：树干立在判定带外缘，横枝从干头伸展到枝尾，叶刺随进度生长 */
   function drawBranchFeature(f, start, progress) {
     const trunkX = f.x0 - cameraX - 2;
-    const yBranch = start - (f.clear || TUNNEL_CLEAR) - 4;
+    const yBranch = start - (f.clear || TUNNEL_CLEAR);
     const reach = (f.x1 - f.x0) * Math.min(1, progress * 1.1);
     ctx.beginPath();
     ctx.moveTo(trunkX, start);
@@ -1691,7 +1705,7 @@
   /** 横栏：双矮柱 + 横木 + 斜撑 */
   function drawBarFeature(f, start, progress) {
     const x0 = f.x0 - cameraX, x1 = f.x1 - cameraX;
-    const top = start - (f.clear || TUNNEL_CLEAR) - 4;
+    const top = start - (f.clear || TUNNEL_CLEAR);
     ctx.beginPath();
     if (progress > 0.2) { ctx.moveTo(x0, start); ctx.lineTo(x0, top); }
     if (progress > 0.5) { ctx.moveTo(x1, start); ctx.lineTo(x1, top); }
@@ -1700,22 +1714,24 @@
     ctx.stroke();
   }
 
-  /** 残拱：断口拱顶 + 基座落石，净空最紧的精度滑障 */
-  function drawRuinFeature(f, start, progress) {
-    const x0 = f.x0 - cameraX, x1 = f.x1 - cameraX;
-    const roof = f.roof || TUNNEL_ROOF;
-    const n = 14;
-    ctx.beginPath();
-    for (let i = 0; i <= n * progress; i++) {
-      const u = i / n;
-      const x = x0 + (x1 - x0) * u;
-      const arch = roof * Math.sin(Math.PI * u);
-      const broken = u > 0.55 ? Math.sin((u - 0.55) * 20) * 4 + (u - 0.55) * 26 : 0;
-      const y = start - arch + broken;
-      if (i === 0) ctx.moveTo(x, start); else ctx.lineTo(x, y);
+  /** 拱形滑障的外轮廓高度（相对地面，向上为正）：隧道=高拱；残拱=顶缘带 V 形断口的高拱 */
+  function outerAt(f, u) {
+    let h = (f.roof || TUNNEL_ROOF) * Math.sin(Math.PI * u);
+    if (f.kind === "ruin") {
+      const d = Math.abs(u - 0.5) / 0.16;
+      if (d < 1) h -= (1 - d) * 12;
     }
-    if (progress >= 1) ctx.lineTo(x1, start);
-    ctx.stroke();
+    return h;
+  }
+
+  /** 内洞口高度 = 碰撞净空（隧道 16 / 残拱 14）：一眼看出「洞很矮，必须趴下」 */
+  function innerAt(f, u) {
+    return (f.clear || TUNNEL_CLEAR) * Math.sin(Math.PI * u);
+  }
+
+  /** 残拱（后层）：外轮廓由 drawTunnelArches 统一画，这里只补基座落石 */
+  function drawRuinFeature(f, start, progress) {
+    const x1 = f.x1 - cameraX;
     if (progress > 0.8) {
       ctx.beginPath();
       ctx.moveTo(x1 - 14, start); ctx.lineTo(x1 - 10, start - 5); ctx.lineTo(x1 - 6, start);
@@ -1744,28 +1760,70 @@
       if (f.kind === "branch") { drawBranchFeature(f, start, progress); continue; }
       if (f.kind === "clothesline") { drawClotheslineFeature(f, start, progress); continue; }
       if (f.kind === "bar") { drawBarFeature(f, start, progress); continue; }
-      if (f.kind === "ruin") { drawRuinFeature(f, start, progress); continue; }
-      // 隧道 / 长隧道：拱顶一笔（长隧加垂滴水痕）
-      const roof = f.roof || TUNNEL_ROOF;
+      // 拱形滑障（隧道/长隧道/残拱）：后层只画高外轮廓
       const n = 18;
       ctx.beginPath();
       for (let i = 0; i <= n * progress; i++) {
         const u = i / n;
         const x = f.x0 + (f.x1 - f.x0) * u - cameraX;
-        const y = start - roof * Math.sin(Math.PI * u);
+        const y = start - outerAt(f, u);
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+      if (f.kind === "ruin") drawRuinFeature(f, start, progress);
+    }
+  }
+
+  /** 滑障实体（前景层，画在角色之后）：外轮廓与内洞口之间白填充 + 低洞口轮廓；
+      滑行穿过时角色处在矮洞里、高出洞口的部分被实体掩住——「钻过去」有实物感 */
+  function drawSlideFronts() {
+    for (const f of routeFeatures) {
+      if (f.interaction !== "slide") continue;
+      if (f.kind !== "tunnel" && f.kind !== "longtunnel" && f.kind !== "ruin") continue;
+      if (f.x1 < cameraX - 80 || f.x0 > cameraX + W + 80) continue;
+      const start = heightAt(f.x0);
+      const x0 = f.x0 - cameraX, x1 = f.x1 - cameraX;
+      const n = Math.max(10, Math.round((x1 - x0) / 10));
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(-10000, -10000, drawnX - cameraX + 10000, 20000);   // 随笔尖描出
+      ctx.clip();
+      ctx.beginPath();
+      for (let i = 0; i <= n; i++) {
+        const u = i / n;
+        const x = x0 + (x1 - x0) * u;
+        if (i === 0) ctx.moveTo(x, start - outerAt(f, u));
+        else ctx.lineTo(x, start - outerAt(f, u));
+      }
+      for (let i = n; i >= 0; i--) {
+        const u = i / n;
+        ctx.lineTo(x0 + (x1 - x0) * u, start - innerAt(f, u));
+      }
+      ctx.closePath();
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fill();
+      ctx.strokeStyle = "#18181A";
+      ctx.lineWidth = 1.55;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.beginPath();
+      for (let i = 0; i <= n; i++) {
+        const u = i / n;
+        const x = x0 + (x1 - x0) * u;
+        const y = start - innerAt(f, u);
         if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
       }
       ctx.stroke();
       if (f.span > 200) {
         ctx.beginPath();
-        for (const tx of [0.3, 0.55, 0.8]) {
-          if (tx > progress) continue;
-          const x = f.x0 + (f.x1 - f.x0) * tx - cameraX;
-          const y = start - roof * Math.sin(Math.PI * tx);
+        for (const tx of [0.32, 0.55, 0.78]) {
+          const x = x0 + (x1 - x0) * tx;
+          const y = start - innerAt(f, tx);
           ctx.moveTo(x, y); ctx.lineTo(x, y + 6);
         }
         ctx.stroke();
       }
+      ctx.restore();
     }
   }
 
@@ -2284,7 +2342,7 @@
     const mid = (feature.x0 + feature.x1) / 2;
     const half = (feature.x1 - feature.x0) / 2;
     const u = (wx - mid) / half;
-    const zoneK = 0.5 * (speedRamp / 120);   // 难度正置：判定带随速度收紧，时间窗恒定
+    const zoneK = 0.5 * Math.pow(speedRamp / 120, 1.25);   // 难度进阶：判定带略快于速度收紧，顶速时间窗 −25%
 
     if (feature.interaction === "slide") {
       // 拱顶下沿给站姿撞头、滑行通过；整跃能过、低跳会撞——与画出的拱线同源。
@@ -2528,7 +2586,7 @@
       } else if (mode === "play") {
         idleT += dt;
         // 节奏曲线：120 → 190（+0.8/s），踉跄时冻结爬升
-        if (stumbleT <= 0) speedRamp = Math.min(190, speedRamp + 0.8 * dt);
+        if (stumbleT <= 0) speedRamp = Math.min(210, speedRamp + 0.35 * dt);
         // 踉跄：先失速，后 1.15× 归队（文档 §5.3）
         const rejoin = stumbleT > 0 && stumbleT <= 0.55;
         const spd = stumbleT > 0 ? (rejoin ? speedRamp * P.rejoinBoost : speedRamp * 0.25) : speedRamp;
@@ -2652,6 +2710,7 @@
     drawPen(penShow, paused ? 0 : dt);
 
     drawMascots();
+    drawSlideFronts();
     drawParticles();
 
     if (mode === "play" && idleT > 4 && idleT < 5.8) drawIdleWave((idleT - 4) / 1.8);
