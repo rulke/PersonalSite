@@ -1218,6 +1218,7 @@
     }
     const feature = {
       kind, x0, x1, span, interaction: interaction || null, depth, lift,
+      clear: options && options.clear, roof: options && options.roof,
     };
     routeFeatures.push(feature);
     return feature;
@@ -1242,6 +1243,8 @@
       stone: [64, "jump", "jump", { lift: 17 }],
       arch: [156, 0, null, { lift: 24, slope: (rnd() - 0.5) * 6 }],
       tunnel: [138, "slide", "slide", {}],
+      longtunnel: [220, "slide", "slide", {}],
+      branch: [64, "slide", "slide", { clear: 18, roof: 26 }],
     };
     const [width, semantic, interaction, profile] = specs[kind] || specs.flat;
     const feature = appendProfile(x0, width, kind, interaction || semantic, profile);
@@ -1452,7 +1455,7 @@
     if (!ensureRoute._deck) {
       ensureRoute._deck = [
         "flat", "hill", "stream", "cloud", "mud", "arch", "valley",
-        "tunnel", "flat", "stone", "hill", "stream", "cloud", "tunnel",
+        "tunnel", "flat", "stone", "branch", "hill", "stream", "cloud", "tunnel", "longtunnel",
       ];
       ensureRoute._i = 0;
       ensureRoute._cursor = CAMP_END;
@@ -1467,7 +1470,8 @@
       }
       const gap = (42 + rnd() * 58) * (speedRamp / 120);   // 间隔随速度放大，反应时间守恒
       ensureRoute._cursor = appendFlat(ensureRoute._cursor, gap);
-      const built = isTouch && kind === "tunnel" ? "stream" : kind;   // 触屏无滑行：隧道降级为溪流
+      const slideFallback = { tunnel: "stream", longtunnel: "valley", branch: "stone" };   // 触屏无滑行：滑障降级为跳障
+      const built = isTouch && slideFallback[kind] ? slideFallback[kind] : kind;
       ensureRoute._cursor = appendRouteFeature(ensureRoute._cursor, built).x;
     }
     const keepFrom = cameraX - 400;
@@ -1598,23 +1602,65 @@
     ctx.stroke();
   }
 
+  /** 矮枝：树干立在判定带外缘，横枝从干头伸展到枝尾，叶刺随进度生长 */
+  function drawBranchFeature(f, start, progress) {
+    const trunkX = f.x0 - cameraX - 2;
+    const yBranch = start - (f.clear || TUNNEL_CLEAR) - 4;
+    const reach = (f.x1 - f.x0) * Math.min(1, progress * 1.1);
+    ctx.beginPath();
+    ctx.moveTo(trunkX, start);
+    ctx.lineTo(trunkX, yBranch - 2);
+    const n = 10;
+    for (let i = 0; i <= n * Math.min(1, progress); i++) {
+      const u = i / n;
+      const x = trunkX + (f.x1 - cameraX - trunkX) * u;
+      const y = yBranch - Math.sin(u * Math.PI) * 3;
+      ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    ctx.beginPath();
+    for (let i = 0; i < 5; i++) {
+      const u = 0.2 + i * 0.16;
+      if (u > progress) continue;
+      const x = trunkX + (f.x1 - cameraX - trunkX) * u;
+      const yTop = yBranch - Math.sin(u * Math.PI) * 3;
+      ctx.moveTo(x, yTop - 2);
+      ctx.lineTo(x, yTop - 7 - Math.sin(u * Math.PI) * 4);
+    }
+    ctx.stroke();
+  }
+
   function drawTunnelArches() {
     ctx.strokeStyle = "#18181A";
     ctx.lineWidth = 1.55;
     ctx.lineCap = "round";
+    ctx.lineJoin = "round";
     for (const f of routeFeatures) {
-      if (f.kind !== "tunnel" || f.x0 >= drawnX || f.x1 < cameraX - 80 || f.x0 > cameraX + W + 80) continue;
+      if (f.interaction !== "slide" || f.x0 >= drawnX || f.x1 < cameraX - 80 || f.x0 > cameraX + W + 80) continue;
       const progress = Math.max(0, Math.min(1, (drawnX - f.x0) / (f.x1 - f.x0)));
       const start = heightAt(f.x0);
+      if (f.kind === "branch") { drawBranchFeature(f, start, progress); continue; }
+      // 隧道 / 长隧道：拱顶一笔（长隧加垂滴水痕）
+      const roof = f.roof || TUNNEL_ROOF;
       const n = 18;
       ctx.beginPath();
       for (let i = 0; i <= n * progress; i++) {
         const u = i / n;
         const x = f.x0 + (f.x1 - f.x0) * u - cameraX;
-        const y = start - TUNNEL_ROOF * Math.sin(Math.PI * u);
+        const y = start - roof * Math.sin(Math.PI * u);
         if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
       }
       ctx.stroke();
+      if (f.span > 200) {
+        ctx.beginPath();
+        for (const tx of [0.3, 0.55, 0.8]) {
+          if (tx > progress) continue;
+          const x = f.x0 + (f.x1 - f.x0) * tx - cameraX;
+          const y = start - roof * Math.sin(Math.PI * tx);
+          ctx.moveTo(x, y); ctx.lineTo(x, y + 6);
+        }
+        ctx.stroke();
+      }
     }
   }
 
@@ -2138,8 +2184,8 @@
     if (feature.interaction === "slide") {
       // 拱顶下沿给站姿撞头、滑行通过；整跃能过、低跳会撞——与画出的拱线同源。
       const ground = heightAt(wx);
-      const lintel = ground - TUNNEL_CLEAR;
-      const roof = ground - TUNNEL_ROOF;
+      const lintel = ground - (feature.clear || TUNNEL_CLEAR);
+      const roof = ground - (feature.roof || TUNNEL_ROOF);
       if (head < lintel && feet > roof && Math.abs(u) < zoneK) { stun(); return; }
     } else if (feature.interaction === "jump") {
       if (Math.abs(u) < zoneK && playerY > -4) stun();
