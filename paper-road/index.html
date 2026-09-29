@@ -164,13 +164,6 @@
     transition: color .2s, border-color .2s;
   }
   .hud-btn:hover { color: var(--ink); border-color: var(--ink-soft); }
-  .nav-sound {
-    margin-left: 4px; padding: 8px 10px; border-radius: 999px;
-    border: 1px solid var(--line-faint); color: var(--ink-soft);
-    font-size: 12px; transition: color .2s, opacity .2s;
-  }
-  .nav-sound[aria-pressed="true"] { color: var(--ink); }
-  .nav-sound[aria-pressed="false"] { opacity: 0.55; }
 
   .hero-copy {
     text-align: center;
@@ -709,7 +702,6 @@
       <a href="#contact" data-i18n="nav.contact">联系</a>
     </div>
     <button class="nav-lang" id="lang-btn" type="button" aria-label="Switch language">EN</button>
-    <button class="nav-sound" id="btn-sound" type="button" aria-pressed="false" aria-label="Sound">♪</button>
   </div>
 </nav>
 
@@ -1097,7 +1089,12 @@
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     baseY = H * 0.64;
     // 未出发时篝火始终对齐小队中心；出发后为世界物，不再随窗口挪动
-    if (cameraX === 0) fireX = W * 0.22;
+    if (cameraX === 0) {
+      // 未出发：村舍/记录板等营地景物与开镜小队中心同源，随窗口一起平移，避免错位
+      const d = W * 0.22 - fireX;
+      fireX = W * 0.22;
+      if (d) for (const o of objects) o.x += d;
+    }
   }
   window.addEventListener("resize", () => { resize(); });
 
@@ -1148,7 +1145,9 @@
   let speedRamp = 120;    // 节奏曲线：120 → 190（+0.8/s），踉跄回落 40
   let prevY = 0;          // 落地检测（上一帧高度）
   let lastMile = 0;       // 里程碑计数（每 1000px = 100m）
-  let bestMile = 0;       // 本 seed 最佳里程碑（localStorage，仅本地）
+  let bestPx = 0;         // 本 seed 最远里程（px，localStorage，仅本地）
+  let bestSaved = 0;      // 已落盘的最远里程（每 0.1 km 写一次，避免每帧写）
+  let entrySeed = 0;      // 本世界入口 seed：读写 localStorage 用同一把钥匙（seed 变量会被 rnd 改写）
   let hintTimer = 0;
   // 视觉跟随留一小段历史：碰撞始终锚定 Chestnut，后两只只在画面上错相跟随。
   let motionClock = 0;
@@ -1258,7 +1257,43 @@
      除天空云朵外，全部由笔尖 stroke-reveal 描出。
      back: 角色身后的单线轮廓（一笔一条）
      front: 滑行时的前景遮挡（桥面/洞顶，白填充压在角色上） */
-  function objectStrokes(kind) {
+  /* ── 手写数字/字母笔画：统计物（里程碑/记录板）上的刻字 ──
+     局部坐标：基线 y=0、字高 9、字宽 6（y 负向上）；textStrokes 负责居中排版 */
+  const GLYPHS = {
+    "0": [[[1.2, 0], [0, -2.4], [0, -6.6], [2, -9], [4, -9], [6, -6.6], [6, -2.4], [4.8, 0], [1.2, 0]]],
+    "1": [[[0.6, -6.6], [3, -9], [3, 0]], [[1, 0], [5, 0]]],
+    "2": [[[0.2, -6.8], [2.2, -9], [4, -9], [6, -6.8], [5.2, -5], [0, 0], [6, 0]]],
+    "3": [[[0.2, -9], [5.8, -9], [3, -5.4]], [[3, -5.4], [5.2, -4.8], [6, -2.4], [4, 0], [1, 0], [0, -1.2]]],
+    "4": [[[4.6, 0], [4.6, -9], [0, -2.8], [6, -2.8]]],
+    "5": [[[5.8, -9], [0.4, -9], [0.2, -5], [4, -5.4], [6, -3], [5.2, -0.6], [2.4, 0], [0, -1.2]]],
+    "6": [[[5.2, -9], [1.8, -6.6], [0, -3], [0, -1.2], [2, 0], [4, 0], [6, -2], [4.4, -4.4], [1.6, -4.2]]],
+    "7": [[[0.2, -9], [5.8, -9], [2, 0]]],
+    "8": [[[1.8, -4.6], [0, -6.6], [2, -9], [4, -9], [6, -6.6], [4.2, -4.6], [1.2, -4], [0, -2], [2, 0], [4, 0], [6, -2], [4.2, -4.6]]],
+    "9": [[[6, -4.6], [4, -6.6], [1.6, -5], [0, -6.8], [2, -9], [4, -9], [6, -7], [6, -2], [4, 0], [1.6, 0]]],
+    ".": [[[2.4, 0], [3.6, 0]]],
+    "k": [[[1, 0], [1, -9]], [[1, -3.8], [5.6, -0.6]], [[1, -3.8], [5.6, -6.8]]],
+    m: [[[0.4, 0], [0.4, -7], [1.8, -7.4], [3, -6], [3, 0]], [[3, -6], [4.4, -7.4], [5.8, -6], [5.8, 0]]],
+  };
+  const GLYPH_ADV = { ".": 4, " ": 4, m: 9 };
+
+  /** 把一行短标签排成居中的笔画（oy = 基线，scale = 字号系数，maxW = 碑面可刻宽度 → 超宽自动收窄） */
+  function textStrokes(text, oy, scale, maxW) {
+    if (!text) return [];
+    const chars = String(text).toLowerCase().split("");
+    let total = -1.5;
+    for (const ch of chars) total += GLYPH_ADV[ch] || 7.5;
+    const sc = maxW && total * scale > maxW ? maxW / total : scale;
+    const out = [];
+    let pen = -total / 2;
+    for (const ch of chars) {
+      const g = GLYPHS[ch];
+      if (g) for (const st of g) out.push(st.map((pt) => [(pen + pt[0]) * sc, oy + pt[1] * sc]));
+      pen += GLYPH_ADV[ch] || 7.5;
+    }
+    return out;
+  }
+
+  function objectStrokes(kind, label) {
     // 小屋：墙 + 坡顶 + 门 + 烟囱与一缕淡烟
     if (kind === "cabin") return [
       [[-22, 0], [-22, -24], [0, -44], [22, -24], [22, 0], [-22, 0]],
@@ -1340,10 +1375,24 @@
       [[-2, 0], [-2, -26], [-16, -26], [-16, -38], [16, -38], [16, -26], [5, -26], [5, 0]],
       [[-9, -32], [7, -32], [2.5, -35.5], [7, -32], [2.5, -28.5]],
     ];
-    // 里程碑石：立石 + 小旗
-    if (kind === "milestone") return [
-      [[-6, 0], [-8, -14], [-3, -26], [5, -26], [7, -12], [4, 0], [-6, 0]],
-      [[5, -26], [14, -23], [5, -19]],
+    // 里程碑矮石（每 0.5 km）：圆头石 + 碑面刻字（统计物，不参与碰撞）
+    if (kind === "milestoneSmall") return [
+      [[-11, 0], [-14, -12], [-9, -26], [9, -26], [14, -12], [11, 0], [-11, 0]],
+      ...textStrokes(label, -10, 0.7, 20),
+    ];
+    // 里程碑大碑（每 1 km）：石柱 + 峰顶 + 基石线 + 刻字
+    if (kind === "milestoneBig") return [
+      [[-13, 0], [-15, -13], [-11, -30], [11, -30], [15, -13], [13, 0], [-13, 0]],
+      [[-11, -30], [-6.5, -36], [-2.5, -32.5], [2, -36.5], [6.5, -31], [11, -30]],
+      [[-18, 0], [18, 0]],
+      ...textStrokes(label, -13, 1.0, 23),
+    ];
+    // 营地记录板：双柱 + 板面 + 星标 + 本 seed 最远里程
+    if (kind === "record") return [
+      [[-26, 0], [-26, -42], [26, -42], [26, 0]],
+      [[-20, -38], [20, -38], [20, -22], [-20, -22], [-20, -38]],
+      ...(label ? textStrokes(label, -25, 0.68, 36) : [[[-11, -30], [11, -30]]]),
+      [[0, -50], [3, -54], [6, -50], [3, -46], [0, -50], [3, -54]],
     ];
     return [[[0, 0], [0, -8]]];
   }
@@ -1351,7 +1400,7 @@
   /** 物件度量：路径总长、占宽、笔尖需走过的距离（复杂件更长） */
   function ensureMetrics(o) {
     if (o._m) return o._m;
-    if (!o.strokes) o.strokes = objectStrokes(o.kind);
+    if (!o.strokes) o.strokes = objectStrokes(o.kind, o.label);
     let total = 0, minX = 1e9, maxX = -1e9;
     for (const st of o.strokes) {
       total += strokeTotal(st);
@@ -1432,18 +1481,33 @@
       cabin: 22, tree: 22, clocktower: 14, shop: 20, hill: 46,
       stream: 18, valley: 22, flower: 14, stone: 16, mud: 18,
       bridge: 40, cave: 38, mush: 10, crate: 14, sign: 16,
+      milestoneSmall: 14, milestoneBig: 18, record: 28,
     };
     return (rough[kind] || 16) * (s || 1);
   }
 
   /** 辅助笔画只负责景物，不参与可走路线和碰撞。
       让位规则：① 不与任何障碍区间重叠（跳类/滑类/石台，留 16px 余量）
-               ② 不与既有物件挨太近；两者互相牵制，循环到干净为止。 */
-  function placeObject(cursorX, kind, s) {
+               ② 不与既有物件挨太近；两者互相牵制，循环到干净为止。
+               ③ exact=true（里程碑/记录板）落点必须准：只让开障碍，撞到景物则把景物挪开。 */
+  function placeObject(cursorX, kind, s, label, exact) {
     const hw = halfWidthOf(kind, s);
     const minGap = 48;
     const clear = 16;
-    let x = cursorX + hw + minGap + rnd() * 40;
+    let x = exact ? cursorX : cursorX + hw + minGap + rnd() * 40;
+    if (exact) {
+      for (const f of routeFeatures) {
+        if (f.interaction !== "jump" && f.interaction !== "slide") continue;
+        if (x + hw > f.x0 - clear && x - hw < f.x1 + clear) x = f.x1 + clear + hw;
+      }
+      for (const e of objects) {
+        if (e.kind === "record" || e.kind === "milestoneBig" || e.kind === "milestoneSmall") continue;
+        const eh = halfWidthOf(e.kind, e.s || 1);
+        if (Math.abs(x - e.x) < hw + eh + 14) e.x += hw + eh + 26;
+      }
+      objects.push({ x, kind, s: s || 1, p: 0, on: false, strokes: null, label: label || null });
+      return x + hw;
+    }
     for (let guard = 0; guard < 12; guard++) {
       let moved = false;
       for (const f of routeFeatures) {
@@ -1456,7 +1520,7 @@
       }
       if (!moved) break;
     }
-    objects.push({ x, kind, s: s || 1, p: 0, on: false, strokes: null });
+    objects.push({ x, kind, s: s || 1, p: 0, on: false, strokes: null, label: label || null });
     return x + hw;
   }
 
@@ -1528,19 +1592,22 @@
   function ensureWorld(xTo) {
     ensureRoute(xTo + 700);   // 路线先于物件生成：物件落点可避开坑
     if (ensureWorld._deck == null) {
-      ensureWorld._deck = ["tree", "hill", "flower", "mush", "sign", "milestone"];
+      ensureWorld._deck = ["tree", "hill", "flower", "mush", "sign", "tree"];
       ensureWorld._i = 0;
       ensureWorld._cursor = 700;
-      ensureWorld._mile = 1000;
+      ensureWorld._mile = 500;
     }
     while (ensureWorld._cursor < xTo + 700) {
       const kind = ensureWorld._deck[ensureWorld._i++ % ensureWorld._deck.length];
       ensureWorld._cursor = placeObject(ensureWorld._cursor, kind, 0.78 + rnd() * 0.28)
         + 70 + rnd() * 90;
     }
+    // 里程碑统计物：0.5 km 一块矮石、整 1 km 一座大碑，碑面刻里程（与 HUD 同一把尺）
     while (ensureWorld._mile < xTo) {
-      placeObject(ensureWorld._mile, "milestone", 1);
-      ensureWorld._mile += 1000;
+      const isBig = ensureWorld._mile % 1000 === 0;
+      const label = isBig ? ensureWorld._mile / 1000 + "km" : ensureWorld._mile + "m";
+      placeObject(ensureWorld._mile, isBig ? "milestoneBig" : "milestoneSmall", 1, label, true);
+      ensureWorld._mile += 500;
     }
     const keepFrom = cameraX - 400;
     while (objects.length && objects[0].x < keepFrom) objects.shift();
@@ -1553,7 +1620,9 @@
     drawnX = mode === "play" ? CAMP_END      // redraw starts at the camp edge
       : cameraX + W * 0.85;             // camp state is pre-drawn to the pen
     speedRamp = 120; lastMile = 0;
-    try { bestMile = parseInt(localStorage.getItem("lucky.best." + newSeed), 10) || 0; } catch (err) { bestMile = 0; }
+    entrySeed = newSeed >>> 0;
+    try { bestPx = parseInt(localStorage.getItem("lucky.bestPx." + entrySeed), 10) || 0; } catch (err) { bestPx = 0; }
+    bestSaved = bestPx;
     // 营地段预画为水平路线；dy 相对 baseY，resize 后不需要重建。
     routePoints = [];
     for (let x = 0; x <= 420; x += ROUTE_STEP) routePoints.push({ x, dy: 0 });
@@ -1565,6 +1634,9 @@
       { x: fireX + 168, kind: "flower", s: 0.85, p: 1, on: true, strokes: null },
       { x: fireX + 300, kind: "tree", s: 1.0, p: 1, on: true, strokes: null },
       { x: fireX + 620, kind: "clocktower", s: 0.85, p: 1, on: true, strokes: null },
+      // 营地记录板：写下本 seed 的最远里程（还没出发则留空板）
+      { x: fireX + 66, kind: "record", s: 1, p: 1, on: true, strokes: null,
+        label: bestPx > 0 ? (bestPx / 1000).toFixed(1) + " km" : null },
     ];
     particles = [];
     mascotMotion = [];
@@ -1576,7 +1648,7 @@
     ensureRoute._i = 0;
     ensureRoute._deck = null;
     ensureWorld._cursor = 880;
-    ensureWorld._mile = 1000;
+    ensureWorld._mile = 500;
     ensureWorld._i = 0;
     ensureWorld._deck = null;
     ensureWorld(cameraX + W + 200);
@@ -1749,6 +1821,16 @@
     for (const st of objectStrokes("stone")) drawStrokeReveal(st, progress, cx, start, 1);
   }
 
+  /** 一笔草簇：三根短线自基点散开（h 为负向上长草，为正向下垂挂） */
+  function drawTuft(x, y, h) {
+    ctx.beginPath();
+    for (let k = -1; k <= 1; k++) {
+      ctx.moveTo(x + k * 0.8, y);
+      ctx.lineTo(x + k * 3.4, y + h * (k === 0 ? 1 : 0.68));
+    }
+    ctx.stroke();
+  }
+
   function drawTunnelArches() {
     ctx.strokeStyle = "#18181A";
     ctx.lineWidth = 1.55;
@@ -1773,6 +1855,15 @@
         if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
       }
       ctx.stroke();
+      // 隧道/长隧道：拱背草簇 —— 石拱像长在草地上的土丘，而不是悬空的贴纸
+      if (f.kind === "tunnel" || f.kind === "longtunnel") {
+        ctx.lineWidth = 1.15;
+        for (const tu of [0.3, 0.5, 0.7]) {
+          if (progress <= tu + 0.02) continue;   // 笔还没走到就长出来会很怪
+          drawTuft(f.x0 + (f.x1 - f.x0) * tu - cameraX, start - outerAt(f, tu) + 0.5, -4.5);
+        }
+        ctx.lineWidth = 1.55;
+      }
       if (f.kind === "ruin") drawRuinFeature(f, start, progress);
     }
   }
@@ -1806,9 +1897,31 @@
       ctx.fillStyle = "#FFFFFF";
       ctx.fill();
       ctx.strokeStyle = "#18181A";
-      ctx.lineWidth = 1.55;
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
+      // 砌缝：外拱到洞门石圈之间的短放射线，拱顶像一块块拱石砌起
+      ctx.lineWidth = 1;
+      for (const u of [0.26, 0.4, 0.6, 0.74]) {
+        const x = x0 + (x1 - x0) * u;
+        const yo = start - outerAt(f, u);
+        const yr = start - innerAt(f, u) * 1.22;
+        ctx.beginPath();
+        ctx.moveTo(x, yo);
+        ctx.lineTo(x, yo + (yr - yo) * 0.62 + 0.5);
+        ctx.stroke();
+      }
+      // 洞门石圈：与洞口同形的内缩弧，一眼看出「这是个洞口」
+      ctx.lineWidth = 1.15;
+      ctx.beginPath();
+      for (let i = 0; i <= n; i++) {
+        const u = i / n;
+        const x = x0 + (x1 - x0) * u;
+        const y = start - innerAt(f, u) * 1.22;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+      // 洞口净空线：最重的一笔，画在石圈之上
+      ctx.lineWidth = 1.7;
       ctx.beginPath();
       for (let i = 0; i <= n; i++) {
         const u = i / n;
@@ -1817,14 +1930,11 @@
         if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
       }
       ctx.stroke();
+      // 长隧道：洞顶垂草，给纵深一点闷闷的线索（只垂很短，不挡角色）
       if (f.span > 200) {
-        ctx.beginPath();
-        for (const tx of [0.32, 0.55, 0.78]) {
-          const x = x0 + (x1 - x0) * tx;
-          const y = start - innerAt(f, tx);
-          ctx.moveTo(x, y); ctx.lineTo(x, y + 6);
-        }
-        ctx.stroke();
+        ctx.lineWidth = 1.15;
+        for (const tx of [0.3, 0.5, 0.7])
+          drawTuft(x0 + (x1 - x0) * tx, start - innerAt(f, tx), 5);
       }
       ctx.restore();
     }
@@ -2370,7 +2480,7 @@
     if (slideHeld) releaseSlide();           // 按住滑时跳跃 = 起身跳（恐龙同款）
     if (jumping && playerY < -5) { jumpBuf = P.bufferJump; return; }
     if (coyote > 0 || playerY > -2) {
-      vy = P.jumpV; jumping = true; jumpBuf = 0; sJump();
+      vy = P.jumpV; jumping = true; jumpBuf = 0;
     } else jumpBuf = P.bufferJump;
   }
 
@@ -2383,7 +2493,6 @@
       slideHeld = held;
       return;
     }
-    if (sliding <= 0) sSlide();
     slideHeld = held;
     sliding = Math.max(sliding, P.slideMin);
   }
@@ -2412,32 +2521,6 @@
     }
   }
   function skipIntro() { enterPlay(true); }
-
-  /* ── 声音：WebAudio 三枚极简音，默认静音（导航 ♪ 开关） ── */
-  let audioOn = false, actx = null;
-  function tone(freq, dur, delay, type) {
-    if (!audioOn) return;
-    try {
-      actx = actx || new (window.AudioContext || window.webkitAudioContext)();
-      const t0 = actx.currentTime + (delay || 0);
-      const osc = actx.createOscillator(), gn = actx.createGain();
-      osc.type = type || "sine";
-      osc.frequency.setValueAtTime(freq, t0);
-      gn.gain.setValueAtTime(0.0001, t0);
-      gn.gain.linearRampToValueAtTime(0.05, t0 + 0.012);
-      gn.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-      osc.connect(gn).connect(actx.destination);
-      osc.start(t0); osc.stop(t0 + dur + 0.02);
-    } catch (err) {}
-  }
-  const sJump = () => { tone(540, 0.09); tone(720, 0.08, 0.05); };
-  const sSlide = () => tone(190, 0.14, 0, "triangle");
-  const sMile = () => { tone(660, 0.09); tone(880, 0.12, 0.07); };
-  document.getElementById("btn-sound").addEventListener("click", (e) => {
-    audioOn = !audioOn;
-    e.currentTarget.setAttribute("aria-pressed", String(audioOn));
-    if (audioOn) tone(660, 0.08);
-  });
 
   canvas.addEventListener("contextmenu", (e) => e.preventDefault());
   let touchStart = null;
@@ -2565,7 +2648,6 @@
         cameraX = 0;
         revealByPen(dt);
         if (rnd() < dt * 1.5) emitParticles(fireX - cameraX, heightAt(fireX) - 34, 1, false);
-        if (hudKmEl) hudKmEl.textContent = bestMile > 0 ? "BEST " + (bestMile / 10).toFixed(1) + " km" : "";
         if (modeT > 2.4) { mode = "point"; modeT = 0; }
       } else if (mode === "point") {
         // 指路 + 笔落位，仍不卷动
@@ -2626,19 +2708,23 @@
         if (rnd() < dt * 4) emitParticles(W * 0.85, heightAt(cameraX + W * 0.85) - 2, 1, false);
         collide();
 
-        // 里程碑：每 1000px = 100m——HUD 轻脉冲 + 最佳里程落 localStorage
+        // 整公里：HUD 里程读数轻脉冲（路边的大碑也正好在这一格）
         const mile = Math.floor(cameraX / 1000);
         if (mile > lastMile) {
           lastMile = mile;
-          sMile();
           if (hudKmEl) {
             hudKmEl.classList.remove("pulse");
             void hudKmEl.offsetWidth;
             hudKmEl.classList.add("pulse");
           }
-          if (mile > bestMile) {
-            bestMile = mile;
-            try { localStorage.setItem("lucky.best." + seed, String(bestMile)); } catch (err) {}
+        }
+        // 最远里程：连续记录，每 0.1 km 落一次盘——出发营地的记录板下次开营就是它
+        const pxNow = Math.floor(cameraX);
+        if (pxNow > bestPx) {
+          bestPx = pxNow;
+          if (pxNow - bestSaved >= 100) {
+            bestSaved = pxNow;
+            try { localStorage.setItem("lucky.bestPx." + entrySeed, String(bestPx)); } catch (err) {}
           }
         }
         if (hudKmEl) hudKmEl.textContent = (cameraX / 1000).toFixed(1) + " km";
