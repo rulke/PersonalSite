@@ -19,6 +19,8 @@
     --font-display: "SF Pro Display", "Inter", -apple-system, "Segoe UI", sans-serif;
     --font-cjk: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
     --font-mono: "SF Mono", "JetBrains Mono", ui-monospace, monospace;
+    /* 固定导航让位：HUD（里程读数 + ⏸/↺）必须落在导航下沿之下，JS 按真实高度写这个值 */
+    --nav-pad: 64px;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -140,13 +142,17 @@
   #stage {
     display: block;
     width: 100%;
-    height: min(68vh, 560px, calc(100vh - 310px));   /* 预留：标题(含5vw放大)+副标+出发按钮+提示行 */
+    /* 预留：标题(含5vw放大)+副标+出发按钮+提示行 + 导航让位；120px 下限防极矮视口塌成 0 */
+    height: max(120px, min(68vh, 560px, calc(100vh - 310px - var(--nav-pad))));
     touch-action: pan-y;
     cursor: default;
     background: var(--paper);
   }
 
-  .stage-wrap { position: relative; }
+  .stage-wrap {
+    position: relative;
+    margin-top: var(--nav-pad);   /* 顶到导航下沿之下：HUD 不再被盖住 */
+  }
   .stage-hud {
     position: absolute; top: 12px; right: 16px;
     font-family: var(--font-mono); font-size: 12px;
@@ -637,10 +643,10 @@
   }
 
   @media (max-width: 880px) {
-    #stage { height: min(58vh, 480px, calc(100vh - 230px)); }
+    #stage { height: max(110px, min(58vh, 480px, calc(100vh - 230px - var(--nav-pad)))); }
     .sheet { margin: 0; border-radius: 0; border-left: none; border-right: none; }
     .section { padding: 56px 20px 40px; scroll-margin-top: 80px; }
-    #stage { height: min(48vh, 360px, calc(100vh - 230px)); }
+    #stage { height: max(100px, min(48vh, 360px, calc(100vh - 230px - var(--nav-pad)))); }
     .hero-copy { margin-top: -20px; padding: 4px 16px; }
     .hero-title { font-size: clamp(26px, 7vw, 40px); }
     .works-featured { grid-template-columns: 1fr; gap: 20px; }
@@ -1079,7 +1085,17 @@
   const hudKmEl = document.getElementById("hud-km");
   let W = 0, H = 0, dpr = 1, baseY = 0;
 
+  /** HUD 让位：按固定导航的真实高度写 --nav-pad（sheet 自身不动，只把舞台推到导航下沿之下） */
+  function syncNavPad() {
+    const nav = document.querySelector(".nav");
+    const sheet = document.querySelector(".sheet");
+    if (!nav || !sheet) return;
+    const pad = nav.getBoundingClientRect().bottom + 4 - sheet.getBoundingClientRect().top;
+    document.documentElement.style.setProperty("--nav-pad", Math.max(0, Math.round(pad)) + "px");
+  }
+
   function resize() {
+    syncNavPad();
     dpr = Math.min(window.devicePixelRatio || 1, 2);
     W = canvas.clientWidth || window.innerWidth;
     // 未布局时不写死 640，避免 baseY 算歪
