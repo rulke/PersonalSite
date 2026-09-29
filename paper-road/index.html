@@ -544,6 +544,13 @@
     color: var(--accent-orange);
     border-color: var(--accent-orange);
   }
+  .email-addr {
+    margin-top: 12px;
+    font-family: var(--font-mono);
+    font-size: 12px; letter-spacing: 0.08em;
+    color: var(--ink-soft);
+    user-select: all;              /* 点一下整串选中，方便抄地址 */
+  }
 
   /* 链接高亮：hover / 键盘 focus / 章节选中 一律暖橙（§2.1 accent-orange = hover） */
   .nav-links a:hover, .nav-links a:focus-visible, .nav-links a.active {
@@ -795,9 +802,10 @@
         <path class="mb-star" d="M54 44l1.8 4 4 1.8-4 1.8-1.8 4-1.8-4-4-1.8 4-1.8z" fill="#FFDE59" stroke="#18181A" stroke-width="1"/>
       </svg>
     </div>
-    <a class="email-link rv" href="mailto:hello@lucky.dev" data-i18n="contact.email_label">写信给我</a>
+    <a class="email-link rv" href="mailto:luckyzgl0@gmail.com" data-i18n="contact.email_label">写信给我</a>
+    <p class="email-addr rv" style="--rvd:.06s">luckyzgl0@gmail.com</p>
     <div class="socials rv" style="--rvd:.1s">
-      <a href="#">GitHub</a>
+      <a href="https://github.com/rulke" target="_blank" rel="noopener noreferrer">GitHub</a>
       <a href="#">X</a>
       <a href="#">Bilibili</a>
     </div>
