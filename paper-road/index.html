@@ -1245,6 +1245,9 @@
       tunnel: [138, "slide", "slide", {}],
       longtunnel: [220, "slide", "slide", {}],
       branch: [64, "slide", "slide", { clear: 18, roof: 26 }],
+      clothesline: [90, "slide", "slide", { clear: 16, roof: 30 }],
+      bar: [70, "slide", "slide", { clear: 16, roof: 28 }],
+      ruin: [56, "slide", "slide", { clear: 14, roof: 34 }],
     };
     const [width, semantic, interaction, profile] = specs[kind] || specs.flat;
     const feature = appendProfile(x0, width, kind, interaction || semantic, profile);
@@ -1455,7 +1458,7 @@
     if (!ensureRoute._deck) {
       ensureRoute._deck = [
         "flat", "hill", "stream", "cloud", "mud", "arch", "valley",
-        "tunnel", "flat", "stone", "branch", "hill", "stream", "cloud", "tunnel", "longtunnel",
+        "tunnel", "flat", "stone", "branch", "clothesline", "hill", "stream", "cloud", "bar", "tunnel", "longtunnel", "ruin",
       ];
       ensureRoute._i = 0;
       ensureRoute._cursor = CAMP_END;
@@ -1470,7 +1473,7 @@
       }
       const gap = (42 + rnd() * 58) * (speedRamp / 120);   // 间隔随速度放大，反应时间守恒
       ensureRoute._cursor = appendFlat(ensureRoute._cursor, gap);
-      const slideFallback = { tunnel: "stream", longtunnel: "valley", branch: "stone" };   // 触屏无滑行：滑障降级为跳障
+      const slideFallback = { tunnel: "stream", longtunnel: "valley", branch: "stone", clothesline: "mud", bar: "stone", ruin: "mud" };   // 触屏无滑行：滑障降级为跳障
       const built = isTouch && slideFallback[kind] ? slideFallback[kind] : kind;
       ensureRoute._cursor = appendRouteFeature(ensureRoute._cursor, built).x;
     }
@@ -1630,6 +1633,71 @@
     ctx.stroke();
   }
 
+  /** 晾衣绳：双柱 + 下垂绳线 + 摆动小布，布下钻过 */
+  function drawClotheslineFeature(f, start, progress) {
+    const x0 = f.x0 - cameraX, x1 = f.x1 - cameraX;
+    const top = start - (f.clear || TUNNEL_CLEAR) - 12;
+    const ropeSag = 5;
+    ctx.beginPath();
+    ctx.moveTo(x0, start); ctx.lineTo(x0, top);
+    if (progress > 0.25) {
+      const n = 8, reach = Math.min(1, (progress - 0.2) / 0.6);
+      for (let i = 0; i <= n * reach; i++) {
+        const u = i / n;
+        const x = x0 + (x1 - x0) * u;
+        const y = top + Math.sin(u * Math.PI) * ropeSag;
+        if (i === 0) ctx.lineTo(x, y); else ctx.lineTo(x, y);
+      }
+    }
+    if (progress > 0.7) ctx.lineTo(x1, top);
+    if (progress > 0.85) ctx.lineTo(x1, start);
+    ctx.stroke();
+    if (progress > 0.55) {
+      const sway = reduceMotion ? 0 : Math.sin(modeT * 4 + f.x0) * 2;
+      const cx = x0 + (x1 - x0) * 0.5, cy = top + Math.sin(Math.PI * 0.5) * ropeSag;
+      ctx.beginPath();
+      ctx.moveTo(cx - 7, cy); ctx.lineTo(cx + 7 + sway, cy + 1);
+      ctx.lineTo(cx + 5 + sway, cy + 12); ctx.lineTo(cx - 5, cy + 11);
+      ctx.closePath(); ctx.stroke();
+    }
+  }
+
+  /** 横栏：双矮柱 + 横木 + 斜撑 */
+  function drawBarFeature(f, start, progress) {
+    const x0 = f.x0 - cameraX, x1 = f.x1 - cameraX;
+    const top = start - (f.clear || TUNNEL_CLEAR) - 4;
+    ctx.beginPath();
+    if (progress > 0.2) { ctx.moveTo(x0, start); ctx.lineTo(x0, top); }
+    if (progress > 0.5) { ctx.moveTo(x1, start); ctx.lineTo(x1, top); }
+    if (progress > 0.75) { ctx.moveTo(x0 - 2, top); ctx.lineTo(x1 + 2, top); }
+    if (progress > 0.9) { ctx.moveTo(x0 + 3, start - 6); ctx.lineTo(x0 + 8, top + 3); }
+    ctx.stroke();
+  }
+
+  /** 残拱：断口拱顶 + 基座落石，净空最紧的精度滑障 */
+  function drawRuinFeature(f, start, progress) {
+    const x0 = f.x0 - cameraX, x1 = f.x1 - cameraX;
+    const roof = f.roof || TUNNEL_ROOF;
+    const n = 14;
+    ctx.beginPath();
+    for (let i = 0; i <= n * progress; i++) {
+      const u = i / n;
+      const x = x0 + (x1 - x0) * u;
+      const arch = roof * Math.sin(Math.PI * u);
+      const broken = u > 0.55 ? Math.sin((u - 0.55) * 20) * 4 + (u - 0.55) * 26 : 0;
+      const y = start - arch + broken;
+      if (i === 0) ctx.moveTo(x, start); else ctx.lineTo(x, y);
+    }
+    if (progress >= 1) ctx.lineTo(x1, start);
+    ctx.stroke();
+    if (progress > 0.8) {
+      ctx.beginPath();
+      ctx.moveTo(x1 - 14, start); ctx.lineTo(x1 - 10, start - 5); ctx.lineTo(x1 - 6, start);
+      ctx.moveTo(x1 - 26, start); ctx.lineTo(x1 - 22, start - 4); ctx.lineTo(x1 - 18, start);
+      ctx.stroke();
+    }
+  }
+
   function drawTunnelArches() {
     ctx.strokeStyle = "#18181A";
     ctx.lineWidth = 1.55;
@@ -1640,6 +1708,9 @@
       const progress = Math.max(0, Math.min(1, (drawnX - f.x0) / (f.x1 - f.x0)));
       const start = heightAt(f.x0);
       if (f.kind === "branch") { drawBranchFeature(f, start, progress); continue; }
+      if (f.kind === "clothesline") { drawClotheslineFeature(f, start, progress); continue; }
+      if (f.kind === "bar") { drawBarFeature(f, start, progress); continue; }
+      if (f.kind === "ruin") { drawRuinFeature(f, start, progress); continue; }
       // 隧道 / 长隧道：拱顶一笔（长隧加垂滴水痕）
       const roof = f.roof || TUNNEL_ROOF;
       const n = 18;
