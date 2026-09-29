@@ -2061,11 +2061,13 @@
       return mascotMotion[0] || { y: playerY, slide: slideT };
     };
 
+    const spots = [];
     for (let i = 0; i < 3; i++) {
       const config = MASCOTS[i];
       const visual = delayedMotion(config.lag);
       const X = px + forms[i];
       const Y = heightAt(cameraX + X) + visual.y * b;
+      spots.push({ x: X, y: Y });
       const tilt = ang * b + (visual.slide == null && stumbleT > 0 ? Math.sin(modeT * 26) * 0.05 : 0);
       ctx.save();
       ctx.translate(X, Y);
@@ -2077,6 +2079,8 @@
       ctx.restore();
     }
 
+    // 特效锚点：取队形中位的视觉落脚点（各自贴地 + 跟随样本），斜坡上随角色而非固定高度
+    const gy = spots[1].y;
     // 滑行扬尘（压低身姿拖出的短线）
     if (slideT != null) {
       ctx.strokeStyle = "rgba(24,24,26,0.22)";
