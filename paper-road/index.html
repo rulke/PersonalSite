@@ -1147,7 +1147,7 @@
   let prevY = 0;          // 落地检测（上一帧高度）
   let lastMile = 0;       // 里程碑计数（每 1000px = 100m）
   let bestPx = 0;         // 本 seed 最远里程（px，localStorage，仅本地）
-  let bestSaved = 0;      // 已落盘的最远里程（每 0.1 km 写一次，避免每帧写）
+  let bestSaved = 0;      // 已落盘的最远里程（每 10 m 写一次，避免每帧写）
   let entrySeed = 0;      // 本世界入口 seed：读写 localStorage 用同一把钥匙（seed 变量会被 rnd 改写）
   let hintTimer = 0;
   // 视觉跟随留一小段历史：碰撞始终锚定 Chestnut，后两只只在画面上错相跟随。
@@ -1585,12 +1585,20 @@
     while (routePoints.length > ROUTE_MAX) routePoints.splice(0, Math.min(160, routePoints.length - ROUTE_MAX));
   }
 
-  /* ── 里程碑节奏 ──
-     大碑之间至少隔 MILE_MIN_GAP 秒：按最坏情况（顶速）换算距离再向上取到整公里——
-     30s × 210px/s = 6300 → 7km。速度只会更低（起步 120px/s 时约 55s），
-     所以「至少 30 秒」在任何时刻都成立；碑面里程也总是整公里（7km / 14km / 21km…）。 */
-  const MILE_MIN_GAP = 30;                                                // s
-  const MILE_STEP = Math.ceil((MILE_MIN_GAP * P.rampMax) / 1000) * 1000;   // px
+  /* ── 距离换算与里程碑节奏 ──
+     换算：10px = 1m（1000px = 100m）——HUD、营地记录板、碑面刻字共用这一把尺。
+     里程碑：每 1 km 一座大碑 = 1000m × 10px = 10000px。
+     节奏自检：顶速 210px/s 下 47.6s、起步约 83s，仍 ≥ MILE_MIN_GAP（30s）。 */
+  const PX_PER_M = 10;                     // 换算：10px = 1m
+  const MILE_MIN_GAP = 30;                 // s：两座碑之间的最小间隔（自检线）
+  const MILE_M = 1000;                     // m：每 1 km 一座大碑
+  const MILE_STEP = MILE_M * PX_PER_M;     // px = 10000
+
+  /** 距离显示（与碑面刻字同源）：不足 1 km 用米，超过用 km */
+  function fmtDist(px) {
+    const m = px / PX_PER_M;
+    return m < 1000 ? Math.round(m) + " m" : (m / 1000).toFixed(1) + " km";
+  }
 
   function ensureWorld(xTo) {
     ensureRoute(xTo + 700);   // 路线先于物件生成：物件落点可避开坑
@@ -1605,11 +1613,11 @@
       ensureWorld._cursor = placeObject(ensureWorld._cursor, kind, 0.78 + rnd() * 0.28)
         + 70 + rnd() * 90;
     }
-    // 里程碑统计物：每 MILE_STEP（7km）一座大碑，碑面刻里程（与 HUD 同一把尺）——
+    // 里程碑统计物：每 1 km（= MILE_STEP）一座大碑，碑面刻里程（与 HUD 同一把尺）——
     // 稀疏到每一次都算个「章节」，而不是路边又一块石头
     while (ensureWorld._mile + MILE_STEP < xTo) {
       ensureWorld._mile += MILE_STEP;
-      placeObject(ensureWorld._mile, "milestoneBig", 1, ensureWorld._mile / 1000 + "km", true);
+      placeObject(ensureWorld._mile, "milestoneBig", 1, ensureWorld._mile / PX_PER_M / 1000 + "km", true);
     }
     const keepFrom = cameraX - 400;
     while (objects.length && objects[0].x < keepFrom) objects.shift();
@@ -1638,7 +1646,7 @@
       { x: fireX + 620, kind: "clocktower", s: 0.85, p: 1, on: true, strokes: null },
       // 营地记录板：写下本 seed 的最远里程（还没出发则留空板）
       { x: fireX + 66, kind: "record", s: 1, p: 1, on: true, strokes: null,
-        label: bestPx > 0 ? (bestPx / 1000).toFixed(1) + " km" : null },
+        label: bestPx > 0 ? fmtDist(bestPx) : null },
     ];
     particles = [];
     mascotMotion = [];
@@ -2711,7 +2719,7 @@
         collide();
 
         // 整公里：HUD 里程读数轻脉冲（路边的大碑也正好在这一格）
-        const mile = Math.floor(cameraX / 1000);
+        const mile = Math.floor(cameraX / MILE_STEP);
         if (mile > lastMile) {
           lastMile = mile;
           if (hudKmEl) {
@@ -2720,7 +2728,7 @@
             hudKmEl.classList.add("pulse");
           }
         }
-        // 最远里程：连续记录，每 0.1 km 落一次盘——出发营地的记录板下次开营就是它
+        // 最远里程：连续记录，每 10 m（= 100px）落一次盘——出发营地的记录板下次开营就是它
         const pxNow = Math.floor(cameraX);
         if (pxNow > bestPx) {
           bestPx = pxNow;
@@ -2729,7 +2737,7 @@
             try { localStorage.setItem("lucky.bestPx." + entrySeed, String(bestPx)); } catch (err) {}
           }
         }
-        if (hudKmEl) hudKmEl.textContent = (cameraX / 1000).toFixed(1) + " km";
+        if (hudKmEl) hudKmEl.textContent = fmtDist(cameraX);
       } else if (mode === "await") {
         drawnX = cameraX + W * 0.85;   // reduced-motion：静态营地，地线一次画全
         revealByPen(dt);
