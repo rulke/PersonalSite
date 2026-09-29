@@ -1436,23 +1436,25 @@
     return (rough[kind] || 16) * (s || 1);
   }
 
-  /** 辅助笔画只负责景物，不参与可走路线和碰撞。 */
+  /** 辅助笔画只负责景物，不参与可走路线和碰撞。
+      让位规则：① 不与任何障碍区间重叠（跳类/滑类/石台，留 16px 余量）
+               ② 不与既有物件挨太近；两者互相牵制，循环到干净为止。 */
   function placeObject(cursorX, kind, s) {
     const hw = halfWidthOf(kind, s);
     const minGap = 48;
+    const clear = 16;
     let x = cursorX + hw + minGap + rnd() * 40;
-    for (let guard = 0; guard < 8; guard++) {
-      let hit = false;
+    for (let guard = 0; guard < 12; guard++) {
+      let moved = false;
+      for (const f of routeFeatures) {
+        if (f.interaction !== "jump" && f.interaction !== "slide") continue;
+        if (x + hw > f.x0 - clear && x - hw < f.x1 + clear) { x = f.x1 + clear + hw; moved = true; }
+      }
       for (const e of objects) {
         const eh = halfWidthOf(e.kind, e.s || 1);
-        if (Math.abs(x - e.x) < hw + eh + minGap * 0.7) { hit = true; break; }
+        if (Math.abs(x - e.x) < hw + eh + minGap * 0.7) { x += 70; moved = true; break; }
       }
-      if (!hit) break;
-      x += 70;
-    }
-    // 物件不得落在断线坑里
-    for (const f of routeFeatures) {
-      if (f.interaction === "jump" && f.depth && x + hw > f.x0 - 12 && x - hw < f.x1 + 12) x = f.x1 + 12 + hw;
+      if (!moved) break;
     }
     objects.push({ x, kind, s: s || 1, p: 0, on: false, strokes: null });
     return x + hw;
@@ -1479,6 +1481,9 @@
           [ensureRoute._deck[i], ensureRoute._deck[j]] = [ensureRoute._deck[j], ensureRoute._deck[i]];
         }
       }
+      // 统一入口间隔：连招的首个元素前也留一段平坦，避免障碍与前一障碍首尾相接
+      const gap = (42 + rnd() * 58) * (speedRamp / 120);
+      ensureRoute._cursor = appendFlat(ensureRoute._cursor, gap);
       // 滑跳连招模板：动词切换（落地续跳 / 滑完即跳 / 跳完即滑）
       if (kind === "combo-dual-valley") {
         const f1 = appendRouteFeature(ensureRoute._cursor, "valley");
@@ -1511,8 +1516,6 @@
         ensureRoute._cursor = appendRouteFeature(land2, built2).x;
         continue;
       }
-      const gap = (42 + rnd() * 58) * (speedRamp / 120);   // 间隔随速度放大，反应时间守恒
-      ensureRoute._cursor = appendFlat(ensureRoute._cursor, gap);
       const slideFallback = { tunnel: "stream", longtunnel: "valley", branch: "stone", clothesline: "mud", bar: "stone", ruin: "mud" };   // 触屏无滑行：滑障降级为跳障
       const built = isTouch && slideFallback[kind] ? slideFallback[kind] : kind;
       ensureRoute._cursor = appendRouteFeature(ensureRoute._cursor, built).x;
