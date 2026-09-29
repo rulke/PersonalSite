@@ -1614,35 +1614,21 @@
     ctx.strokeStyle = "#18181A";
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
-    // 坑=断线：没有线的地方没有路，与「脚沾地即踉跄」的碰撞语义一致
-    const gaps = [];
-    for (const f of routeFeatures) if (f.interaction === "jump" && f.depth) gaps.push(f);
-    const inGap = (x) => { for (const f of gaps) if (x >= f.x0 && x <= f.x1) return true; return false; };
     ctx.beginPath();
     let started = false;
     for (let i = 0; i < routePoints.length; i++) {
       const p = routePoints[i];
       if (p.x > drawnX) {
-        if (i > 0 && routePoints[i - 1].x < drawnX && !inGap(drawnX)) {
+        if (i > 0 && routePoints[i - 1].x < drawnX) {
           const edge = sampleRoute(drawnX);
           ctx.lineTo(drawnX - cameraX, baseY + edge.dy);
         }
         break;
       }
-      if (inGap(p.x)) { started = false; continue; }
       if (!started) { ctx.moveTo(p.x - cameraX, baseY + p.dy); started = true; }
       else ctx.lineTo(p.x - cameraX, baseY + p.dy);
     }
     ctx.stroke();
-    // 断口两端各垂滴一笔：把缺口读成坑口，而不是画漏
-    for (const f of gaps) {
-      if (f.x1 < cameraX - 40 || f.x0 > cameraX + W + 40) continue;
-      const y = heightAt(f.x0);
-      ctx.beginPath();
-      if (drawnX > f.x0 + 6) { ctx.moveTo(f.x0 - cameraX, y); ctx.lineTo(f.x0 - cameraX, y + 7); }
-      if (drawnX > f.x1 + 6) { ctx.moveTo(f.x1 - cameraX, y); ctx.lineTo(f.x1 - cameraX, y + 7); }
-      ctx.stroke();
-    }
   }
 
   /** 矮枝：树干立在判定带外缘，横枝从干头伸展到枝尾，叶刺随进度生长 */
