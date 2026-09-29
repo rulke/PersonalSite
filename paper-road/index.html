@@ -830,11 +830,11 @@
       "hero.title": "用匠心写代码， <br>以灵魂做设计。",
       "hero.sub": "边走边画，把每天画得更新一点。",
       "hero.hint": "[左键] 跳跃 · [右键] 滑行 ｜ [↺ 重绘] ｜ [⏸ 暂停]",
-      "hero.hint.touch": "[轻点] 跳跃",
+      "hero.hint.touch": "[轻点] 跳跃 · [下滑] 滑行",
       "hero.setout": "出发", "hero.skip": "出发",
       "hero.redraw": "↺ 重绘", "hero.pause": "⏸ 暂停", "hero.play": "▶ 继续",
       "hero.skipping": "点击出发，开始上路",
-      "a11y.controls": "键盘：空格或上箭头跳跃，Shift、S 或下箭头滑行，Esc 跳过开场或暂停。",
+      "a11y.controls": "键盘：空格或上箭头跳跃，Shift、S 或下箭头滑行，Esc 跳过开场或暂停。触屏：轻点跳跃，下滑滑行。",
       "works.sub": "精选项目", "works.empty": "还在路上收集。",
       "about.sub": "路上的人", "about.manifesto": "路是边走边画出来的。",
       "notes.sub": "制作笔记", "notes.all": "阅读全部 ↗",
@@ -847,11 +847,11 @@
       "hero.title": "Code with craft. <br>Design with soul.",
       "hero.sub": "Keep walking, keep drawing.",
       "hero.hint": "[LMB] Jump · [RMB] Slide ｜ [↺ Redraw] ｜ [⏸ Pause]",
-      "hero.hint.touch": "[Tap] Jump",
+      "hero.hint.touch": "[Tap] Jump · [Swipe down] Slide",
       "hero.setout": "Set out", "hero.skip": "Set out",
       "hero.redraw": "↺ Redraw", "hero.pause": "⏸ Pause", "hero.play": "▶ Resume",
       "hero.skipping": "Click to set out",
-      "a11y.controls": "Keyboard: Space or Up to jump, Shift, S or Down to slide. Esc skips the intro or pauses.",
+      "a11y.controls": "Keyboard: Space or Up to jump, Shift, S or Down to slide. Esc skips the intro or pauses. Touch: tap to jump, swipe down to slide.",
       "works.sub": "Selected projects", "works.empty": "Still collecting on the road.",
       "about.sub": "Who is on the road", "about.manifesto": "Draw the road as we go.",
       "notes.sub": "Making notes", "notes.all": "Read all notes ↗",
@@ -1119,12 +1119,19 @@
     stumbleDur: 1.5, rejoinBoost: 1.15,
   };
 
+  // 营地段长度：预画水平路线，小队在此完成出发仪式。
+  const CAMP_END = 420;
+  // 低矮通道：净空给滑行 hitbox（11px）留量，拱顶上沿让整跃可过、低跳会撞。
+  const TUNNEL_CLEAR = 16;
+  const TUNNEL_ROOF = 36;
+
   let cameraX = 0, paused = false;
   let mode = reduceMotion ? "await" : "camp"; // camp → point → walk → play
   let modeT = 0;
-  let pathPoints = [];
-  let objects = [];
-  let obstacles = [];
+  // 一笔成景的唯一真源：相对 baseY 的路线采样与语义区间。
+  let routePoints = [];
+  let routeFeatures = [];
+  let objects = []; // 仅辅助笔画，不再改变地面或碰撞。
   let particles = [];
   let stumbleT = 0, jumpBuf = 0, coyote = 0;
   let jumping = false, sliding = 0, slideBuf = 0, vy = 0, playerY = 0;
@@ -1135,12 +1142,15 @@
   let hintPulsed = false;
   let stageVisible = true;
   let fireX = 263;        // 篝火世界坐标 = 开镜小队中心（0.22·W），由 resetWorld/resize 派生
-  let drawnX = 420;       // 地线已画到哪（补画前沿）：skip/重绘后从营地端快速追到笔尖
+  let drawnX = CAMP_END;  // 路线已描到哪（补画前沿）：skip/重绘后从营地端快速追到笔尖
   let speedRamp = 120;    // 节奏曲线：120 → 190（+0.8/s），踉跄回落 40
   let prevY = 0;          // 落地检测（上一帧高度）
   let lastMile = 0;       // 里程碑计数（每 1000px = 100m）
   let bestMile = 0;       // 本 seed 最佳里程碑（localStorage，仅本地）
   let hintTimer = 0;
+  // 视觉跟随留一小段历史：碰撞始终锚定 Chestnut，后两只只在画面上错相跟随。
+  let motionClock = 0;
+  let mascotMotion = [];
   const isTouch = matchMedia("(pointer: coarse)").matches;
   // 夜空点缀随系统时间（22:00–5:00 月牙与星）；纸面恒为纸白
   const isNight = (() => { const h = new Date().getHours(); return h >= 22 || h < 5; })();
@@ -1156,26 +1166,85 @@
     return (hash1(i) * (1 - u) + hash1(i + 1) * u) * 2 - 1;
   }
 
-  function terrainY(worldX) {
-    // 营地段近水平，500 后平滑接入起伏（避免台阶/折角）
-    const k = worldX < 420 ? 0 : worldX > 620 ? 1 : (worldX - 420) / 200;
-    const s = k * k * (3 - 2 * k);
-    let y = baseY + (10 * Math.sin(worldX / 320) + 4 * Math.sin(worldX / 110 + 0.7)) * s;
-    for (const o of obstacles) {
-      const dx = worldX - o.x;
-      const hw = o.w;
-      if (dx > -hw && dx < hw) {
-        const u = dx / hw;
-        const bell = Math.cos((u * Math.PI) / 2);
-        if (o.type === "pit" || o.type === "stream") y += (o.depth || 22) * bell * bell;
-        if (o.type === "valley") y += 18 * bell * bell;
-        if (o.type === "rock" || o.type === "stone") y -= (o.h || 14) * bell * bell;
-        if (o.type === "mud") y += 10 * bell * bell;
-      }
-    }
-    return y + (noise1(worldX * 0.11) * 0.7 + noise1(worldX * 0.03) * 0.5) * s;
+  const ROUTE_STEP = 5;
+  const ROUTE_MAX = 2048;
+  const smooth = (u) => u * u * (3 - 2 * u);
+
+  function sampleRoute(worldX) {
+    if (!routePoints.length) return { x: worldX, dy: 0 };
+    if (worldX <= routePoints[0].x) return routePoints[0];
+    const last = routePoints[routePoints.length - 1];
+    if (worldX >= last.x) return last;
+    // 采样点严格等距，索引可直接推算；clamp 只防御首尾边界的浮点误差。
+    const index = Math.max(0, Math.min(routePoints.length - 2,
+      Math.floor((worldX - routePoints[0].x) / ROUTE_STEP)));
+    const a = routePoints[index], b = routePoints[index + 1];
+    const t = b.x === a.x ? 0 : (worldX - a.x) / (b.x - a.x);
+    return { x: worldX, dy: a.dy + (b.dy - a.dy) * t };
   }
-  const tangentAt = (wx) => (terrainY(wx + 4) - terrainY(wx - 4)) / 8;
+
+  function heightAt(worldX) { return baseY + sampleRoute(worldX).dy; }
+  const tangentAt = (wx) => (heightAt(wx + 4) - heightAt(wx - 4)) / 8;
+
+  function routeFeatureAt(worldX) {
+    for (let i = routeFeatures.length - 1; i >= 0; i--) {
+      const f = routeFeatures[i];
+      if (worldX >= f.x0 && worldX <= f.x1) return f;
+    }
+    return null;
+  }
+
+  /** 宽度吸附到整步长：区间端点必然是真实采样点，索引可直接推算。
+      每个地貌都是「进入 → 主轮廓 → 退出」一段可读单笔：起收两端斜率归零，
+      与相邻平地切向连续，因此不会出现台阶或折角。 */
+  function snapSpan(width) {
+    return Math.max(ROUTE_STEP, Math.round(width / ROUTE_STEP) * ROUTE_STEP);
+  }
+
+  function appendProfile(x0, width, kind, interaction, options) {
+    const start = sampleRoute(x0).dy;
+    const slope = options && options.slope || 0;
+    const depth = options && options.depth || 0;
+    const lift = options && options.lift || 0;
+    const span = snapSpan(width);
+    const x1 = x0 + span;
+    for (let x = x0 + ROUTE_STEP; x <= x1; x += ROUTE_STEP) {
+      const u = (x - x0) / span;
+      const bell = Math.sin(Math.PI * u);
+      const dy = start + slope * u + depth * bell * bell - lift * bell * bell;
+      routePoints.push({ x, dy });
+    }
+    const feature = {
+      kind, x0, x1, span, interaction: interaction || null, depth, lift,
+    };
+    routeFeatures.push(feature);
+    return feature;
+  }
+
+  function appendFlat(x0, width) {
+    const start = sampleRoute(x0).dy;
+    const x1 = x0 + snapSpan(width);
+    for (let x = x0 + ROUTE_STEP; x <= x1; x += ROUTE_STEP)
+      routePoints.push({ x, dy: start });
+    return x1;
+  }
+
+  function appendRouteFeature(x0, kind) {
+    const specs = {
+      flat: [120, 0, null, {}],
+      hill: [180, 0, null, { lift: 20, slope: (rnd() - 0.5) * 8 }],
+      cloud: [220, 0, null, { lift: 15, slope: (rnd() - 0.5) * 10 }],
+      stream: [76, "jump", "jump", { depth: 24 }],
+      valley: [112, "jump", "jump", { depth: 29 }],
+      mud: [70, "jump", "jump", { depth: 12 }],
+      stone: [64, "jump", "jump", { lift: 17 }],
+      arch: [156, 0, null, { lift: 24, slope: (rnd() - 0.5) * 6 }],
+      tunnel: [138, "slide", "slide", {}],
+    };
+    const [width, semantic, interaction, profile] = specs[kind] || specs.flat;
+    const feature = appendProfile(x0, width, kind, interaction || semantic, profile);
+    return { x: feature.x1, feature };
+  }
 
   /* ── 一笔画场景 ──
      除天空云朵外，全部由笔尖 stroke-reveal 描出。
@@ -1223,7 +1292,7 @@
     if (kind === "hill") return [[
       [-46, 0], [-28, -14], [-12, -22], [0, -14], [16, -24], [32, -12], [46, 0],
     ]];
-    // 小溪：只画水纹（谷形交给 terrainY，避免叠成 X）
+    // 小溪水纹只作辅助笔画；谷形来自同一条路线，避免叠成 X。
     if (kind === "stream") return [
       [[-18, -4], [-9, -7], [0, -4], [9, -7], [18, -4]],
       [[-12, -11], [-3, -13], [6, -11], [14, -13]],
@@ -1359,12 +1428,11 @@
     return (rough[kind] || 16) * (s || 1);
   }
 
-  /** 在不与已有地貌重合的前提下落一件 */
-  function placeObject(cursorX, kind, s, withObstacle) {
+  /** 辅助笔画只负责景物，不参与可走路线和碰撞。 */
+  function placeObject(cursorX, kind, s) {
     const hw = halfWidthOf(kind, s);
     const minGap = 48;
     let x = cursorX + hw + minGap + rnd() * 40;
-    // 若与已有 objects 过近则右推（双保险）
     for (let guard = 0; guard < 8; guard++) {
       let hit = false;
       for (const e of objects) {
@@ -1374,99 +1442,54 @@
       if (!hit) break;
       x += 70;
     }
-    const obj = { x, kind, s: s || 1, p: 0, on: false, strokes: null };
-    objects.push(obj);
-    if (withObstacle === "jump-pit") obstacles.push({ x, type: "stream", w: 28, depth: 18 });
-    else if (withObstacle === "jump-valley") obstacles.push({ x, type: "valley", w: 36, depth: 22 });
-    else if (withObstacle === "jump-mud") obstacles.push({ x, type: "mud", w: 22, depth: 14 });
-    else if (withObstacle === "jump-stone") obstacles.push({ x, type: "stone", w: 18, h: 16 });
-    else if (withObstacle === "roll-bridge") obstacles.push({ x, type: "roll", w: 36, clear: 22, tall: 38 });
-    else if (withObstacle === "roll-cave") obstacles.push({ x, type: "roll", w: 34, clear: 20, tall: 44 });
+    objects.push({ x, kind, s: s || 1, p: 0, on: false, strokes: null });
     return x + hw;
   }
 
-  function ensureWorld(xTo) {
-    // 生成牌堆：11 类地貌各至少按序出现，再洗牌循环（治「缺项」）
-    if (!ensureWorld._deck) {
-      ensureWorld._deck = [
-        "cabin", "tree", "hill", "stream", "flower", "stone",
-        "valley", "bridge", "mud", "cave", "clocktower", "shop",
-        "combo-pits", "tree", "flower", "hill", "mush",
-        "combo-bridge-pit",
+  function ensureRoute(xTo) {
+    if (!ensureRoute._deck) {
+      ensureRoute._deck = [
+        "flat", "hill", "stream", "cloud", "mud", "arch", "valley",
+        "tunnel", "flat", "stone", "hill", "stream", "cloud", "tunnel",
       ];
+      ensureRoute._i = 0;
+      ensureRoute._cursor = CAMP_END;
     }
-    if (ensureWorld._i == null) ensureWorld._i = 0;
-    if (ensureWorld._cursor == null) ensureWorld._cursor = 700;
-
-    while (obstacles.length < 50) {
-      const xHint = ensureWorld._cursor;
-      if (xHint > xTo + 1500 && obstacles.length > 3) break;
-
-      // 营地段（<900）只出风景，禁止 roll 桥/洞挖断地线
-      if (xHint < 900) {
-        const k = ensureWorld._deck[ensureWorld._i++ % ensureWorld._deck.length];
-        if (["cabin", "tree", "clocktower", "shop", "hill", "flower", "mush"].includes(k)) {
-          ensureWorld._cursor = placeObject(xHint, k, 0.9 + rnd() * 0.25, null);
-        } else {
-          ensureWorld._cursor = xHint + 200;
-        }
-        continue;
-      }
-
-      const k = ensureWorld._deck[ensureWorld._i++ % ensureWorld._deck.length];
-      if (ensureWorld._i % ensureWorld._deck.length === 0) {
-        for (let i = ensureWorld._deck.length - 1; i > 0; i--) {
+    while (ensureRoute._cursor < xTo + 220) {
+      const kind = ensureRoute._deck[ensureRoute._i++ % ensureRoute._deck.length];
+      if (ensureRoute._i % ensureRoute._deck.length === 0) {
+        for (let i = ensureRoute._deck.length - 1; i > 0; i--) {
           const j = (rnd() * (i + 1)) | 0;
-          const t = ensureWorld._deck[i];
-          ensureWorld._deck[i] = ensureWorld._deck[j];
-          ensureWorld._deck[j] = t;
+          [ensureRoute._deck[i], ensureRoute._deck[j]] = [ensureRoute._deck[j], ensureRoute._deck[i]];
         }
       }
-
-      let right;
-      if (k === "stream") right = placeObject(xHint, "stream", 1, "jump-pit");
-      else if (k === "valley") right = placeObject(xHint, "valley", 1, "jump-valley");
-      else if (k === "mud") right = placeObject(xHint, "mud", 1, "jump-mud");
-      else if (k === "stone") right = placeObject(xHint, "stone", 1, "jump-stone");
-      else if (k === "bridge") right = placeObject(xHint, "bridge", 1, isTouch && ensureWorld._i % 2 === 0 ? null : "roll-bridge");
-      else if (k === "cave") right = placeObject(xHint, "cave", 1, isTouch && ensureWorld._i % 2 === 0 ? null : "roll-cave");
-      else if (k === "combo-pits") {
-        const x1 = placeObject(xHint, "stream", 1, "jump-pit");
-        right = placeObject(x1 + 58, "stream", 1, "jump-pit");
-      }
-      else if (k === "combo-bridge-pit") {
-        const x1 = placeObject(xHint, "bridge", 1, isTouch && ensureWorld._i % 2 === 0 ? null : "roll-bridge");
-        right = placeObject(x1 + 70, "stream", 1, "jump-pit");
-      }
-      else {
-        right = placeObject(xHint, k, 0.88 + rnd() * 0.28, null);
-        // 伴生也走防重叠
-        if (rnd() < 0.35) {
-          const ck = ["tree", "flower", "mush"][(rnd() * 3) | 0];
-          right = placeObject(right, ck, 0.75 + rnd() * 0.25, null);
-        }
-      }
-      // 间距随节奏曲线等比放大：速度上升时时间节奏保持连贯
-      ensureWorld._cursor = right + (60 + rnd() * 80) * (speedRamp / 120);
+      const gap = 42 + rnd() * 58;
+      ensureRoute._cursor = appendFlat(ensureRoute._cursor, gap);
+      ensureRoute._cursor = appendRouteFeature(ensureRoute._cursor, kind).x;
     }
-    // 里程碑石：每 1000px（100m）由笔画出
-    ensureWorld._mile = ensureWorld._mile || 1000;
+    const keepFrom = cameraX - 400;
+    while (routeFeatures.length && routeFeatures[0].x1 < keepFrom) routeFeatures.shift();
+    while (routePoints.length > ROUTE_MAX) routePoints.splice(0, Math.min(160, routePoints.length - ROUTE_MAX));
+  }
+
+  function ensureWorld(xTo) {
+    ensureRoute(xTo);
+    if (ensureWorld._deck == null) {
+      ensureWorld._deck = ["tree", "hill", "flower", "mush", "sign", "milestone"];
+      ensureWorld._i = 0;
+      ensureWorld._cursor = 700;
+      ensureWorld._mile = 1000;
+    }
+    while (ensureWorld._cursor < xTo + 700) {
+      const kind = ensureWorld._deck[ensureWorld._i++ % ensureWorld._deck.length];
+      ensureWorld._cursor = placeObject(ensureWorld._cursor, kind, 0.78 + rnd() * 0.28)
+        + 70 + rnd() * 90;
+    }
     while (ensureWorld._mile < xTo) {
-      placeObject(ensureWorld._mile, "milestone", 1, null);
+      placeObject(ensureWorld._mile, "milestone", 1);
       ensureWorld._mile += 1000;
     }
-    const penX = cameraX + W * 0.85;
-    if (!pathPoints.length) pathPoints.push({ x: 0 });
-    let lastX = pathPoints[pathPoints.length - 1].x;
-    // 统一 5px 步长，避免 5/6 混用在衔接处留缝
-    while (lastX < penX) {
-      lastX += 5;
-      pathPoints.push({ x: lastX });
-      if (pathPoints.length > 2400) pathPoints.splice(0, 240);
-    }
-    // 回收离场对象：内存平稳，路径点有上限
     const keepFrom = cameraX - 400;
-    while (obstacles.length && obstacles[0].x < keepFrom) obstacles.shift();
     while (objects.length && objects[0].x < keepFrom) objects.shift();
   }
 
@@ -1474,17 +1497,14 @@
     srand(newSeed);
     cameraX = 0;
     fireX = W * 0.22;   // 单一锚点：篝火 = 开镜小队中心（与队形同源，任意窗宽重合）
-    drawnX = mode === "play" ? 420      // redraw starts at the camp edge
+    drawnX = mode === "play" ? CAMP_END      // redraw starts at the camp edge
       : cameraX + W * 0.85;             // camp state is pre-drawn to the pen
     speedRamp = 120; lastMile = 0;
     try { bestMile = parseInt(localStorage.getItem("lucky.best." + newSeed), 10) || 0; } catch (err) { bestMile = 0; }
-    // 营地段预画地线（t=0 即可见、略粗）：只存 x，Y 绘制时现算
-    pathPoints = [];
-    for (let x = 0; x <= 420; x += 5) {
-      pathPoints.push({ x });
-    }
-    obstacles = [];
-    // 村落开镜：屋舍在小队身后（跟随 0.22·W 锚点，pre-drawn），前方只有路
+    // 营地段预画为水平路线；dy 相对 baseY，resize 后不需要重建。
+    routePoints = [];
+    for (let x = 0; x <= 420; x += ROUTE_STEP) routePoints.push({ x, dy: 0 });
+    routeFeatures = [];
     objects = [
       { x: fireX - 205, kind: "cabin", s: 0.92, p: 1, on: true, strokes: null },
       { x: fireX - 112, kind: "shop", s: 0.88, p: 1, on: true, strokes: null },
@@ -1494,13 +1514,18 @@
       { x: fireX + 620, kind: "clocktower", s: 0.85, p: 1, on: true, strokes: null },
     ];
     particles = [];
+    mascotMotion = [];
+    motionClock = 0;
     playerY = 0; vy = 0; jumping = false; sliding = 0;
     stumbleT = 0; gaitBoost = 1;
     departBlend = mode === "camp" || mode === "point" ? 0 : departBlend;
-    // 生成游标从营地塔之后开始，禁止与营地地貌重合
+    ensureRoute._cursor = 420;
+    ensureRoute._i = 0;
+    ensureRoute._deck = null;
     ensureWorld._cursor = 880;
     ensureWorld._mile = 1000;
-    ensureWorld._i = ensureWorld._i || 0;
+    ensureWorld._i = 0;
+    ensureWorld._deck = null;
     ensureWorld(cameraX + W + 200);
   }
 
@@ -1541,29 +1566,53 @@
     }
   }
 
-  /** 补画前沿追赶笔尖：正常行进时贴着笔，skip/重绘后 0.3–0.5s 把欠账快速画完 */
+  /** 补画前沿追赶笔尖：进度映射到路线已完成的实际采样位置。 */
   function advanceFront(dt, camSpd) {
     const penX = cameraX + W * 0.85;
     drawnX = Math.min(penX, drawnX + Math.max((camSpd || P.speed) * dt, (penX - drawnX) * Math.min(1, dt * 6)));
   }
 
   function drawPath() {
-    if (pathPoints.length < 2) return;
+    if (routePoints.length < 2) return;
     ctx.lineWidth = 2.2;
     ctx.strokeStyle = "#18181A";
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
-    // Continuous terrain polyline, clipped at the current reveal front.
     ctx.beginPath();
-    for (let i = 0; i < pathPoints.length; i++) {
-      const x = pathPoints[i].x;
-      if (x > drawnX) break;
-      const sx = x - cameraX;
-      const sy = terrainY(x);
-      if (i === 0) ctx.moveTo(sx, sy);
-      else ctx.lineTo(sx, sy);
+    let started = false;
+    for (let i = 0; i < routePoints.length; i++) {
+      const p = routePoints[i];
+      if (p.x > drawnX) {
+        if (i > 0 && routePoints[i - 1].x < drawnX) {
+          const edge = sampleRoute(drawnX);
+          ctx.lineTo(drawnX - cameraX, baseY + edge.dy);
+        }
+        break;
+      }
+      if (!started) { ctx.moveTo(p.x - cameraX, baseY + p.dy); started = true; }
+      else ctx.lineTo(p.x - cameraX, baseY + p.dy);
     }
     ctx.stroke();
+  }
+
+  function drawTunnelArches() {
+    ctx.strokeStyle = "#18181A";
+    ctx.lineWidth = 1.55;
+    ctx.lineCap = "round";
+    for (const f of routeFeatures) {
+      if (f.kind !== "tunnel" || f.x0 >= drawnX || f.x1 < cameraX - 80 || f.x0 > cameraX + W + 80) continue;
+      const progress = Math.max(0, Math.min(1, (drawnX - f.x0) / (f.x1 - f.x0)));
+      const start = heightAt(f.x0);
+      const n = 18;
+      ctx.beginPath();
+      for (let i = 0; i <= n * progress; i++) {
+        const u = i / n;
+        const x = f.x0 + (f.x1 - f.x0) * u - cameraX;
+        const y = start - TUNNEL_ROOF * Math.sin(Math.PI * u);
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
   }
 
   function drawObjects(layer) {
@@ -1576,7 +1625,7 @@
       const sx = o.x - cameraX;
       if (sx < -120 || sx > W + 120) continue;
       if (o.p <= 0) continue;
-      const sy = terrainY(o.x);
+      const sy = heightAt(o.x);
       const sc = o.s || 1;
 
       if (layer === "back") {
@@ -1622,7 +1671,7 @@
     const worldPen = cameraX + penX;
     // 笔尖严格锁在路径最前端（与 ensureWorld / particles 同一公式）
     const tipX = worldPen;
-    const tipY = terrainY(tipX);
+    const tipY = heightAt(tipX);
     const target = 0.22 + Math.max(-0.26, Math.min(0.26, Math.atan(tangentAt(tipX)) * 0.85));
     penAng += (target - penAng) * Math.min(1, (dt || 0.016) * 8);
     const still = mode === "await";
@@ -1692,191 +1741,245 @@
     ctx.globalAlpha = 1;
   }
 
-  /* 角色：干净比例 + 自然行走循环 + 翻滚（720°/0.55s，文档 §3/§5.3） */
-  function walkPose(time, phase) {
-    // 快步跑：大一点的步幅 + 前倾，避免「原地滑步」
-    const p = time * 13 + phase;
+  /* 角色：共享物理锚点 + 各自的呼吸、步态与二级动作。 */
+  const MASCOTS = [
+    { phase: 0, lag: 0, stride: 7.2, bob: 1.55, lean: 0.10 },
+    { phase: 1.3, lag: 0.04, stride: 6.1, bob: 1.15, lean: 0.075 },
+    { phase: 2.6, lag: 0.08, stride: 7.8, bob: 1.8, lean: 0.12 },
+  ];
+
+  function walkPose(time, config) {
+    const p = time * 13 + config.phase;
+    const blinkCycle = (time * 0.72 + config.phase * 0.13) % 1;
     return {
-      bob: Math.abs(Math.sin(p)) * 1.4,
-      legL: Math.sin(p) * 7,
-      legR: Math.sin(p + Math.PI) * 7,
-      lean: 0.1 + Math.sin(p) * 0.03,
+      bob: Math.abs(Math.sin(p)) * config.bob,
+      legL: Math.sin(p) * config.stride,
+      legR: Math.sin(p + Math.PI) * config.stride,
+      lean: config.lean + Math.sin(p) * 0.03,
+      breath: Math.sin(time * 3.1 + config.phase) * 0.55,
+      blink: blinkCycle > 0.91 && blinkCycle < 0.965,
+      step: Math.sin(p),
     };
   }
-  // 翻滚姿态：以身体中心为轴 720° 自旋 + 压扁（hitbox ×0.4）
-  /** 滑行：压低身姿 + 前倾，不自旋 */
+
   function applySlide(sx, sy) {
     ctx.rotate(-0.28);
     ctx.scale(sx, sy);
   }
 
-  function drawChestnut(x, y, squash, time, roll, phase, pose) {
-    const w = walkPose(time, phase || 0);
+  function drawChestnut(x, y, squash, time, roll, config, pose) {
+    const w = walkPose(time, config);
     ctx.save();
     ctx.translate(x, y);
-    const s = 0.8;
+    const s = 0.82;
     if (roll != null) applySlide(s * 1.18, s * 0.48);
     else {
       ctx.translate(0, -w.bob);
       ctx.rotate(w.lean);
-      ctx.scale(s, s * (1 - squash * 0.08));
+      ctx.scale(s, s * (1 - squash * 0.10));
     }
     ctx.lineWidth = 1.5;
     ctx.strokeStyle = "#18181A";
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
 
-    // 柠檬黄小背包（白底品牌点缀）
+    // 蓬松尾巴在身后，背包随步态摆动，保持小队唯一的明亮点。
+    ctx.beginPath();
+    ctx.moveTo(-6, -12);
+    ctx.quadraticCurveTo(-15, -16 + w.step * 1.3, -12, -24);
+    ctx.quadraticCurveTo(-8, -28, -6, -22);
+    ctx.stroke();
+    const packSwing = roll != null ? 0 : w.step * 1.8;
     ctx.fillStyle = "#FFDE59";
     ctx.beginPath();
-    ctx.moveTo(11, -17); ctx.lineTo(16.5, -17); ctx.lineTo(16.5, -6); ctx.lineTo(11, -6);
+    ctx.roundRect(10, -18 + packSwing, 7, 12, 2.5);
+    ctx.fill(); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(11, -15 + packSwing); ctx.quadraticCurveTo(7, -20, 5, -16);
+    ctx.stroke();
+
+    // 饱满的脸颊与不对称耳形。
+    ctx.fillStyle = "#FFFFFF";
+    ctx.beginPath();
+    ctx.moveTo(-6, -7);
+    ctx.quadraticCurveTo(-9, -14, -6, -21);
+    ctx.quadraticCurveTo(-9, -29, -3, -28);
+    ctx.quadraticCurveTo(0, -34, 5, -29);
+    ctx.quadraticCurveTo(12, -29, 12, -20);
+    ctx.quadraticCurveTo(13, -12, 8, -7);
+    ctx.quadraticCurveTo(1, -3, -6, -7);
     ctx.closePath(); ctx.fill(); ctx.stroke();
 
-    // 身 + 头 + 双耳：一笔连续
-    ctx.beginPath();
-    ctx.moveTo(-5, -7);
-    ctx.quadraticCurveTo(-7, -16, -5, -22);
-    ctx.quadraticCurveTo(-8, -29, -2, -27);
-    ctx.quadraticCurveTo(1, -33, 5, -28);
-    ctx.quadraticCurveTo(11, -28, 11, -20);
-    ctx.quadraticCurveTo(12, -12, 8, -7);
-    ctx.stroke();
-
-    // 尾
-    ctx.beginPath();
-    ctx.moveTo(-5, -11);
-    ctx.quadraticCurveTo(-13, -15, -11, -23);
-    ctx.stroke();
-
-    // 腿（翻滚时收起）
     if (roll != null) {
       ctx.beginPath();
       ctx.moveTo(-3, -6); ctx.quadraticCurveTo(-1, -2, -4, -1);
       ctx.moveTo(4, -6); ctx.quadraticCurveTo(6, -2, 3, -1);
-      ctx.stroke();
     } else {
       ctx.beginPath();
       ctx.moveTo(-2, -5); ctx.lineTo(-2 + w.legL, 0);
       ctx.moveTo(3, -5); ctx.lineTo(3 + w.legR, 0);
-      ctx.stroke();
     }
+    ctx.stroke();
 
-    // 姿态：伸懒腰（营地呼吸）/ 指路（出发仪式，文档 §6.1）
     if (pose === "stretch") {
+      // 营地里回头整理背包，动作收在身体附近。
       ctx.beginPath();
-      ctx.moveTo(0, -26); ctx.quadraticCurveTo(-2 - Math.sin(time * 2) * 1.5, -31, -4, -34);
-      ctx.moveTo(6, -25); ctx.quadraticCurveTo(8 + Math.sin(time * 2) * 1.5, -30, 10, -33);
+      ctx.moveTo(5, -16); ctx.quadraticCurveTo(10, -12 + Math.sin(time * 2) * 1.2, 12, -9);
+      ctx.moveTo(-1, -25); ctx.quadraticCurveTo(-2, -31, -5, -33);
       ctx.stroke();
     } else if (pose === "point") {
       ctx.beginPath();
-      ctx.moveTo(4, -21);
-      ctx.quadraticCurveTo(10, -22, 15, -19);
+      ctx.moveTo(4, -20); ctx.quadraticCurveTo(11, -22, 16, -19);
       ctx.stroke();
-      ctx.beginPath();
-      ctx.arc(15.5, -19, 1, 0, Math.PI * 2);
-      ctx.fillStyle = "#18181A"; ctx.fill();
+      ctx.fillStyle = "#18181A";
+      ctx.beginPath(); ctx.arc(16.4, -19, 1.05, 0, Math.PI * 2); ctx.fill();
     }
 
     ctx.fillStyle = "#18181A";
     ctx.beginPath();
-    ctx.arc(0, -21, 0.85, 0, Math.PI * 2);
-    ctx.arc(5, -21, 0.85, 0, Math.PI * 2);
+    if (w.blink) {
+      ctx.moveTo(-0.8, -21); ctx.lineTo(1, -21);
+      ctx.moveTo(5.1, -21); ctx.lineTo(6.9, -21);
+      ctx.stroke();
+    } else {
+      ctx.arc(0.2, -21, 0.95, 0, Math.PI * 2);
+      ctx.arc(6, -21, 0.95, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.beginPath();
+    ctx.arc(3.1, -17.5, 0.85, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
   }
 
-  function drawCloudy(x, y, squash, time, roll, phase) {
-    const w = walkPose(time, phase != null ? phase : 1.3);
+  function drawCloudy(x, y, squash, time, roll, config, pose) {
+    const w = walkPose(time, config);
     ctx.save();
     ctx.translate(x, y);
-    const s = 0.8;
+    const s = 0.84;
     if (roll != null) applySlide(s * 1.18, s * 0.48);
     else {
-      ctx.translate(0, -w.bob);
+      ctx.translate(0, -w.bob + w.breath * 0.35);
       ctx.rotate(w.lean);
-      ctx.scale(s, s * (1 - squash * 0.08));
+      ctx.scale(s, s * (1 - squash * 0.10));
     }
     ctx.lineWidth = 1.5;
     ctx.strokeStyle = "#18181A";
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
 
-    // 垂耳兔：一笔耳→头→身→耳（白填充遮住背后的线条）
+    const earBounce = roll != null ? 0 : Math.max(0, -playerY / 42) * 2 + w.step * 1.2;
+    // 水滴身形：一长一短的软垂耳包住圆脸。
     ctx.fillStyle = "#FFFFFF";
     ctx.beginPath();
     ctx.moveTo(-7, -12);
-    ctx.quadraticCurveTo(-13, -4, -11, 3);
-    ctx.quadraticCurveTo(-7, -1, -6, -11);
-    ctx.quadraticCurveTo(-4, -24, 3, -25);
-    ctx.quadraticCurveTo(9, -24, 10, -16);
-    ctx.quadraticCurveTo(14, -8, 15, 1);
-    ctx.quadraticCurveTo(12, -6, 9, -12);
-    ctx.quadraticCurveTo(10, -5, 5, -3);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    ctx.quadraticCurveTo(-15, -7 + earBounce, -12, 3);
+    ctx.quadraticCurveTo(-8, 1, -6, -10);
+    ctx.quadraticCurveTo(-5, -25, 3, -27);
+    ctx.quadraticCurveTo(11, -25, 10, -15);
+    ctx.quadraticCurveTo(15, -9 + earBounce * 0.65, 15, -1);
+    ctx.quadraticCurveTo(11, -3, 8, -13);
+    ctx.quadraticCurveTo(9, -3, 4, -2);
+    ctx.quadraticCurveTo(-3, -1, -7, -12);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
 
     if (roll != null) {
       ctx.beginPath();
-      ctx.moveTo(-2, -6); ctx.quadraticCurveTo(0, -2, -3, -1);
-      ctx.moveTo(4, -6); ctx.quadraticCurveTo(6, -2, 3, -1);
-      ctx.stroke();
+      ctx.moveTo(-2, -5); ctx.quadraticCurveTo(0, -2, -3, -1);
+      ctx.moveTo(4, -5); ctx.quadraticCurveTo(6, -2, 3, -1);
     } else {
       ctx.beginPath();
       ctx.moveTo(-1, -3); ctx.lineTo(-1 + w.legL, 0);
       ctx.moveTo(3, -3); ctx.lineTo(3 + w.legR, 0);
+    }
+    ctx.stroke();
+
+    if (pose === "camp") {
+      ctx.beginPath();
+      ctx.moveTo(8, -17); ctx.quadraticCurveTo(12, -21, 11, -26);
+      ctx.moveTo(-1, -13); ctx.quadraticCurveTo(-6, -14, -8, -17);
       ctx.stroke();
+      ctx.strokeStyle = "#6CC6D9";
+      ctx.beginPath();
+      ctx.moveTo(-8, -17); ctx.lineTo(-9, -9); ctx.stroke();
+      ctx.strokeStyle = "#18181A";
     }
 
     ctx.fillStyle = "#18181A";
-    ctx.beginPath();
-    ctx.arc(1, -17, 0.85, 0, Math.PI * 2);
-    ctx.arc(6, -17, 0.85, 0, Math.PI * 2);
-    ctx.fill();
+    if (w.blink) {
+      ctx.beginPath();
+      ctx.moveTo(0, -18); ctx.lineTo(2.2, -18);
+      ctx.moveTo(6.3, -18); ctx.lineTo(8.5, -18);
+      ctx.stroke();
+    } else {
+      ctx.beginPath();
+      ctx.ellipse(1.1, -18, 0.75, 1.15, 0, 0, Math.PI * 2);
+      ctx.ellipse(7.1, -18, 0.75, 1.15, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    if (Math.sin(time * 0.9 + config.phase) > 0.78) {
+      ctx.strokeStyle = "#FF9F43";
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(-1.5, -14); ctx.lineTo(0.5, -14); ctx.moveTo(8, -14); ctx.lineTo(10, -14); ctx.stroke();
+    }
     ctx.restore();
   }
 
-  function drawKuro(x, y, squash, time, roll, phase) {
-    const w = walkPose(time * 1.25, phase != null ? phase : 2.6);
+  function drawKuro(x, y, squash, time, roll, config, pose) {
+    const w = walkPose(time * 1.16, config);
     ctx.save();
     ctx.translate(x, y);
-    const s = 0.8;
+    const s = 0.82;
     if (roll != null) applySlide(s * 1.15, s * 0.5);
     else {
-      ctx.translate(0, -w.bob * 0.85);
+      const hop = pose === "camp" ? Math.max(0, Math.sin(time * 5 + config.phase)) * 3 : 0;
+      ctx.translate(0, -w.bob * 0.8 - hop);
       ctx.rotate(w.lean);
-      ctx.scale(s, s * (1 - squash * 0.08));
+      ctx.scale(s, s * (1 - squash * 0.10));
     }
     ctx.lineWidth = 1.5;
     ctx.strokeStyle = "#18181A";
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
 
-    // 黑毛团（#18181A 填充，豆豆眼反白）
+    // 略不规则的绒毛边缘与头顶小羽毛。
     ctx.fillStyle = "#18181A";
     ctx.beginPath();
-    ctx.arc(0, -10, 8.2, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.moveTo(-7, -9);
+    ctx.quadraticCurveTo(-9, -15, -5, -19);
+    ctx.quadraticCurveTo(-2, -24, 1, -20);
+    ctx.quadraticCurveTo(5, -24, 8, -18);
+    ctx.quadraticCurveTo(11, -13, 7, -7);
+    ctx.quadraticCurveTo(3, -2, -4, -4);
+    ctx.quadraticCurveTo(-8, -4, -7, -9);
+    ctx.closePath(); ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(0, -20); ctx.quadraticCurveTo(-1, -26, 3, -28); ctx.quadraticCurveTo(4, -24, 5, -22);
+    ctx.stroke();
+
+    const wing = roll != null ? 0 : (jumping || pose === "camp" ? -4 - w.step * 2 : -1.5 + w.step * 1.3);
+    ctx.beginPath();
+    ctx.moveTo(-5, -12); ctx.quadraticCurveTo(-10, -13 + wing, -10, -8 + wing * 0.4);
+    ctx.moveTo(7, -12); ctx.quadraticCurveTo(12, -13 - wing * 0.5, 11, -8 - wing * 0.25);
+    ctx.stroke();
 
     if (roll != null) {
       ctx.beginPath();
       ctx.moveTo(-2, -4); ctx.quadraticCurveTo(0, -1, -3, 0);
       ctx.moveTo(2, -4); ctx.quadraticCurveTo(4, -1, 1, 0);
-      ctx.stroke();
     } else {
       ctx.beginPath();
       ctx.moveTo(-2, -3); ctx.lineTo(-2 + w.legL, 0);
       ctx.moveTo(2, -3); ctx.lineTo(2 + w.legR, 0);
-      ctx.stroke();
     }
+    ctx.stroke();
 
     ctx.fillStyle = "#FFFFFF";
-    ctx.beginPath();
-    ctx.arc(-2.4, -12, 1.35, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(2.8, -12, 1.35, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.beginPath(); ctx.arc(-2.4, -13, 1.55, 0, Math.PI * 2); ctx.arc(3.2, -13, 1.55, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#18181A";
+    ctx.beginPath(); ctx.arc(-2.1, -12.8, 0.6, 0, Math.PI * 2); ctx.arc(3.5, -12.8, 0.6, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#FFFFFF";
+    ctx.beginPath(); ctx.arc(-1.9, -13.1, 0.22, 0, Math.PI * 2); ctx.arc(3.7, -13.1, 0.22, 0, Math.PI * 2); ctx.fill();
     ctx.restore();
   }
 
@@ -1885,7 +1988,7 @@
     const fx = fireX - cameraX;
     if (fx < -60 || fx > W + 60) return;
     const fade = Math.max(0, Math.min(1, 1 - (cameraX - 600) / 250));
-    const fy = terrainY(fireX);
+    const fy = heightAt(fireX);
     ctx.save();
     ctx.globalAlpha = fade;
     ctx.translate(fx, fy);
@@ -1932,11 +2035,10 @@
     ctx.restore();
   }
 
-  /** 角色群：营地休息位 → 行进队形连续过渡（无瞬移），翻滚/踉跄/跳跃姿态 */
+  /** 角色群：营地休息位 → 行进队形连续过渡（无瞬移），物理只由队首锚点判定。 */
   function drawMascots() {
     const px = W * 0.22;
     const worldX = playerWorldX();
-    const gy = terrainY(worldX) + playerY;
     const ang = Math.atan(tangentAt(worldX)) * 0.35;
     const slideT = sliding > 0 ? 1 - sliding / P.slideDur : null;
     const squash = jumping && playerY < -16 ? 0.2 : stumbleT > 0 ? 0.15 : 0;
@@ -1945,29 +2047,37 @@
       ? departBlend * departBlend * (3 - 2 * departBlend)
       : 0;
     const tAnim = mode === "await" ? 0.3 : modeT * (0.45 + 0.55 * b) * gaitBoost;
-    const pose = mode === "camp" ? (modeT > 0.9 ? "stretch" : "idle")
+    const leaderPose = mode === "camp" ? (modeT > 0.9 ? "stretch" : "idle")
       : mode === "point" ? "point" : null;
-
-    // 单一锚点：休息位 = cameraX=0 时的队形位（同由 0.22·W 派生）。
-    // 起点与终点恒重合，混合只剩步频/贴地姿态过渡——任意窗宽下零位移残差。
-    const phases = [0, 1.3, 2.6];
+    const companionsCampPose = mode === "camp" ? "camp" : null;
     const forms = [-26, 0, 24];
 
+    // 每帧读取共享物理高度。Cloudy/Kuro-Kuro 只读较早的视觉样本，绝不影响碰撞。
+    const delayedMotion = (lag) => {
+      const target = motionClock - lag;
+      for (let i = mascotMotion.length - 1; i >= 0; i--) {
+        if (mascotMotion[i].t <= target) return mascotMotion[i];
+      }
+      return mascotMotion[0] || { y: playerY, slide: slideT };
+    };
+
     for (let i = 0; i < 3; i++) {
+      const config = MASCOTS[i];
+      const visual = delayedMotion(config.lag);
       const X = px + forms[i];
-      const Y = terrainY(cameraX + X) + playerY * b;
-      const tilt = ang * b + (slideT == null && stumbleT > 0 ? Math.sin(modeT * 26) * 0.05 : 0);
+      const Y = heightAt(cameraX + X) + visual.y * b;
+      const tilt = ang * b + (visual.slide == null && stumbleT > 0 ? Math.sin(modeT * 26) * 0.05 : 0);
       ctx.save();
       ctx.translate(X, Y);
       ctx.rotate(tilt);
       ctx.translate(-X, -Y);
-      if (i === 0) drawChestnut(X, Y, squash, tAnim, slideT, phases[i], pose);
-      else if (i === 1) drawCloudy(X, Y, squash, tAnim, slideT, phases[i]);
-      else drawKuro(X, Y, squash, tAnim, slideT, phases[i]);
+      if (i === 0) drawChestnut(X, Y, squash, tAnim, visual.slide, config, leaderPose);
+      else if (i === 1) drawCloudy(X, Y, squash, tAnim, visual.slide, config, companionsCampPose);
+      else drawKuro(X, Y, squash, tAnim, visual.slide, config, companionsCampPose);
       ctx.restore();
     }
 
-    // 滑行扬尘（翻滚拖出的短线）
+    // 滑行扬尘（压低身姿拖出的短线）
     if (slideT != null) {
       ctx.strokeStyle = "rgba(24,24,26,0.22)";
       ctx.lineWidth = 1;
@@ -2007,37 +2117,31 @@
   function collide() {
     if (mode !== "play" || stumbleT > 0) return;
     const wx = playerWorldX();
-    const gy = terrainY(wx);
-    const standH = sliding > 0 ? 11 : 28;   // 滑行 hitbox 压低
+    const feature = routeFeatureAt(wx);
+    if (!feature) return;
+    const gy = heightAt(wx);
+    const standH = sliding > 0 ? 11 : 28;
     const head = gy + playerY - standH;
     const feet = gy + playerY;
+    const mid = (feature.x0 + feature.x1) / 2;
+    const half = (feature.x1 - feature.x0) / 2;
+    const u = (wx - mid) / half;
 
-    for (const o of obstacles) {
-      const dx = Math.abs(wx - o.x);
-      if (dx > o.w) continue;
-      const u = (wx - o.x) / o.w;
-
-      if (o.type === "roll") {
-        // 桥洞 / 山洞：身体撞在结构带上才踉跄；滑行可穿过、整体跃过放行
-        const ground = terrainY(o.x);
-        const lintel = ground - (o.clear || 20);
-        const roof = ground - (o.tall || 40);
-        // 判定带只算洞口正上方（0.65）：两侧拱脚不撞头，整体跃过放行
-        if (head < lintel && feet > roof && Math.abs(u) < 0.65) { stun(); return; }
-      } else if (o.type === "stone") {
-        const top = terrainY(o.x) - (o.h || 16);
-        if (feet > top + 4 && playerY > -(o.h || 16) * 0.6) { stun(); return; }
-      } else if (o.type === "stream" || o.type === "mud" || o.type === "valley") {
-        // 落在坑里
-        if (Math.abs(u) < 0.65 && playerY > -4) { stun(); return; }
-      }
+    if (feature.interaction === "slide") {
+      // 拱顶下沿给站姿撞头、滑行通过；整跃能过、低跳会撞——与画出的拱线同源。
+      const ground = heightAt(wx);
+      const lintel = ground - TUNNEL_CLEAR;
+      const roof = ground - TUNNEL_ROOF;
+      if (head < lintel && feet > roof && Math.abs(u) < 0.65) { stun(); return; }
+    } else if (feature.interaction === "jump") {
+      if (Math.abs(u) < 0.65 && playerY > -4) stun();
     }
   }
 
   function stun() {
     stumbleT = P.stumbleDur;
     jumping = false; sliding = 0; playerY = 0; vy = 0;
-    emitParticles(W * 0.22, terrainY(playerWorldX()) - 24, 5, true);
+    emitParticles(W * 0.22, heightAt(playerWorldX()) - 24, 5, true);
   }
 
   function doJump() {
@@ -2117,21 +2221,32 @@
     if (e.button !== 0) return;
     skipIntro();
     if (e.pointerType === "touch") {
-      touchStart = { x: e.clientX, y: e.clientY, t: performance.now() };
+      touchStart = { x: e.clientX, y: e.clientY, t: performance.now(), slid: false };
       return;
     }
     // 左键只跳，绝不长按误触滑行（滑行 = 右键 / Shift / ↓）
     doJump();
+  });
+  canvas.addEventListener("pointermove", (e) => {
+    if (!touchStart || e.pointerType !== "touch" || touchStart.slid) return;
+    const dy = e.clientY - touchStart.y;
+    const dx = e.clientX - touchStart.x;
+    // 只接管短距离、明确向下的意图；其余保留给页面纵向滚动。
+    if (dy > 38 && dy > Math.abs(dx) * 1.25 && performance.now() - touchStart.t < 460) {
+      touchStart.slid = true;
+      doSlide();
+    }
   });
   canvas.addEventListener("pointerup", (e) => {
     if (!touchStart || e.pointerType !== "touch") return;
     const dx = e.clientX - touchStart.x;
     const dy = e.clientY - touchStart.y;
     const dt = performance.now() - touchStart.t;
+    const tapped = !touchStart.slid && dt < 320 && Math.abs(dx) < 24 && Math.abs(dy) < 24;
     touchStart = null;
-    // 触屏只保留轻点跳跃；滑动交给页面滚动（touch-action: pan-y）
-    if (dt < 320 && Math.abs(dy) < 24) doJump();
+    if (tapped) doJump();
   });
+  canvas.addEventListener("pointercancel", () => { touchStart = null; });
 
   window.addEventListener("keydown", (e) => {
     idleT = 0;
@@ -2162,7 +2277,7 @@
       history.replaceState(null, "", u);   // ?seed= 可分享
     } catch (err) { /* file:// 某些环境不支持时静默 */ }
     resetWorld(seed);
-    emitParticles(W * 0.85, terrainY(cameraX + W * 0.85) - 6, 8, true);
+    emitParticles(W * 0.85, heightAt(cameraX + W * 0.85) - 6, 8, true);
   });
   document.getElementById("btn-pause").addEventListener("click", () => {
     paused = !paused;
@@ -2182,7 +2297,7 @@
   /** Idle 示范：一小段波浪（文档 §4.4） */
   function drawIdleWave(k) {
     const penX = W * 0.85;
-    const base = terrainY(cameraX + penX);
+    const base = heightAt(cameraX + penX);
     ctx.save();
     ctx.globalAlpha = Math.sin(Math.min(1, k) * Math.PI) * 0.6;
     ctx.strokeStyle = "#18181A";
@@ -2211,11 +2326,14 @@
     if (sim) modeT += dt;
 
     if (sim) {
+      motionClock += dt;
+      mascotMotion.push({ t: motionClock, y: playerY, slide: sliding > 0 ? 1 - sliding / P.slideDur : null });
+      while (mascotMotion.length > 12) mascotMotion.shift();
       if (mode === "camp") {
         // 营地呼吸约 2.4s：镜头锁死，完整看到村舍/火+小队/预画线；篝火偶尔冒火星
         cameraX = 0;
         revealByPen(dt);
-        if (rnd() < dt * 1.5) emitParticles(fireX - cameraX, terrainY(fireX) - 34, 1, false);
+        if (rnd() < dt * 1.5) emitParticles(fireX - cameraX, heightAt(fireX) - 34, 1, false);
         if (hudKmEl) hudKmEl.textContent = bestMile > 0 ? "BEST " + (bestMile / 10).toFixed(1) + " km" : "";
         if (modeT > 2.4) { mode = "point"; modeT = 0; }
       } else if (mode === "point") {
@@ -2224,7 +2342,7 @@
         penDrop = Math.min(1, penDrop + dt / 0.9);
         if (penDrop >= 1 && !pointLand) {
           pointLand = true;
-          emitParticles(W * 0.85, terrainY(cameraX + W * 0.85) - 2, 4, true);
+          emitParticles(W * 0.85, heightAt(cameraX + W * 0.85) - 2, 4, true);
         }
         if (modeT > 1.6) { mode = "walk"; modeT = 0; }
       } else if (mode === "walk") {
@@ -2235,7 +2353,7 @@
         advanceFront(dt, walkSpd);
         ensureWorld(cameraX + W + 200);
         revealByPen(dt);
-        if (rnd() < dt * 3) emitParticles(W * 0.85, terrainY(cameraX + W * 0.85) - 2, 1, false);
+        if (rnd() < dt * 3) emitParticles(W * 0.85, heightAt(cameraX + W * 0.85) - 2, 1, false);
         if (modeT > 2.6) enterPlay(false);
       } else if (mode === "play") {
         idleT += dt;
@@ -2267,12 +2385,12 @@
           vy += (Math.abs(vy) < 160 ? 1500 : P.gravity) * dt;
           playerY += vy * dt;
           if (playerY >= 0) {
-            if (prevY < -40) emitParticles(W * 0.22, terrainY(playerWorldX()) - 1, 3, false);
+            if (prevY < -40) emitParticles(W * 0.22, heightAt(playerWorldX()) - 1, 3, false);
             playerY = 0; vy = 0; jumping = false; coyote = P.coyote;
           }
         } else coyote -= dt;
 
-        if (rnd() < dt * 4) emitParticles(W * 0.85, terrainY(cameraX + W * 0.85) - 2, 1, false);
+        if (rnd() < dt * 4) emitParticles(W * 0.85, heightAt(cameraX + W * 0.85) - 2, 1, false);
         collide();
 
         // 里程碑：每 1000px = 100m——HUD 轻脉冲 + 最佳里程落 localStorage
@@ -2354,6 +2472,7 @@
 
     drawCampFire();
     drawPath();
+    drawTunnelArches();
     drawObjects("back");
 
     const penShow = mode === "camp" ? 0
@@ -2361,7 +2480,6 @@
     drawPen(penShow, paused ? 0 : dt);
 
     drawMascots();
-    drawObjects("front");   // 前景遮挡：桥面/洞顶压在角色上
     drawParticles();
 
     if (mode === "play" && idleT > 4 && idleT < 5.8) drawIdleWave((idleT - 4) / 1.8);
@@ -2430,9 +2548,11 @@
       return {
         mode, cameraX, playerY, sliding: sliding > 0, stumbleT,
         particles: particles.length, objects: objects.length,
-        pathPoints: pathPoints.length, stageVisible,
-        pathX0: pathPoints[0] && pathPoints[0].x,
-        pathXN: pathPoints[pathPoints.length - 1] && pathPoints[pathPoints.length - 1].x,
+        routePoints: routePoints.length, routeFeatures: routeFeatures.length, stageVisible,
+        routeX0: routePoints[0] && routePoints[0].x,
+        routeXN: routePoints[routePoints.length - 1] && routePoints[routePoints.length - 1].x,
+        feature: routeFeatureAt(playerWorldX()),
+        penTip: { x: Math.round(cameraX + W * 0.85), y: Math.round(heightAt(cameraX + W * 0.85)) },
         drawnX: Math.round(drawnX),
         baseY: Math.round(baseY), W, H,
       };
