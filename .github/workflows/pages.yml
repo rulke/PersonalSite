@@ -1,0 +1,38 @@
+name: Deploy to GitHub Pages
+
+# 把 paper-road/ 作为站点根发布：https://rulke.github.io/PersonalSite/
+# 只在 main 上发布；develop 是工作分支（要发布就把它合进 main）。
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true   # 仓库尚未开启 Pages 时自动开启（Source = GitHub Actions）
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: paper-road
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

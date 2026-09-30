@@ -11,6 +11,8 @@ in the repo root.
 
 ## Structure
 - `README.md`: 仓库说明（运行方式 / 操作 / 玩法 / 结构 / 约定）。
+- `.github/workflows/pages.yml`: GitHub Pages 发布（main → 以 `paper-road/` 为站点根）。
+- `LICENSE`: MIT（GitHub 建仓时自动生成，保留）。
 - `个人主页设计与开发方案.md`: design/dev plan (lucky, ZH/EN, no-ending road).
 - `AGENTS.md`: this file.
 - `.gitignore`: local backups (`*副本*`), secrets, editor/build noise.
