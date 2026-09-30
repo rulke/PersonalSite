@@ -96,8 +96,25 @@ window.WORKS = [
     mascot: "none",
   },
   {
-    id: "lucky-road",
+    id: "rainbow-kitten",
     status: "bento",
+    order: 30,
+    title: { zh: "彩色小馋猫", en: "Rainbow Kitten" },
+    tagline: {
+      zh: "按颜色顺序吃，别碰那口不闪的。",
+      en: "Eat in rainbow order — and never touch the one that doesn't blink.",
+    },
+    meta: {
+      zh: "微信小游戏 · 贪吃蛇变体",
+      en: "WeChat mini-game · a Snake remix",
+    },
+    link: "https://github.com/rulke/Rainbow-Kitten",
+    art: "kitten",
+    mascot: "none",
+  },
+  {
+    id: "lucky-road",
+    status: "draft",      // 2026-09-30 bento 位让给「彩色小馋猫」；内容保留，改回 bento 即恢复
     order: 30,
     date: "2026-01-20",
     title: { zh: "lucky Road", en: "lucky Road" },
