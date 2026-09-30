@@ -26,8 +26,25 @@ window.WORKS = [
     mascot: "none",
   },
   {
-    id: "timesense",
+    id: "mainland",
     status: "featured",
+    order: 10,
+    title: { zh: "海陆变迁", en: "Mainland" },
+    tagline: {
+      zh: "拖动海平面，看岸线一进一退。",
+      en: "Drag the sea level and watch the coastline come and go.",
+    },
+    meta: {
+      zh: "全球海平面模拟 · 交互地图",
+      en: "Sea-level simulation · interactive map",
+    },
+    link: "https://rulke.github.io/mainland/",
+    art: "coast",
+    mascot: "peek",
+  },
+  {
+    id: "timesense",
+    status: "draft",      // 2026-09-30 大卡位让给「海陆变迁」；内容保留，改回 featured 即恢复
     order: 10,
     date: "2024-06-01",
     title: { zh: "TimeSense", en: "TimeSense" },
