@@ -9,6 +9,23 @@
  */
 window.WORKS = [
   {
+    id: "fishpond",
+    status: "featured",
+    order: 5,
+    title: { zh: "lucky 的鱼塘", en: "Fishpond" },
+    tagline: {
+      zh: "一座只求慢的池塘，不必争抢，鱼来了便接住。",
+      en: "A pond that only asks for slow — no rushing, just catch what comes.",
+    },
+    meta: {
+      zh: "垂钓小品 · 只求慢",
+      en: "Fishing mini-game · slow by design",
+    },
+    link: "https://rulke.github.io/fishpond/",
+    art: "pond",
+    mascot: "none",
+  },
+  {
     id: "timesense",
     status: "featured",
     order: 10,
@@ -28,7 +45,7 @@ window.WORKS = [
   },
   {
     id: "swingcat",
-    status: "featured",
+    status: "bento",
     order: 20,
     date: "2025-01-15",
     title: { zh: "SwingCat", en: "SwingCat" },
