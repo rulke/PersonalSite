@@ -857,12 +857,12 @@
   };
   const NOTES = {
     zh: [
-      { date: "2026.06.21", title: "TimeSense，在各个国家被学到了一些事。" },
-      { date: "2026.02.15", title: "「知育時計・声音计时器」TimeSense 是什么？" },
+      { date: "2026.06.04", title: "Codex 工程化指南：16 条可复用、可验证的工作流", link: "https://mp.weixin.qq.com/s/SVUyAQL5DgU3kWjeW_knVg" },
+      { date: "2026.03.26", title: "Gemini 教程｜Pixel 活动领取 Google AI Pro 12 个月会员", link: "https://mp.weixin.qq.com/s/dIWMUfNog7tmWdPRTmRnbA" },
     ],
     en: [
-      { date: "2026.06.21", title: "What TimeSense keeps learning around the world." },
-      { date: "2026.02.15", title: "What is TimeSense, the sound timer?" },
+      { date: "2026.06.04", title: "A Codex engineering guide: 16 reusable, verifiable workflows", link: "https://mp.weixin.qq.com/s/SVUyAQL5DgU3kWjeW_knVg" },
+      { date: "2026.03.26", title: "Gemini guide: 12 months of Google AI Pro via the Pixel promo", link: "https://mp.weixin.qq.com/s/dIWMUfNog7tmWdPRTmRnbA" },
     ],
   };
 
@@ -1071,7 +1071,7 @@
 
   function renderNotes() {
     document.getElementById("notes-list").innerHTML = (NOTES[lang] || NOTES.en)
-      .map((n, i) => `<a class="note-row rv" style="--rvd:${(i * 0.08).toFixed(2)}s" href="#">
+      .map((n, i) => `<a class="note-row rv" style="--rvd:${(i * 0.08).toFixed(2)}s" href="${n.link || "#"}"${n.link ? ' target="_blank" rel="noopener noreferrer"' : ""}>
         <span class="note-date">${n.date}</span>
         <span class="note-title${lang === "zh" ? " zh" : ""}">${n.title}</span>
         <span class="note-arrow" aria-hidden="true">↗</span></a>`)
