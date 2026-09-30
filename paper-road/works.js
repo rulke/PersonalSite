@@ -61,8 +61,25 @@ window.WORKS = [
     mascot: "peek",
   },
   {
-    id: "swingcat",
+    id: "soft-signals",
     status: "bento",
+    order: 20,
+    title: { zh: "Soft Signals", en: "Soft Signals" },
+    tagline: {
+      zh: "三只毛绒小家伙，想待多久都行。",
+      en: "Three fuzzy little ones — stay as long as you like.",
+    },
+    meta: {
+      zh: "互动角色主页 · 柔焦",
+      en: "Interactive character site · soft focus",
+    },
+    link: "https://momozz.art/#pink",
+    art: "soft",
+    mascot: "none",
+  },
+  {
+    id: "swingcat",
+    status: "draft",      // 2026-09-30 bento 位让给「Soft Signals」；内容保留，改回 bento 即恢复
     order: 20,
     date: "2025-01-15",
     title: { zh: "SwingCat", en: "SwingCat" },
