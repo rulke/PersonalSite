@@ -64,7 +64,7 @@ window.WORKS = [
     id: "soft-signals",
     status: "bento",
     order: 20,
-    title: { zh: "Soft Signals", en: "Soft Signals" },
+    title: { zh: "柔讯", en: "Soft Signals" },
     tagline: {
       zh: "三只毛绒小家伙，想待多久都行。",
       en: "Three fuzzy little ones — stay as long as you like.",
