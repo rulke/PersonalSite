@@ -40,7 +40,7 @@ window.WORKS = [
     },
     link: "https://rulke.github.io/mainland/",
     art: "coast",
-    mascot: "peek",
+    mascot: "none",
   },
   {
     id: "timesense",
