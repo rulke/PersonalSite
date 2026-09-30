@@ -171,6 +171,11 @@
   }
   .hud-btn:hover { color: var(--ink); border-color: var(--ink-soft); }
 
+  /* 负 margin 让文案上提、压住画布底部的空白区；但 .stage-wrap 是 positioned，
+     静态的 .hero 会被它（以及画布每帧的白底）盖住 —— 实测 ≤880px 断点下标题顶部
+     有 16~17px 落在画布内，第一行的上半截被白底涂掉（"文字被截断"）。
+     给 .hero 也加 positioned，后出现的元素即绘制在上层。 */
+  .hero { position: relative; }
   .hero-copy {
     text-align: center;
     padding: 12px 24px 8px;
