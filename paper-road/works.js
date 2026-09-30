@@ -131,8 +131,25 @@ window.WORKS = [
     mascot: "none",
   },
   {
-    id: "ship-notes",
+    id: "visit-markers",
     status: "bento",
+    order: 40,
+    title: { zh: "访问历史标记", en: "Visit History Markers" },
+    tagline: {
+      zh: "逛过的链接会留下记号，按时间分色。",
+      en: "Visited links keep a mark — colored by when.",
+    },
+    meta: {
+      zh: "Chrome 扩展 · 浏览轨迹",
+      en: "Chrome extension · browsing trail",
+    },
+    link: "https://github.com/rulke/Visit-history-markers",
+    art: "marker",
+    mascot: "none",
+  },
+  {
+    id: "ship-notes",
+    status: "draft",      // 2026-09-30 bento 位让给「访问历史标记」；内容保留，改回 bento 即恢复
     order: 40,
     date: "2025-11-02",
     title: { zh: "Ship Notes", en: "Ship Notes" },
